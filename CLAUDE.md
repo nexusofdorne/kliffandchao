@@ -6,11 +6,12 @@ Private, password-gated wedding website for Kliff & Chao (5 March 2027, Cebu). I
 
 | File | Spec for | Wins on |
 |---|---|---|
-| `BUILD_PLAN.md` | Architecture, data model, phases, env vars | Data, RSVP, admin, sync |
-| `PLAN.md` | Design, frontend, password gate | Design and the gate |
+| `docs/BUILD_PLAN.md` | Architecture, data model, repo layout, phases, env vars | Data, RSVP, admin, sync |
+| `docs/PLAN.md` | Design, frontend, password gate | Design and the gate |
 | `prototype/index.html` | Look-and-feel | Visuals |
+| `docs/design/website2.0.pdf` | Current client direction (glass) | Behind the prototype; read it when the prototype is ambiguous |
 
-Work one phase of `BUILD_PLAN.md` at a time. If the specs conflict or are silent on something that matters, **stop and ask**. Don't pick one.
+Work one phase of `docs/BUILD_PLAN.md` at a time. Put new files where its "Repo layout" and "App source" sections say; if something doesn't fit, ask before inventing a folder. If the specs conflict or are silent on something that matters, **stop and ask**. Don't pick one.
 
 ## Commands
 
@@ -75,6 +76,7 @@ These are the rules most likely to be broken by accident. Treat any violation as
 - RSVP rules: guest outside the party → `outside_party`; duplicate guest ids rejected; past deadline → not editable; message over 500 chars rejected.
 - Building the `Party` view from current answers and the latest submission.
 - `safeCell`: leading `= + - @` escaped, control characters stripped, 500-char cap.
+- Scroll maths in `lib/track/`: progress → panel and story index at the phase boundaries (`P1`, `P2`), capsule position, and the coverflow transform/scale/opacity for offsets 0, ±1, ±3 and beyond ±3.
 - Search scoring ladder, if any scoring happens in TypeScript.
 
 **Integration tests (`npm run test:db`).** For things that only exist in Postgres, run against a separate test database, never the production one:
