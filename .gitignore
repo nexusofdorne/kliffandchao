@@ -1,1 +1,22 @@
+# Next.js
+/.next/
+/out/
+
+# Dependencies
+/node_modules/
+
+# Env — real values are local/test only, .env.example stays committed
+.env
+.env.local
+.env.test
+.env*.local
+
+# The 2GB intro video source; only the trimmed intro-web.mp4 ships
+prototype/video/intro2.mp4
+
+# Vercel
 .vercel
+
+# Misc
+*.tsbuildinfo
+next-env.d.ts
