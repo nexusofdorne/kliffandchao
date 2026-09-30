@@ -32,7 +32,10 @@ This replaces the earlier `BUILD_PLAN.md`. It merges two documents:
 
 Next.js (App Router) + TypeScript · Tailwind CSS v4 · shadcn/ui · Prisma · Supabase Postgres · Supabase Auth (admin) · Zod · React Hook Form · `jose` · `node:crypto` scrypt · GSAP/ScrollTrigger · Lenis · Leaflet + OSM · Resend · Vercel · Cloudflare DNS · `google-auth-library` (Sheets mirror only).
 
-> ⚠️ **Verify versions in Phase 0, don't trust this file.** `PLAN.md` pins Next.js 15; newer majors have shipped, and newer Next.js releases appear to have renamed `middleware.ts` and changed its runtime. Prisma's newer majors also changed how the datasource URL is configured. Have Claude Code read the current docs for both, then either pin deliberately or update the gate and Prisma sections below before writing code.
+> ✅ **Versions verified in Phase 0, locked below.** Checked against current Next.js and Prisma docs:
+>
+> - **Next.js 16** (latest stable, 16.1.1+; use the latest 16.x patch — 16.2.11 fixes CVE-2026-64642, a middleware/proxy bypass under Turbopack + `i18n.locales`; we don't use `i18n` but pin the patched version anyway). `middleware.ts` is deprecated in favour of `proxy.ts` (same file, renamed export, default export or `export const proxy`), and it now runs on the **Node.js runtime by default** instead of Edge. This doesn't change the gate design — `jose` was chosen so session verification works on either runtime — but every `middleware.ts` reference below means `proxy.ts`.
+> - **Prisma ORM 7** (latest stable, 7.6.0+). Breaking changes that affect this plan: a **driver adapter is now mandatory** for Postgres (`@prisma/adapter-pg`, not optional as in v6), the datasource URL moves out of `schema.prisma` into a new **`prisma.config.ts`** at the repo root, the package needs `"type": "module"` in `package.json`, and `prisma migrate dev`/`db push` no longer auto-run `generate`. See "Connections on Vercel" below for what this means for the pooled/direct URL split.
 
 ---
 
@@ -105,7 +108,7 @@ app/
     sync/route.ts                 POST Apps Script webhook (shared secret)
     admin/sync/route.ts           POST "Sync now" full pull (Supabase-auth'd)
     health/route.ts               DB reachable?
-middleware.ts (or its renamed equivalent)   redirect UX only, NOT the sole check
+proxy.ts (Next 16's renamed middleware.ts)   redirect UX only, NOT the sole check
 config/site.ts                    names, date, venue, links (chaodesign URL with UTMs, defined once)
 content/
   chapters.ts                     5 chapters, each with its stories (photo, caption, paragraph)
@@ -234,7 +237,7 @@ Add a check to Phase 1's "done when": a request to the Supabase REST endpoint fo
 
 ### Connections on Vercel
 
-`DATABASE_URL` = Supabase **pooled** connection (transaction mode) for the app; `DIRECT_URL` = direct connection for migrations. Confirm the exact flags against current Prisma + Supabase docs in Phase 0.
+`DATABASE_URL` = Supabase **pooled** connection (transaction mode) for the app; `DIRECT_URL` = direct connection for migrations. With Prisma 7, both are read in `prisma.config.ts` (not `schema.prisma`) and handed to `@prisma/adapter-pg` — the app instantiates the adapter with `DATABASE_URL`, and the CLI's `migrate`/`db push` commands use `DIRECT_URL` via the same config file's `migrate.url` (or an env override), since Supabase's pooler doesn't support the advisory locks migrations need.
 
 ---
 
