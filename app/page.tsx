@@ -1,5 +1,5 @@
+import { GateScreen } from '@/components/site/gate/GateScreen';
 import { isSafeNextPath } from '@/lib/auth/safe-next';
-import { GateForm } from './gate-form';
 
 export default async function GatePage({
   searchParams,
@@ -10,5 +10,5 @@ export default async function GatePage({
   const requestedNext = typeof params.next === 'string' ? params.next : undefined;
   const next = requestedNext && isSafeNextPath(requestedNext) ? requestedNext : '/story';
 
-  return <GateForm next={next} />;
+  return <GateScreen next={next} />;
 }

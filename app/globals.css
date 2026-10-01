@@ -129,3 +129,206 @@
     @apply font-sans;
   }
 }
+
+/* ============================================================
+   Glass design tokens — prototype/index.html's :root block.
+   One tint for dark media (gate, intro, journey), one for the light
+   wedding panel — see `.glass` / `.glass-light` below.
+   ============================================================ */
+:root {
+  --olive: #2a4300; /* ink + RSVP pill background on the light wedding panel */
+  --green: #4f7a22; /* RSVP pill hover background on the light panel */
+
+  --glass-fill: rgba(255, 255, 255, 0.1);
+  --glass-fill-hi: rgba(255, 255, 255, 0.19); /* active segment, RSVP pill */
+  --glass-rim: rgba(255, 255, 255, 0.26);
+  --glass-blur: blur(20px) saturate(1.5);
+  --glass-shadow:
+    0 10px 34px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.26),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+
+  --glass-light-fill: rgba(255, 255, 255, 0.52);
+  --glass-light-rim: rgba(255, 255, 255, 0.7);
+  --glass-light-shadow:
+    0 8px 28px rgba(28, 40, 14, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+
+  --nav-fs: clamp(9px, 1.15vh, 13px);
+}
+
+/* The one glass primitive, two tints — prototype/index.html's `.g`/`.g-l`.
+   backdrop-filter needs something textured behind it to read at all; see
+   GlassWash for the light tint's case (the wedding panel). */
+.glass {
+  background: var(--glass-fill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-rim);
+  box-shadow: var(--glass-shadow);
+}
+.glass-light {
+  background: var(--glass-light-fill);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-light-rim);
+  box-shadow: var(--glass-light-shadow);
+}
+/* Older Android WebView / Firefox with the flag off ship no backdrop-filter
+   at all: fall back to a heavier flat fill so the rim still sits on
+   something opaque and white label text keeps its contrast. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: rgba(22, 30, 14, 0.62);
+  }
+  .glass-light {
+    background: rgba(255, 255, 255, 0.86);
+  }
+}
+
+/* ============================================================
+   Journey coverflow — prototype/index.html's .jcontent / .flow / .cf.
+   Dedicated CSS rather than Tailwind arbitrary values: the geometry has
+   enough interdependent breakpoint overrides (custom properties, calc(),
+   a media query) that a class mirrors the source 1:1 and stays legible.
+   ============================================================ */
+.journey-content {
+  padding: calc(2.4vh + clamp(52px, 7.4vh, 76px) + 3.2vh) 0 3vh;
+}
+
+.coverflow-rail {
+  --cw: min(31vw, 400px);
+  --ch: min(50vh, 470px);
+  position: relative;
+  flex: none;
+  width: 100%;
+  height: var(--ch);
+  margin-top: 2.6vh;
+  cursor: grab;
+}
+.coverflow-rail:active {
+  cursor: grabbing;
+}
+
+.coverflow-card {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--cw);
+  height: var(--ch);
+  margin-left: calc(var(--cw) / -2);
+  margin-top: calc(var(--ch) / -2);
+  transition:
+    transform 0.55s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.3s ease,
+    box-shadow 0.3s ease;
+  will-change: transform, opacity;
+}
+.coverflow-card.is-active {
+  box-shadow: 0 30px 74px rgba(0, 0, 0, 0.58);
+}
+
+@media (max-width: 768px) {
+  .journey-content {
+    padding: calc(1.4vh + env(safe-area-inset-top, 0px) + clamp(44px, 13vw, 58px) + 2.6vh) 0
+      calc(4vh + env(safe-area-inset-bottom, 0px));
+  }
+
+  .coverflow-rail {
+    --cw: 74vw;
+    --ch: min(46vh, 400px);
+    cursor: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 calc((100vw - var(--cw)) / 2);
+    gap: 3.4vw;
+    margin-top: 2.4vh;
+  }
+  .coverflow-rail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .coverflow-card {
+    position: relative;
+    left: auto;
+    top: auto;
+    margin: 0;
+    flex: 0 0 var(--cw);
+    scroll-snap-align: center;
+    transform: scale(0.88);
+    opacity: 0.5;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .coverflow-card.is-active {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* IntroPanel's slow background zoom — prototype/index.html's #intro .bg */
+@keyframes kb {
+  from {
+    transform: scale(1.03);
+  }
+  to {
+    transform: scale(1.11);
+  }
+}
+
+/* AudioToggle's equalizer bars — prototype/index.html's .audio-btn .eq i */
+@keyframes eq {
+  from {
+    transform: scaleY(0.3);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+/* Ambience's swaying grass blades — prototype/index.html's .grass path */
+@keyframes sway {
+  from {
+    transform: rotate(-2.4deg);
+  }
+  to {
+    transform: rotate(2.8deg);
+  }
+}
+
+/* Birds' wing flap — prototype/index.html's .bird svg */
+@keyframes flap {
+  from {
+    transform: scaleY(0.42);
+  }
+  to {
+    transform: scaleY(1.12);
+  }
+}
+
+/* Birds' flight path — prototype/index.html's .bird. -18vw/118vw are both
+   wholly off-screen so a bird never pops into existence mid-frame. */
+@keyframes fly-across {
+  from {
+    transform: translate3d(-18vw, 0, 0);
+  }
+  to {
+    transform: translate3d(118vw, -9vh, 0);
+  }
+}
+
+/* Gate background's slow Ken Burns drift — prototype/index.html's
+   #gate .bg img */
+@keyframes gate-drift {
+  from {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.13) translate3d(-1.4%, -1%, 0);
+  }
+}

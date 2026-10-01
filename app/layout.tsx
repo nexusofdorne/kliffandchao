@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { Montserrat } from 'next/font/google';
 import localFont from 'next/font/local';
+import { AudioProvider } from '@/components/site/AudioProvider';
+import { LenisProvider } from '@/components/site/LenisProvider';
 import { siteConfig } from '@/config/site';
 import './globals.css';
 
@@ -31,7 +33,11 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       lang="en"
       className={`${generalSans.variable} ${montserrat.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AudioProvider>
+          <LenisProvider>{children}</LenisProvider>
+        </AudioProvider>
+      </body>
     </html>
   );
 }
