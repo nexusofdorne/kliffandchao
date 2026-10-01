@@ -237,7 +237,7 @@ Add a check to Phase 1's "done when": a request to the Supabase REST endpoint fo
 
 ### Connections on Vercel
 
-`DATABASE_URL` = Supabase **pooled** connection (transaction mode) for the app; `DIRECT_URL` = direct connection for migrations. With Prisma 7, both are read in `prisma.config.ts` (not `schema.prisma`) and handed to `@prisma/adapter-pg` — the app instantiates the adapter with `DATABASE_URL`, and the CLI's `migrate`/`db push` commands use `DIRECT_URL` via the same config file's `migrate.url` (or an env override), since Supabase's pooler doesn't support the advisory locks migrations need.
+`DATABASE_URL` = Supabase **pooled** connection (transaction mode) for the app; `DIRECT_URL` = direct connection for migrations. With Prisma 7, `prisma.config.ts`'s `datasource.url` is CLI-only (migrate, studio, seed) and reads `DIRECT_URL` directly — Supabase's pooler doesn't support the advisory locks migrations need. The running app never reads that config file; `lib/prisma.ts` builds its own `@prisma/adapter-pg` instance from `DATABASE_URL` (pooled) instead, so request-serving traffic goes through the pooler while CLI tooling doesn't.
 
 ---
 
@@ -377,17 +377,26 @@ Each phase ends deployable to a **Vercel preview**. Keep the prototype live on i
 - **Prompt:** *"Phase 3. Implement the RSVP flow in BUILD_PLAN.md. Search uses raw SQL; explain why Prisma can't express it. Write a small script that fires 5 concurrent submissions so I can run the concurrency check."*
 
 ### Phase 4 — Frontend port
-- Port `prototype/index.html` into `components/site/`, **not** a rebuild from prose. All copy into `content/`, all tokens into `globals.css`/the Tailwind theme. Order:
-  1. `HorizontalTrack` + `lib/track/` maths, with `history.scrollRestoration = 'manual'` set before ScrollTrigger measures anything.
-  2. Gate UI + `AudioProvider` together (no `<form>` on the gate; birds and ambience).
-  3. Glass primitives, the `-webkit-` prefix and the `@supports not` fallback, then the top bar: bare wordmark, section pill with the capsule indicator, separate RSVP pill, audio disc.
-  4. Intro + verse (verse bottom-right).
-  5. Journey coverflow: chapter stepper, desktop driver, mobile scroll-snap, then drag/wheel gestures through the same `jumpTo()`.
-  6. Wedding tabs: details and countdown, day timeline, motif groups (`<details>`), entourage (plain text), FAQ.
-  7. RSVP overlay styling and the three chaodesign credits.
-- Decide the mobile intro-video option before starting the intro panel.
-- **Done when:** `PLAN.md` Verification 4–6 and 13–29 pass, including the **real iPhone** checks for audio and glass.
-- **Prompt:** *"Phase 4, step 1. Port the prototype's HorizontalTrack, following docs/PLAN.md. Put the scroll maths in lib/track/ as pure functions with unit tests. Don't add any animation library besides GSAP. Show me how the single onUpdate feeds the coverflow, the chapter stepper and the top-bar capsule."*
+
+**Ground rule for every step in this phase:** `prototype/index.html` is the source of truth for all visual details. Before writing any component, Claude Code must read the relevant section of the prototype and extract the exact values: layout geometry, padding, font sizes, GSAP `duration`/`ease`/`stagger`, colour tokens, breakpoints, animation timing. Do not infer or approximate from the MDs — the MDs describe intent; the prototype has the numbers. If a value appears in both and they differ, the prototype wins. The two PDFs in `docs/design/` are secondary references for overall composition when the prototype is ambiguous.
+
+**Extraction instruction to include in every step's prompt:**
+> "Before writing any code for this step, read `prototype/index.html` and extract the exact values relevant to this component: all CSS custom properties, pixel measurements, GSAP parameters, breakpoints, class names and any inline styles. List what you extracted, then write the component from those values — not from approximations."
+
+**Port order:**
+1. `HorizontalTrack` + `lib/track/` maths, with `history.scrollRestoration = 'manual'` set before ScrollTrigger measures anything.
+2. Gate UI + `AudioProvider` together (no `<form>` on the gate; birds, ambience, loader bar).
+3. Glass primitives: extract the exact `backdrop-filter`/`-webkit-backdrop-filter` values, `@supports not` fallback, and the blurred botanical wash layer. Then the top bar: exact wordmark position, section pill with capsule indicator, separate RSVP pill, audio disc.
+4. Intro panel + verse: full-bleed video (poster on mobile), exact verse position bottom-right, overlay fade on scroll.
+5. Journey coverflow: extract the exact card scale/opacity/transform at offsets 0, ±1, ±3 and beyond ±3. Chapter stepper dot sizes, spacing, active state, arrow positions. Desktop scroll driver, mobile scroll-snap, then drag/wheel gestures through the same `jumpTo()`.
+6. Wedding tabs: extract exact countdown layout, day-timeline row heights, motif tile grid, entourage text layout, FAQ `<details>` styling including the open/close animation.
+7. RSVP overlay styling. Extract exact position and styling of the three chaodesign credits.
+
+- Decide the mobile intro-video option before starting step 4.
+- **Done when:** `PLAN.md` Verification 4–6 and 13–29 pass, including the **real iPhone** checks for audio and glass. Do a visual side-by-side of each finished component against the prototype in the browser before moving to the next step.
+- **Step 1 prompt:** *"Phase 4, step 1. Before writing anything, read `prototype/index.html` and extract every value relevant to `HorizontalTrack`: the pinned ScrollTrigger setup, phase boundary percentages, `history.scrollRestoration`, and all scroll maths feeding the coverflow, chapter stepper and top-bar capsule. List what you extracted. Then put the maths in `lib/track/` as pure functions with unit tests, and build `HorizontalTrack`. Don't add any animation library besides GSAP."*
+- **Step 2 prompt:** *"Phase 4, step 2. Before writing anything, read `prototype/index.html` and extract every value for the gate screen: bird positions and animation, ambience gradient, loader bar dimensions and timing, wordmark position, the audio handshake on password submit. List what you extracted. Then build `GateScreen`, `Loader`, `Ambience`, `Birds` and `AudioProvider`. No `<form>` on the gate."*
+- **Steps 3–7:** open each session with the extraction instruction above, naming the component and asking for the extracted values before any code is written.
 
 ### Phase 5 — Admin dashboard
 - Supabase Auth login, `/admin` guarded by `require-admin` (session **and** email in `ADMIN_EMAILS`). Counts: invited, households, attending, not attending, pending. Guest table with status and "answered by". Per-household history view.
