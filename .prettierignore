@@ -3,6 +3,7 @@ node_modules
 prototype
 public
 docs/design
+generated
 
 # Hand-authored specs/docs — Prettier's markdown reflow isn't worth the diff noise
 *.md

@@ -1,0 +1,85 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+// No `url` here — Prisma 7 reads the CLI's connection from prisma.config.ts,
+// and the app supplies its own via the @prisma/adapter-pg instance in
+// lib/prisma.ts. See "Pooled vs direct" in docs/BUILD_PLAN.md.
+datasource db {
+  provider = "postgresql"
+}
+
+enum Side {
+  KLIFF
+  CHAO
+  BOTH
+}
+
+enum AttendanceStatus {
+  ATTENDING
+  NOT_ATTENDING
+}
+
+model Party {
+  id          String           @id @default(cuid())
+  externalId  String           @unique
+  label       String
+  members     Guest[]
+  submissions RsvpSubmission[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+}
+
+model Guest {
+  id           String         @id @default(cuid())
+  externalId   String         @unique
+  firstName    String
+  lastName     String
+  nickname     String?
+  side         Side
+  notesPrivate String?
+  archivedAt   DateTime?
+  partyId      String
+  party        Party          @relation(fields: [partyId], references: [id])
+  current      GuestRsvp?
+  responses    RsvpResponse[]
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  @@index([partyId])
+}
+
+// Immutable history: one row per form submit.
+model RsvpSubmission {
+  id                 String         @id
+  partyId            String
+  party              Party          @relation(fields: [partyId], references: [id])
+  submittedByGuestId String
+  message            String?        @db.VarChar(500)
+  ipHash             String?
+  responses          RsvpResponse[]
+  createdAt          DateTime       @default(now())
+}
+
+model RsvpResponse {
+  id           String           @id @default(cuid())
+  submissionId String
+  submission   RsvpSubmission   @relation(fields: [submissionId], references: [id])
+  guestId      String
+  guest        Guest            @relation(fields: [guestId], references: [id])
+  status       AttendanceStatus
+  createdAt    DateTime         @default(now())
+
+  @@unique([submissionId, guestId])
+}
+
+// Current state: exactly one row per guest (the DB-level dedupe rule).
+model GuestRsvp {
+  guestId            String           @id
+  guest              Guest            @relation(fields: [guestId], references: [id])
+  status             AttendanceStatus
+  respondedAt        DateTime
+  respondedByGuestId String
+  lastSubmissionId   String
+}

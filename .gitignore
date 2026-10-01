@@ -17,6 +17,9 @@ prototype/video/intro2.mp4
 # Vercel
 .vercel
 
+# Generated Prisma Client — regenerated via `npx prisma generate`
+/generated/
+
 # Misc
 *.tsbuildinfo
 next-env.d.ts

@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     'next-env.d.ts',
     // Reference only — never built or linted, see CLAUDE.md.
     'prototype/**',
+    // Generated Prisma Client — not our code style to enforce.
+    'generated/**',
   ]),
 ]);
 
