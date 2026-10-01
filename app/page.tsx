@@ -1,12 +1,14 @@
-import { siteConfig } from '@/config/site';
+import { isSafeNextPath } from '@/lib/auth/safe-next';
+import { GateForm } from './gate-form';
 
-export default function Home() {
-  return (
-    <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-      <h1 className="text-3xl font-semibold tracking-tight">
-        {siteConfig.coupleNames}
-      </h1>
-      <p className="text-muted-foreground">{siteConfig.weddingDateDisplay}</p>
-    </div>
-  );
+export default async function GatePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const requestedNext = typeof params.next === 'string' ? params.next : undefined;
+  const next = requestedNext && isSafeNextPath(requestedNext) ? requestedNext : '/story';
+
+  return <GateForm next={next} />;
 }

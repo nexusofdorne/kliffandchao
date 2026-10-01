@@ -606,6 +606,8 @@ node -e "const c=require('node:crypto');const s=c.randomBytes(16);console.log('s
 
 Verify with `timingSafeEqual`. The ~80ms scrypt cost doubles as free brute-force friction.
 
+> 🔴 **Escape every `$` as `\$` when pasting the hash into `.env.local`.** Next.js's env loader (`@next/env`) does shell-style `$VAR`/`${VAR}` expansion on every loaded file, and the scrypt format's `$`-delimiters collide with it — `scrypt$16384$8$1$<salt>$<hash>` silently became `scrypt6384-RAQ-ei...` (chunks of the salt and hash vanished as "undefined variable" expansions), so the *correct* password failed to verify with no error anywhere. `$$` does **not** escape it; `\$` does (`@next/env`'s own unescape step is `.replace(/\\\$/g,"$")`). This only matters for `.env.local`/`.env` — `prisma.config.ts` and `tsx` scripts use plain `dotenv`, which doesn't expand `$` at all and want the hash unescaped.
+
 **Normalize input before comparing** — `.normalize('NFKC').trim().toLowerCase()`, and set `autocapitalize="none" autocorrect="off" spellcheck="false"` on the field. Mobile keyboards autocapitalize; without this a chunk of guests will fail on a correct password and text the couple instead.
 
 **Session:** `jose` HS256 JWT in an httpOnly cookie. Pin `algorithms: ['HS256']` on verify (otherwise you're open to `alg` confusion). Include an `epoch` claim read from env — bumping `SESSION_EPOCH` invalidates every live session at once if the password leaks.
