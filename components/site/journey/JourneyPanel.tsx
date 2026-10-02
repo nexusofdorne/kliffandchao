@@ -111,7 +111,7 @@ export function JourneyPanel() {
           it must NOT also be centred with translateX(-50%) — that gets
           wiped and the content lands off the right edge. */}
       <div
-        className="journey-content absolute inset-0 z-[3] flex flex-col items-center justify-center text-center"
+        className="journey-content absolute inset-0 z-[3] flex flex-col items-center justify-start text-center max-[768px]:justify-center"
         style={{ transform: `translateX(${parallaxX}px)` }}
       >
         <ChapterStepper
