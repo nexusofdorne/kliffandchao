@@ -138,10 +138,12 @@
 :root {
   --olive: #2a4300; /* ink + RSVP pill background on the light wedding panel */
   --green: #4f7a22; /* RSVP pill hover background on the light panel */
+  --lime: #9dcb5a; /* RSVP overlay's accent — focus rings, the submit button, the banner's edge */
 
   --glass-fill: rgba(255, 255, 255, 0.1);
   --glass-fill-hi: rgba(255, 255, 255, 0.19); /* active segment, RSVP pill */
   --glass-rim: rgba(255, 255, 255, 0.26);
+  --glass-rim-soft: rgba(255, 255, 255, 0.13); /* the RSVP attendance toggle's own border */
   --glass-blur: blur(20px) saturate(1.5);
   --glass-shadow:
     0 10px 34px rgba(0, 0, 0, 0.3),
@@ -439,6 +441,31 @@
   .motif-grid {
     grid-template-columns: 1fr;
     gap: 9px;
+  }
+}
+
+/* ============================================================
+   RSVP overlay — prototype/index.html's #rsvp / .rclose / .rwrap.
+   ============================================================ */
+.rsvp-close {
+  position: fixed;
+  right: 3.2vw;
+  top: 3.4vh;
+  z-index: 95;
+}
+
+.rsvp-wrap {
+  padding: 12vh 7vw 10vh;
+}
+
+@media (max-width: 768px) {
+  .rsvp-close {
+    top: calc(1.4vh + env(safe-area-inset-top, 0px));
+    right: 4vw;
+    padding: 10px 16px;
+  }
+  .rsvp-wrap {
+    padding: 9vh 7vw 12vh;
   }
 }
 
