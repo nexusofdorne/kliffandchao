@@ -86,6 +86,16 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!isMobile && !reduced) return;
 
+    // Without a pinned ScrollTrigger to snap for it (desktop's own `snap`
+    // option above), a guest could let go mid-flick and be left parked
+    // halfway between two full-height sections, half of each showing.
+    // SNAP_IDLE_MS of no further scroll means they've stopped, not just
+    // paused mid-flick — only then is it safe to assume where they landed
+    // is where they meant to stop, and correct it to the nearer section.
+    const SNAP_IDLE_MS = 160;
+    const SNAP_THRESHOLD_PX = 2;
+    let snapTimeoutId: ReturnType<typeof setTimeout>;
+
     function reportActiveSection() {
       const viewportMid = window.scrollY + window.innerHeight / 2;
       let section = 0;
@@ -94,11 +104,34 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
         if (el && el.offsetTop <= viewportMid) section = index;
       });
       onUpdateRef.current?.({ progress: section / (SECTION_IDS.length - 1), panel: section });
+
+      clearTimeout(snapTimeoutId);
+      snapTimeoutId = setTimeout(snapToNearestSection, SNAP_IDLE_MS);
+    }
+
+    function snapToNearestSection() {
+      const sections = SECTION_IDS.map((id) => document.getElementById(id));
+      let nearest: HTMLElement | null = null;
+      let nearestDistance = Infinity;
+      for (const el of sections) {
+        if (!el) return;
+        const distance = Math.abs(el.offsetTop - window.scrollY);
+        if (distance < nearestDistance) {
+          nearestDistance = distance;
+          nearest = el;
+        }
+      }
+      if (nearest && nearestDistance > SNAP_THRESHOLD_PX) {
+        window.scrollTo({ top: nearest.offsetTop, behavior: reduced ? 'auto' : 'smooth' });
+      }
     }
 
     reportActiveSection();
     window.addEventListener('scroll', reportActiveSection, { passive: true });
-    return () => window.removeEventListener('scroll', reportActiveSection);
+    return () => {
+      clearTimeout(snapTimeoutId);
+      window.removeEventListener('scroll', reportActiveSection);
+    };
   }, []);
 
   // useGSAP scopes a gsap.context() to pinRef and calls context.revert() on

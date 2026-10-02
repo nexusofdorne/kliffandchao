@@ -1,6 +1,6 @@
 'use client';
 
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState, useSyncExternalStore } from 'react';
 import { chapters, type FlatStory } from '@/content/chapters';
 import { computeCardTransform, computeStepTarget } from '@/lib/track/coverflow';
 import { StoryCard } from './StoryCard';
@@ -9,8 +9,28 @@ import { useCoverflowGestures } from './useCoverflowGestures';
 const MOBILE_BREAKPOINT_PX = 768;
 const EAGER_LOAD_COUNT = 3;
 
-function getInitialIsMobile(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth < MOBILE_BREAKPOINT_PX;
+// useSyncExternalStore, not a lazy useState initializer reading
+// window.innerWidth directly: the server always renders assuming desktop
+// (there's no window to read), so a client render that disagrees during
+// hydration — true on an actual mobile load — logged a hydration mismatch
+// on StoryCard's inline transform/opacity that "won't be patched up".
+// Harmless on its own, but once something else re-rendered this tree
+// afterward (e.g. a scroll-driven state update elsewhere), React's
+// reconciliation hit DOM it no longer recognized and crashed with
+// "Failed to execute 'removeChild'". getServerSnapshot keeps the first
+// client render identical to the server's; useSyncExternalStore then
+// corrects it before paint, with no visible flash and no manual effect.
+function subscribeToViewportChange(onChange: () => void) {
+  window.addEventListener('resize', onChange);
+  return () => window.removeEventListener('resize', onChange);
+}
+
+function getIsMobileSnapshot(): boolean {
+  return window.innerWidth > 0 && window.innerWidth < MOBILE_BREAKPOINT_PX;
+}
+
+function getIsMobileServerSnapshot(): boolean {
+  return false;
 }
 
 // The gap between card centres on the native scroll-snap rail. Not the same
@@ -47,7 +67,7 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(function Co
   { stories, activeIndex, onSelectStory, onMobileActiveChange },
   ref,
 ) {
-  const [isMobile] = useState(getInitialIsMobile);
+  const isMobile = useSyncExternalStore(subscribeToViewportChange, getIsMobileSnapshot, getIsMobileServerSnapshot);
   const [cardWidth, setCardWidth] = useState(0);
   const firstCardRef = useRef<HTMLDivElement>(null);
   const { containerRef, justSwipedRef } = useCoverflowGestures(!isMobile, (direction) => {

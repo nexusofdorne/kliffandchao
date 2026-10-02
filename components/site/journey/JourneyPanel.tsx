@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { chapters, stories } from '@/content/chapters';
 import { computeActiveStoryIndex, computeParallaxOffset, computeScrollBudget } from '@/lib/track/progress';
@@ -24,8 +24,19 @@ const MOBILE_BREAKPOINT_PX = 768;
 const COPY_CROSSFADE_MS = 170;
 const COPY_OPACITY = 0.84;
 
-function getInitialIsMobile(): boolean {
-  return typeof window !== 'undefined' && window.innerWidth > 0 && window.innerWidth < MOBILE_BREAKPOINT_PX;
+// See Coverflow's own isMobile for why this reads via useSyncExternalStore
+// rather than a lazy useState initializer.
+function subscribeToViewportChange(onChange: () => void) {
+  window.addEventListener('resize', onChange);
+  return () => window.removeEventListener('resize', onChange);
+}
+
+function getIsMobileSnapshot(): boolean {
+  return window.innerWidth > 0 && window.innerWidth < MOBILE_BREAKPOINT_PX;
+}
+
+function getIsMobileServerSnapshot(): boolean {
+  return false;
 }
 
 function firstStoryOfChapter(chapterIndex: number): number {
@@ -39,7 +50,7 @@ function firstStoryOfChapter(chapterIndex: number): number {
 // Coverflow reports its own native scroll position back up instead.
 export function JourneyPanel() {
   const { progress, panel, jumpToStory } = useTrackProgress();
-  const [isMobile] = useState(getInitialIsMobile);
+  const isMobile = useSyncExternalStore(subscribeToViewportChange, getIsMobileSnapshot, getIsMobileServerSnapshot);
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
   const coverflowRef = useRef<CoverflowHandle>(null);
