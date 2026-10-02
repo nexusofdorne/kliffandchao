@@ -91,21 +91,47 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
   //    client-navigation can commit this subtree in more than one pass,
   //    and waiting lets React finish before GSAP's pin-spacer surgery
   //    touches the DOM. A direct/hard load never hit either problem.
+  //
+  // The retry itself runs on setTimeout, not requestAnimationFrame: a
+  // backgrounded or embedded-preview tab can suspend rAF indefinitely (the
+  // same risk docs/PLAN.md already calls out for the 0-100 loader), and an
+  // rAF that never fires once meant the pin was never created at all — the
+  // track stayed squeezed into one overflow-hidden screen, unscrollable,
+  // with nav clicks silently going nowhere. setTimeout still fires
+  // (throttled, not frozen) even then.
   useGSAP(
     () => {
       if (!pinRef.current) return;
 
-      let frame: number;
+      let timeoutId: ReturnType<typeof setTimeout>;
       const trySetup = () => {
         if (!pinRef.current) return;
         if (window.innerWidth === 0 || window.innerHeight === 0) {
-          frame = requestAnimationFrame(trySetup);
+          timeoutId = setTimeout(trySetup, 50);
           return;
         }
 
         const isMobile = matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
         const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
         if (isMobile || reduced) return;
+
+        // Belt and braces against a second ScrollTrigger ever stacking on
+        // top of the first: Next's RSC client-navigation can commit this
+        // subtree more than once (see above), and when it does, the first
+        // commit's effect cleanup isn't guaranteed to run before the second
+        // one's setup does — a React-instance-scoped ref guard wouldn't
+        // catch that, since each commit gets its own ref. Checking by the
+        // actual trigger DOM node catches it regardless of which commit
+        // (or Strict Mode re-invoke, or HMR) is responsible. Adopting the
+        // existing trigger, rather than killing and recreating, avoids
+        // measuring the pin mid-revert — and whichever commit React keeps
+        // still needs a live reference for jumpToSection/jumpToStory to
+        // work, even if it wasn't the one that created it.
+        const existing = ScrollTrigger.getAll().find((trigger) => trigger.trigger === pinRef.current);
+        if (existing) {
+          scrollTriggerRef.current = existing;
+          return;
+        }
 
         const { p1, p2, totalScreens } = computeScrollBudget(storyCount);
 
@@ -135,9 +161,11 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
         });
       };
 
-      frame = requestAnimationFrame(trySetup);
+      // A 0ms timeout (not a frame) still lets React finish the commit
+      // first, without betting on a frame actually arriving.
+      timeoutId = setTimeout(trySetup, 0);
       return () => {
-        cancelAnimationFrame(frame);
+        clearTimeout(timeoutId);
         scrollTriggerRef.current = null;
       };
     },

@@ -5,6 +5,7 @@ import { HorizontalTrack, type HorizontalTrackHandle } from '@/components/site/H
 import { IntroPanel } from '@/components/site/intro/IntroPanel';
 import { JourneyPanel } from '@/components/site/journey/JourneyPanel';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
+import { WeddingPanel } from '@/components/site/wedding/WeddingPanel';
 import { stories } from '@/content/chapters';
 
 export default function StoryPage() {
@@ -23,11 +24,7 @@ export default function StoryPage() {
       onUpdate={setUpdate}
       intro={<IntroPanel />}
       journey={<JourneyPanel />}
-      wedding={
-        <div className="flex h-full flex-col items-center justify-center gap-2 bg-[#f4ede6] text-center">
-          <p className="text-xs uppercase tracking-[.14em] text-black/50">Wedding — Phase 4 step 6</p>
-        </div>
-      }
+      wedding={<WeddingPanel />}
     />
   );
 }

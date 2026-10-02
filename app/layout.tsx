@@ -33,7 +33,14 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
       lang="en"
       className={`${generalSans.variable} ${montserrat.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      {/* No className here — deliberately. `min-h-full flex flex-col` was
+          generic scaffolding from Phase 0 with nothing in the site relying
+          on it, and `display:flex` on body breaks GSAP ScrollTrigger's
+          pin-spacer sizing: the spacer's explicit height stops being
+          respected, the pinned track collapses to one screen, and nothing
+          below it scrolls or responds to a jump. Confirmed by removing it
+          and watching the horizontal track's full scroll budget return. */}
+      <body>
         <AudioProvider>
           <LenisProvider>{children}</LenisProvider>
         </AudioProvider>

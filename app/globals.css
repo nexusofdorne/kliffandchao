@@ -271,6 +271,177 @@
   }
 }
 
+/* ============================================================
+   Wedding tabs — prototype/index.html's .tabs/.tabrow/.panel/.tl.
+   Dedicated CSS for the pieces with pseudo-elements or several
+   interdependent breakpoint overrides; simpler pieces stay as Tailwind
+   utility classes on the components themselves.
+   ============================================================ */
+.wedding-panel {
+  padding: 11vh 0 10vh;
+}
+
+.wedding-tab-row {
+  position: relative;
+  display: flex;
+  gap: clamp(13px, 2.5vw, 40px);
+  max-width: 100%;
+  padding-bottom: 11px;
+}
+/* The hairline track. No overflow scrolling on the row itself — an
+   absolutely positioned rule inside a scroll container anchors to the
+   scroll origin and slides away from the labels; the five labels are
+   sized to fit instead. */
+.wedding-tab-row::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: rgba(20, 24, 13, 0.17);
+}
+
+.wedding-tab-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 0;
+  height: 2px;
+  z-index: 1;
+  background: #14180d;
+  pointer-events: none;
+  transition:
+    transform 0.42s cubic-bezier(0.16, 1, 0.3, 1),
+    width 0.42s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.wedding-tab-panel {
+  display: none;
+  text-align: center;
+  padding: 5vh 6vw 4vh;
+}
+.wedding-tab-panel.is-active {
+  display: block;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  animation: fadeup 0.5s ease both;
+}
+.wedding-tab-panel.is-active::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes fadeup {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Vertical day-of timeline, in its own scroll area — the wheel scrolls this
+   list while the cursor is over it and only hands back to the page at the
+   ends (overscroll-behavior: contain). Desktop shows all six stops with no
+   scrolling at all; the scroll area only matters on mobile. */
+.day-timeline {
+  position: relative;
+  margin: 3vh auto 0;
+  width: min(80vw, 330px);
+  height: auto;
+  overflow: visible;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+.day-timeline::-webkit-scrollbar {
+  display: none;
+}
+.day-timeline-inner {
+  position: relative;
+  padding: 1vh 0;
+}
+.day-timeline-inner::before {
+  /* 1.6rem is a stop's left padding; 12.5px centres on the 25px node. */
+  content: '';
+  position: absolute;
+  left: calc(1.6rem + 12.5px);
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(20, 24, 13, 0.2);
+}
+
+@keyframes wheel-dot {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, 9px);
+  }
+}
+
+/* VenueMap's marker — a divIcon, not Leaflet's default PNG pin, so it takes
+   the olive palette directly and avoids the broken-icon-path problem when
+   Leaflet's asset URLs don't resolve. Leaflet injects this via a raw HTML
+   string outside React, so it has to be a global class.
+   prototype/index.html's .pin span. */
+.venue-pin span {
+  display: block;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: var(--olive);
+  box-shadow:
+    0 0 0 4px rgba(42, 67, 0, 0.22),
+    0 1px 5px rgba(0, 0, 0, 0.45);
+}
+
+/* Desktop lays all five motif groups out as a grid — no scroll, no wasted
+   space. Mobile turns it back into a single column. */
+.motif-grid {
+  display: grid;
+  gap: 1vh clamp(16px, 2.4vw, 38px);
+  grid-template-columns: repeat(3, 1fr);
+}
+
+@media (max-width: 768px) {
+  .wedding-panel {
+    padding: calc(1.4vh + env(safe-area-inset-top, 0px) + clamp(44px, 13vw, 58px) + 2.6vh) 0 0;
+  }
+  .wedding-tab-row {
+    gap: clamp(8px, 2.9vw, 14px);
+  }
+  /* Five bare labels have to fit 375px without scrolling. */
+  .wedding-tab-row button {
+    font-size: 8px;
+    letter-spacing: 0.09em;
+  }
+  .wedding-tab-panel.is-active {
+    margin-top: 0;
+    padding: 3.4vh 6vw calc(13vh + env(safe-area-inset-bottom, 0px));
+  }
+  .day-timeline {
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    width: 100%;
+  }
+  .motif-grid {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+}
+
 /* IntroPanel's slow background zoom — prototype/index.html's #intro .bg */
 @keyframes kb {
   from {
