@@ -22,3 +22,11 @@ export const rsvpRequestSchema = z.object({
 
 export type RsvpRequest = z.infer<typeof rsvpRequestSchema>;
 export type RsvpResponseInput = z.infer<typeof rsvpResponseSchema>;
+
+// The Apps Script webhook's payload: the edited row(s) from the Guests
+// tab, each keyed by column header — docs/BUILD_PLAN.md "Sheet -> DB".
+export const syncRequestSchema = z.object({
+  rows: z.array(z.record(z.string(), z.string())).min(1),
+});
+
+export type SyncRequest = z.infer<typeof syncRequestSchema>;

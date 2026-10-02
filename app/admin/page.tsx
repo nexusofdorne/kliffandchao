@@ -1,5 +1,6 @@
 import { GuestTable } from '@/components/admin/GuestTable';
 import { StatsSummary } from '@/components/admin/StatsSummary';
+import { SyncNowButton } from '@/components/admin/SyncNowButton';
 import { getAdminDashboardData } from '@/lib/admin/dashboard';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { prisma } from '@/lib/prisma';
@@ -18,11 +19,14 @@ export default async function AdminPage() {
           <h1 className="text-xl font-semibold text-foreground">Guest list</h1>
           <p className="text-sm text-muted-foreground">Signed in as {email}</p>
         </div>
-        <form action={signOutAdmin}>
-          <button type="submit" className="rounded-md border border-input px-3 py-1.5 text-sm text-foreground">
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-3">
+          <SyncNowButton />
+          <form action={signOutAdmin}>
+            <button type="submit" className="rounded-md border border-input px-3 py-1.5 text-sm text-foreground">
+              Sign out
+            </button>
+          </form>
+        </div>
       </header>
 
       <StatsSummary tally={tally} />

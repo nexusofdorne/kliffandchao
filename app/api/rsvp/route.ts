@@ -6,6 +6,7 @@ import { findGuestOutsideParty, hashIp, hasDuplicateGuestIds, isPastDeadline } f
 import { submitRsvp } from '@/lib/rsvp/submit';
 import { env } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
+import { mirrorRsvpToSheet } from '@/lib/sheets/mirror';
 import { rsvpRequestSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -62,9 +63,19 @@ export async function POST(request: Request) {
   });
 
   if (result.outcome === 'submitted') {
-    // Fire-and-forget: a notification failure must never fail the RSVP.
+    // Fire-and-forget: a notification/mirror failure must never fail the
+    // RSVP — the database write above already committed, that's the
+    // source of truth.
     void notifyCouple(submitter.party.label, parsed.data.message ?? null);
-    // Sheets mirror: Phase 6.
+    void mirrorRsvpToSheet({
+      submissionId: parsed.data.clientSubmissionId,
+      submittedByGuestId: parsed.data.submittedByGuestId,
+      partyId: submitter.partyId,
+      responses: parsed.data.responses,
+      message: parsed.data.message ?? null,
+      ipHash,
+      createdAt: now,
+    });
   }
 
   const party = await loadPartyView(prisma, submitter.partyId, now, deadline);

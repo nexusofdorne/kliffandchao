@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { parseCsv } from '../lib/csv';
 import { parseGuestRows } from '../lib/guests/parse-rows';
+import { upsertGuestRows } from '../lib/guests/upsert';
 import { PrismaClient } from '../generated/prisma/client';
 
 // A standalone client, not lib/prisma.ts's singleton: this script runs via
@@ -23,43 +24,10 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
   const csv = readFileSync(join(here, 'seed-data.csv'), 'utf-8');
-  const { parties, guests } = parseGuestRows(parseCsv(csv));
+  const parsed = parseGuestRows(parseCsv(csv));
+  const result = await upsertGuestRows(prisma, parsed);
 
-  for (const party of parties) {
-    await prisma.party.upsert({
-      where: { externalId: party.externalId },
-      create: { externalId: party.externalId, label: party.label },
-      update: { label: party.label },
-    });
-  }
-
-  for (const guest of guests) {
-    const party = await prisma.party.findUniqueOrThrow({
-      where: { externalId: guest.partyExternalId },
-    });
-    await prisma.guest.upsert({
-      where: { externalId: guest.externalId },
-      create: {
-        externalId: guest.externalId,
-        firstName: guest.firstName,
-        lastName: guest.lastName,
-        nickname: guest.nickname,
-        side: guest.side,
-        notesPrivate: guest.notesPrivate,
-        partyId: party.id,
-      },
-      update: {
-        firstName: guest.firstName,
-        lastName: guest.lastName,
-        nickname: guest.nickname,
-        side: guest.side,
-        notesPrivate: guest.notesPrivate,
-        partyId: party.id,
-      },
-    });
-  }
-
-  console.log(`Seeded ${parties.length} parties and ${guests.length} guests.`);
+  console.log(`Seeded ${result.partiesUpserted} parties and ${result.guestsUpserted} guests.`);
 }
 
 main()
