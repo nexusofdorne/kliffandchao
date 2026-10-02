@@ -16,6 +16,15 @@ describe('parseGuestsSheetValues', () => {
     expect(parseGuestsSheetValues(grid).guests).toHaveLength(1);
   });
 
+  it('skips a row with no guest_id even if another column has a stray value (a pre-allocated template row with leftover formatting/dropdown data)', () => {
+    const grid = [
+      HEADER,
+      ['g01', 'Benjamin', 'Kho', '', 'p01', 'Kho Family', 'KLIFF', ''],
+      ['', '', '', '', '', '', 'BOTH', ''], // no guest_id, but "side" has a stray dropdown default
+    ];
+    expect(parseGuestsSheetValues(grid).guests).toHaveLength(1);
+  });
+
   it('finds the header row below an arbitrary number of unrelated rows (a dashboard summary above the real table)', () => {
     const grid = [
       [],

@@ -64,7 +64,10 @@ function syncGuestRowOnEdit(e) {
     headerInfo.header.forEach((column, index) => {
       if (column) record[column] = String(values[index] ?? '');
     });
-    if (Object.values(record).some((value) => value !== '')) rows.push(record);
+    // guest_id specifically, not "any column non-empty": the template's
+    // own pre-allocated blank rows can have stray dropdown/formatting
+    // values in other columns, which would otherwise look non-blank.
+    if (record.guest_id) rows.push(record);
   }
   if (rows.length === 0) return;
 

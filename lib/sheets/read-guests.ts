@@ -24,10 +24,18 @@ export function parseGuestsSheetValues(grid: string[][]): ParsedGuestRows {
   }
 
   const header = grid[headerRowIndex];
+  const guestIdColumnIndex = header.indexOf('guest_id');
   const dataRows = grid.slice(headerRowIndex + 1);
 
+  // A real guest list's own tab is usually pre-allocated to 1000+ rows by
+  // Google Sheets, and far fewer than that are ever filled in — those
+  // trailing template rows aren't actually blank in every column (stray
+  // dropdown/conditional-formatting defaults in the sheet's own tracking
+  // columns show up as non-empty cells), so "does this row have a
+  // guest_id" is the only reliable signal that it's a real guest, not
+  // "is every cell in the row empty".
   const records = dataRows
-    .filter((row) => row.some((cell) => cell !== ''))
+    .filter((row) => (row[guestIdColumnIndex] ?? '').trim() !== '')
     .map((row) => Object.fromEntries(header.map((key, index) => [key, row[index] ?? ''])));
 
   return parseGuestRows(records);
