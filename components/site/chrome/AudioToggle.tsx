@@ -37,7 +37,7 @@ export function AudioToggle() {
           ))}
         </span>
       ) : (
-        <svg viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-full w-full">
+        <svg viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" className="h-[60%] w-[60%]">
           <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" stroke="none" />
           <path d="M17 9l5 6M22 9l-5 6" stroke="currentColor" fill="none" strokeWidth={2} />
         </svg>
