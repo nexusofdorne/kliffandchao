@@ -22,6 +22,18 @@ export function GuestSearch({ onSelectGuest }: GuestSearchProps) {
   const [failed, setFailed] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
 
+  // GuestSearch stays mounted for the rest of the RSVP flow (the party
+  // form renders below it, not instead of it), so without this the
+  // dropdown from the last search just sat there forever after a guest
+  // was picked.
+  function handleSelect(guest: GuestSearchResult) {
+    abortRef.current?.abort();
+    setQuery('');
+    setResults(null);
+    setFailed(false);
+    onSelectGuest(guest);
+  }
+
   useEffect(() => {
     if (query.trim().length < MIN_QUERY_LENGTH) {
       abortRef.current?.abort();
@@ -79,7 +91,7 @@ export function GuestSearch({ onSelectGuest }: GuestSearchProps) {
               <button
                 key={guest.id}
                 type="button"
-                onClick={() => onSelectGuest(guest)}
+                onClick={() => handleSelect(guest)}
                 className="block w-full border-t border-white/[.08] px-[22px] py-[15px] text-left text-[13px] tracking-[.05em] text-white transition-colors duration-150 first:border-t-0 hover:bg-white/10"
               >
                 {guest.displayName}
