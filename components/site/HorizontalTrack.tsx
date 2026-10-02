@@ -73,6 +73,34 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
     return () => query.removeEventListener('change', reload);
   }, []);
 
+  // Mobile (and reduced-motion) never sets up the pinned ScrollTrigger below,
+  // so `onUpdate` would otherwise never fire there and `panel` would stay
+  // stuck at its initial 0 for the whole visit — which left TopBar's
+  // light/dark nav color and the wedding/journey panels' parallax offset
+  // frozen at the intro's values no matter how far the guest had actually
+  // scrolled. The three sections just stack under native vertical scroll
+  // here, so "panel" is simply whichever section's top has passed the
+  // viewport's midpoint.
+  useEffect(() => {
+    const isMobile = matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (!isMobile && !reduced) return;
+
+    function reportActiveSection() {
+      const viewportMid = window.scrollY + window.innerHeight / 2;
+      let section = 0;
+      SECTION_IDS.forEach((id, index) => {
+        const el = document.getElementById(id);
+        if (el && el.offsetTop <= viewportMid) section = index;
+      });
+      onUpdateRef.current?.({ progress: section / (SECTION_IDS.length - 1), panel: section });
+    }
+
+    reportActiveSection();
+    window.addEventListener('scroll', reportActiveSection, { passive: true });
+    return () => window.removeEventListener('scroll', reportActiveSection);
+  }, []);
+
   // useGSAP scopes a gsap.context() to pinRef and calls context.revert() on
   // cleanup instead of manually killing the trigger, which matters because
   // ScrollTrigger's pin wraps the pinned element in a spacer div — a DOM
