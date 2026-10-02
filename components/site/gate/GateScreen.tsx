@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { useAudio } from '@/components/site/AudioProvider';
 import { Wordmark } from '@/components/site/chrome/Wordmark';
 import { Loader } from './Loader';
@@ -21,6 +21,24 @@ export function GateScreen({ next }: { next: string }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+
+  // `interactive-widget=resizes-content` (app/layout.tsx) covers most
+  // browsers, but Messenger's in-app browser overlays the on-screen keyboard
+  // on top of a static 100vh instead of shrinking it — the password field
+  // ends up hidden behind the keyboard with no way to scroll to it, since
+  // this screen is h-screen/overflow-hidden by design. visualViewport
+  // reports the keyboard's real, shrunk visible area even there, so the
+  // screen's own height follows it and the centred form re-centres above
+  // the keyboard rather than being covered by it.
+  useEffect(() => {
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+    const updateHeight = () => setViewportHeight(viewport.height);
+    updateHeight();
+    viewport.addEventListener('resize', updateHeight);
+    return () => viewport.removeEventListener('resize', updateHeight);
+  }, []);
 
   function handleEnter(event: FormEvent) {
     event.preventDefault();
@@ -61,7 +79,10 @@ export function GateScreen({ next }: { next: string }) {
   }
 
   return (
-    <div className="relative h-screen overflow-hidden bg-black text-white">
+    <div
+      className="relative h-screen overflow-hidden bg-black text-white"
+      style={viewportHeight ? { height: viewportHeight } : undefined}
+    >
       <div className="absolute inset-0">
         <Image
           src="/img/intro.jpg"

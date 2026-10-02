@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Montserrat } from 'next/font/google';
 import localFont from 'next/font/local';
 import { AudioProvider } from '@/components/site/AudioProvider';
@@ -25,6 +25,15 @@ const montserrat = Montserrat({
 export const metadata: Metadata = {
   title: `${siteConfig.coupleNames} — ${siteConfig.weddingDateDisplay}`,
   description: `A private wedding site for ${siteConfig.coupleNames}.`,
+};
+
+// resizes-content: the on-screen keyboard shrinks the layout viewport
+// instead of overlaying it, so 100dvh-based layouts (the gate screen)
+// shrink and re-centre above the keyboard rather than being covered by
+// it — the bug seen in Messenger's in-app browser. Falls back harmlessly
+// where unsupported; GateScreen's own visualViewport listener covers that.
+export const viewport: Viewport = {
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({ children }: LayoutProps<'/'>) {
