@@ -16,7 +16,12 @@ export function LenisProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    const lenis = new Lenis();
+    // Lenis hijacks every wheel/touch event globally by default, which also
+    // blocks native scrolling inside the app's own overflow-y containers
+    // (the wedding tab panels — e.g. a long FAQ list past the fold).
+    // allowNestedScroll detects those and lets them scroll natively instead
+    // of being swallowed by Lenis's document-level smoothing.
+    const lenis = new Lenis({ allowNestedScroll: true });
     const onTick = (time: number) => lenis.raf(time * 1000);
 
     lenis.on('scroll', ScrollTrigger.update);
