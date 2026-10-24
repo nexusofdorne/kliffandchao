@@ -38,7 +38,15 @@ export default function RsvpPage() {
     // for a different household starts a genuinely new one.
     setSubmissionId(crypto.randomUUID());
 
-    const response = await fetch(`/api/party?guestId=${encodeURIComponent(guest.id)}`);
+    let response: Response;
+    try {
+      response = await fetch(`/api/party?guestId=${encodeURIComponent(guest.id)}`);
+    } catch {
+      // Offline or the request never reached the server — without this the
+      // UI would be stuck on "Loading your party…" forever.
+      setStage({ kind: 'search', error: 'Something went wrong — please try again.' });
+      return;
+    }
     if (!response.ok) {
       setStage({ kind: 'search', error: 'Something went wrong — please try again.' });
       return;
@@ -52,16 +60,27 @@ export default function RsvpPage() {
     const { party, guestId } = stage;
 
     setSubmitting(true);
-    const response = await fetch('/api/rsvp', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        submittedByGuestId: guestId,
-        responses: payload.responses,
-        message: payload.message || undefined,
-        clientSubmissionId: submissionId,
-      }),
-    });
+    let response: Response;
+    try {
+      response = await fetch('/api/rsvp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submittedByGuestId: guestId,
+          responses: payload.responses,
+          message: payload.message || undefined,
+          clientSubmissionId: submissionId,
+        }),
+      });
+    } catch {
+      // Offline or the request never reached the server — without this the
+      // submit button would spin forever with no feedback. The idempotency
+      // key (submissionId) is untouched, so retrying is safe even if the
+      // request actually landed server-side before the connection dropped.
+      setSubmitting(false);
+      setStage({ kind: 'party', party, guestId, error: 'Something went wrong — please try again.' });
+      return;
+    }
     setSubmitting(false);
 
     if (!response.ok) {

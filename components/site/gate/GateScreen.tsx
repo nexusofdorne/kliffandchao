@@ -54,11 +54,22 @@ export function GateScreen({ next }: { next: string }) {
   }
 
   async function submit() {
-    const response = await fetch('/api/gate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
-    });
+    let response: Response;
+    try {
+      response = await fetch('/api/gate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      });
+    } catch {
+      // Offline or the request never reached the server — same recovery as
+      // a rejected password, so the gesture-started muted audio doesn't
+      // keep playing silently with no feedback on screen.
+      audio.pause();
+      setError(true);
+      setPassword('');
+      return;
+    }
 
     if (!response.ok) {
       audio.pause();
