@@ -42,7 +42,7 @@ export const chapters: Chapter[] = [
       {
         image: '/img/p4_Im0.jpg',
         caption: 'Different time zones',
-        paragraph: 'Different time zones, terrible connections. Placeholder copy for the long-distance years.',
+        paragraph: 'Different time zones, terrible connections. Placeholder copy for the long-distance yearsss.',
       },
       {
         image: '/img/p1_Im0.jpg',
