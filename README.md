@@ -4,6 +4,29 @@ Private, password-gated wedding website for Kliff & Chao (5 March 2027, Cebu).
 
 See `docs/BUILD_PLAN.md` and `docs/PLAN.md` for the full architecture/design specs, and `CLAUDE.md` for the engineering rules this repo follows. This README is a practical guide to **where to edit content** — no code changes needed for anything below.
 
+## Local setup
+
+Use **Node 24 LTS** (`.nvmrc` records the major version). `npm install` rejects unsupported Node versions before running package install scripts.
+
+1. Run `npm ci` to install the locked dependencies and generate Prisma Client.
+2. Copy `.env.example` to `.env.local` and fill in your configuration. Keep this file private.
+3. Run `npm run hash-password -- <password>`. Its output is a complete `SITE_PASSWORD_HASH=...` line with dollar signs already escaped for Next.js. Replace the local line with that output. For Vercel, generate a **raw value** with `npm run hash-password -- <password> --vercel`; do not paste local escape characters into its dashboard.
+4. Run `npm run check:setup` and `npm run typecheck`. Type checking generates Next.js route types automatically.
+5. Run `npm run dev`. Restart it after changing environment variables.
+
+`check:setup` checks configuration structure and generated files without printing credentials or connecting to external services. It cannot confirm credentials are accepted or that the database has the required migrations.
+
+`npm run verify` runs lint, type checking, and unit tests. Database integration tests additionally require `.env.test` with an explicit `TEST_DATABASE_URL`, migrations, and test fixtures in a separate database. They refuse to fall back to `.env.local` or use the application's database. No email or Sheets requests are made by the delivery integration tests.
+
+The separate Supabase project **kliffandchao-test** is configured locally in `.env.test` with a dedicated test login. Its password is private and gitignored. The public Supabase CA is saved in `config/supabase-ca.crt`; `TEST_DATABASE_CA_CERT` enables full certificate and hostname verification for the test connection.
+
+```powershell
+npm run db:prepare-test  # apply migrations and seed synthetic households in the separate test DB
+npm run test:db          # run the database integration tests
+```
+
+Both commands share the same target checks. Preparation overrides `DIRECT_URL` for child commands instead of allowing `.env.local` to select the application database. It also enables RLS on Prisma's internal migration table. The CA URL parameters are adapted for Prisma Migrate and the pg driver while keeping certificate verification enabled in both. To move this checkout to another computer, configure its own `.env.test`; credentials are not committed.
+
 ## RSVP delivery recovery
 
 An RSVP saves its answers and two pending delivery records in one transaction. Next.js `after()` runs the email and Sheets work after the guest response. If a function is interrupted, the pending or failed work remains visible under **RSVP deliveries** in `/admin`. Use **Retry** there; active tasks become retryable after their five-minute lease expires.
@@ -119,7 +142,8 @@ This entry has no `answer` field — just a flag. Its content is split across tw
 npm run dev          # local dev server
 npm run build        # production build
 npm run lint         # ESLint
-npm run typecheck    # tsc --noEmit
+npm run typecheck    # generate Next.js types, then tsc --noEmit
+npm run check:setup  # check local configuration without exposing secrets
 npm run test         # Vitest, unit tests
 npm run test:db      # Vitest, database integration tests (needs test DB)
 npm run format       # Prettier
