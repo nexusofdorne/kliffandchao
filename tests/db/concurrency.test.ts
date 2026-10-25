@@ -61,6 +61,10 @@ describe('submitRsvp concurrency', () => {
           })),
           message: `Concurrency test #${index}`,
           ipHash: null,
+          notification: {
+            recipient: 'test@example.com',
+            partyLabel: 'Test household',
+          },
         }),
       ),
     );

@@ -21,6 +21,19 @@ enum AttendanceStatus {
   NOT_ATTENDING
 }
 
+enum DeliveryChannel {
+  EMAIL
+  SHEETS
+}
+
+enum DeliveryStatus {
+  PENDING
+  PROCESSING
+  SUCCEEDED
+  FAILED
+  REVIEW
+}
+
 model Party {
   id          String           @id @default(cuid())
   externalId  String           @unique
@@ -59,6 +72,7 @@ model RsvpSubmission {
   message            String?        @db.VarChar(500)
   ipHash             String?
   responses          RsvpResponse[]
+  deliveries         RsvpDelivery[]
   createdAt          DateTime       @default(now())
 }
 
@@ -82,4 +96,32 @@ model GuestRsvp {
   respondedAt        DateTime
   respondedByGuestId String
   lastSubmissionId   String
+}
+
+// Written in the RSVP transaction so a crashed function cannot lose work.
+model RsvpDelivery {
+  id             String          @id @default(cuid())
+  submissionId   String
+  submission     RsvpSubmission  @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  channel        DeliveryChannel
+  status         DeliveryStatus  @default(PENDING)
+  payload        Json
+  attempts       Int             @default(0)
+  firstAttemptAt DateTime?
+  claimToken     String?
+  leaseUntil     DateTime?
+  deliveredAt    DateTime?
+  sheetId        String?
+  sheetStartRow  Int?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@unique([submissionId, channel])
+  @@index([status, createdAt])
+}
+
+// Retried writes reuse a fixed range rather than appending duplicates.
+model SheetMirrorCursor {
+  sheetId String @id
+  nextRow Int
 }

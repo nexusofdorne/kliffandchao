@@ -1,6 +1,7 @@
 import 'server-only';
 import { Prisma, type PrismaClient } from '../../generated/prisma/client';
 import type { RsvpResponseInput } from '../validation';
+import { buildRsvpNotification } from './notify';
 
 export type SubmitRsvpInput = {
   clientSubmissionId: string;
@@ -9,6 +10,7 @@ export type SubmitRsvpInput = {
   responses: RsvpResponseInput[];
   message: string | null;
   ipHash: string | null;
+  notification: { recipient: string; partyLabel: string };
 };
 
 export type SubmitRsvpResult =
@@ -34,6 +36,19 @@ export async function submitRsvp(
           submittedByGuestId: input.submittedByGuestId,
           message: input.message,
           ipHash: input.ipHash,
+          deliveries: {
+            create: [
+              {
+                channel: 'EMAIL',
+                payload: buildRsvpNotification(
+                  input.notification.recipient,
+                  input.notification.partyLabel,
+                  input.message,
+                ),
+              },
+              { channel: 'SHEETS', payload: {} },
+            ],
+          },
           responses: {
             create: input.responses.map((response) => ({
               guestId: response.guestId,

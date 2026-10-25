@@ -4,6 +4,16 @@ Private, password-gated wedding website for Kliff & Chao (5 March 2027, Cebu).
 
 See `docs/BUILD_PLAN.md` and `docs/PLAN.md` for the full architecture/design specs, and `CLAUDE.md` for the engineering rules this repo follows. This README is a practical guide to **where to edit content** — no code changes needed for anything below.
 
+## RSVP delivery recovery
+
+An RSVP saves its answers and two pending delivery records in one transaction. Next.js `after()` runs the email and Sheets work after the guest response. If a function is interrupted, the pending or failed work remains visible under **RSVP deliveries** in `/admin`. Use **Retry** there; active tasks become retryable after their five-minute lease expires.
+
+Email retries reuse both the saved message and its Resend idempotency key. Resend retains keys for 24 hours; after 23 hours from the first attempt the dashboard requires review rather than risking another email. Check Resend and the inbox before sending anything manually. Success means the provider accepted the email, not that it reached the inbox.
+
+Sheets deliveries reserve fixed row ranges after existing `RSVP_Log` content. A retry rewrites its range, so a lost response cannot append duplicate answers. Treat `RSVP_Log` as an application-managed log: do not sort it in place, insert/delete its rows, or let another script append there. Use a separate tab for sorted views. The `Guests` tab remains editable as before. Changing the configured spreadsheet while a delivery is pending requires review because its reserved range belongs to the original sheet.
+
+Before running this version against a database, apply the additive `20261025000000_rsvp_deliveries` migration using `npm run db:deploy` **with the intended database configured**. It creates two tables and enables RLS; existing guest and RSVP records are retained. Deploy the migration before deploying the updated application. Existing historical submissions are not automatically emailed or mirrored again.
+
 ## Content editing guide
 
 Everything project-specific (copy, images, settings) lives in `config/site.ts` and `content/`. You should never need to touch `lib/`, `app/api/`, or `prisma/` to change wording, photos, or wedding details.

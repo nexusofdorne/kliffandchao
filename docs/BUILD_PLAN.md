@@ -408,6 +408,7 @@ Each phase ends deployable to a **Vercel preview**. Keep the prototype live on i
 
 ### Phase 7 — Hardening
 - Error and empty states: DB unreachable, search no-results, offline submit. Optional Upstash rate limits with `PLAN.md`'s generous tiers; Turnstile on the gate only if abuse appears.
+- Delivery hardening (authorized follow-up): `RsvpDelivery` records are created in the RSVP transaction, run through Next.js `after()`, and retried through `/api/admin/deliveries`. `SheetMirrorCursor` allocates fixed log ranges for idempotent Sheets writes. Both new tables require RLS. Email payloads are snapshotted and retries stop for review before Resend's 24-hour idempotency window expires. Existing history is not backfilled or resent.
 - **Done when:** killing `DATABASE_URL` on a preview shows a friendly error screen, not a stack trace.
 
 ### Phase 8 — Launch

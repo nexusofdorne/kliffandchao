@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server';
+import { after, NextResponse } from 'next/server';
 import { requireGateApi } from '@/lib/auth/require-gate';
 import { loadPartyView } from '@/lib/rsvp/build-party';
-import { notifyCouple } from '@/lib/rsvp/notify';
+import { deliverRsvpSubmission } from '@/lib/rsvp/deliveries';
 import {
   findGuestOutsideParty,
   hashIp,
@@ -11,11 +11,11 @@ import {
 import { submitRsvp } from '@/lib/rsvp/submit';
 import { env } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
-import { mirrorRsvpToSheet } from '@/lib/sheets/mirror';
 import { rsvpRequestSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+export const maxDuration = 60;
 
 // Order of checks per docs/BUILD_PLAN.md "POST /api/rsvp": requireGate() ->
 // zod parse -> deadline (409) -> resolve submitter's party -> reject a
@@ -75,22 +75,16 @@ export async function POST(request: Request) {
     responses: parsed.data.responses,
     message: parsed.data.message ?? null,
     ipHash,
+    notification: {
+      recipient: env.COUPLE_NOTIFY_EMAIL,
+      partyLabel: submitter.party.label,
+    },
   });
 
   if (result.outcome === 'submitted') {
-    // Fire-and-forget: a notification/mirror failure must never fail the
-    // RSVP — the database write above already committed, that's the
-    // source of truth.
-    void notifyCouple(submitter.party.label, parsed.data.message ?? null);
-    void mirrorRsvpToSheet({
-      submissionId: parsed.data.clientSubmissionId,
-      submittedByGuestId: parsed.data.submittedByGuestId,
-      partyId: submitter.partyId,
-      responses: parsed.data.responses,
-      message: parsed.data.message ?? null,
-      ipHash,
-      createdAt: now,
-    });
+    // Next.js keeps this work attached to the function lifecycle. Pending
+    // delivery records survive interruption and can be retried by an admin.
+    after(() => deliverRsvpSubmission(prisma, parsed.data.clientSubmissionId));
   }
 
   const party = await loadPartyView(prisma, submitter.partyId, now, deadline);

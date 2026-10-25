@@ -52,6 +52,10 @@ describe('submitRsvp idempotency', () => {
       })),
       message: 'Idempotency test',
       ipHash: null,
+      notification: {
+        recipient: 'test@example.com',
+        partyLabel: 'Test household',
+      },
     };
 
     const first = await submitRsvp(testPrisma, input);
@@ -64,6 +68,15 @@ describe('submitRsvp idempotency', () => {
       where: { id: clientSubmissionId },
     });
     expect(submissions).toHaveLength(1);
+
+    const deliveries = await testPrisma.rsvpDelivery.findMany({
+      where: { submissionId: clientSubmissionId },
+    });
+    expect(deliveries.map(({ channel }) => channel).sort()).toEqual([
+      'EMAIL',
+      'SHEETS',
+    ]);
+    expect(deliveries.every(({ status }) => status === 'PENDING')).toBe(true);
 
     const responses = await testPrisma.rsvpResponse.findMany({
       where: { submissionId: clientSubmissionId },
