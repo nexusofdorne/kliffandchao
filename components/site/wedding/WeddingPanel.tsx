@@ -32,7 +32,11 @@ export function WeddingPanel() {
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  const parallaxX = computeParallaxOffset(panel, WEDDING_LAYER_INDEX, viewportWidth);
+  const parallaxX = computeParallaxOffset(
+    panel,
+    WEDDING_LAYER_INDEX,
+    viewportWidth,
+  );
 
   return (
     <div className="wedding-panel relative flex h-full flex-col overflow-hidden bg-[#f5f3ed] text-[#14180d]">
@@ -43,23 +47,36 @@ export function WeddingPanel() {
           with their own scroll feel — prototype/index.html's PLX only
           pairs #wedding .tabs with the wedding panel index, not the panel
           content. */}
-      <div className="relative z-[1] flex-none" style={{ transform: `translateX(${parallaxX}px)` }}>
+      <div
+        className="relative z-[1] flex-none"
+        style={{ transform: `translateX(${parallaxX}px)` }}
+      >
         <TabBar activeTab={activeTab} onSelectTab={setActiveTab} />
       </div>
 
-      <div className={`wedding-tab-panel relative z-[1] ${activeTab === 'detail' ? 'is-active' : ''}`}>
+      <div
+        className={`wedding-tab-panel relative z-[1] ${activeTab === 'detail' ? 'is-active' : ''}`}
+      >
         <DetailTab active={activeTab === 'detail'} />
       </div>
-      <div className={`wedding-tab-panel relative z-[1] ${activeTab === 'timeline' ? 'is-active' : ''}`}>
+      <div
+        className={`wedding-tab-panel relative z-[1] ${activeTab === 'timeline' ? 'is-active' : ''}`}
+      >
         <TimelineTab />
       </div>
-      <div className={`wedding-tab-panel relative z-[1] ${activeTab === 'motif' ? 'is-active' : ''}`}>
+      <div
+        className={`wedding-tab-panel relative z-[1] ${activeTab === 'motif' ? 'is-active' : ''}`}
+      >
         <MotifTab />
       </div>
-      <div className={`wedding-tab-panel relative z-[1] ${activeTab === 'entourage' ? 'is-active' : ''}`}>
+      <div
+        className={`wedding-tab-panel relative z-[1] ${activeTab === 'entourage' ? 'is-active' : ''}`}
+      >
         <EntourageTab />
       </div>
-      <div className={`wedding-tab-panel relative z-[1] ${activeTab === 'faq' ? 'is-active' : ''}`}>
+      <div
+        className={`wedding-tab-panel relative z-[1] ${activeTab === 'faq' ? 'is-active' : ''}`}
+      >
         <FaqTab />
       </div>
     </div>

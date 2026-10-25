@@ -3,7 +3,10 @@
 import { useRouter } from 'next/navigation';
 import { useCallback, useState } from 'react';
 import { Confirmation } from '@/components/rsvp/Confirmation';
-import { GuestSearch, type GuestSearchResult } from '@/components/rsvp/GuestSearch';
+import {
+  GuestSearch,
+  type GuestSearchResult,
+} from '@/components/rsvp/GuestSearch';
 import { PartyForm, type RsvpSubmitPayload } from '@/components/rsvp/PartyForm';
 import { RsvpBanner } from '@/components/rsvp/RsvpBanner';
 import { GlassWash } from '@/components/site/glass/GlassWash';
@@ -40,15 +43,23 @@ export default function RsvpPage() {
 
     let response: Response;
     try {
-      response = await fetch(`/api/party?guestId=${encodeURIComponent(guest.id)}`);
+      response = await fetch(
+        `/api/party?guestId=${encodeURIComponent(guest.id)}`,
+      );
     } catch {
       // Offline or the request never reached the server — without this the
       // UI would be stuck on "Loading your party…" forever.
-      setStage({ kind: 'search', error: 'Something went wrong — please try again.' });
+      setStage({
+        kind: 'search',
+        error: 'Something went wrong — please try again.',
+      });
       return;
     }
     if (!response.ok) {
-      setStage({ kind: 'search', error: 'Something went wrong — please try again.' });
+      setStage({
+        kind: 'search',
+        error: 'Something went wrong — please try again.',
+      });
       return;
     }
     const party = (await response.json()) as PartyView;
@@ -78,16 +89,28 @@ export default function RsvpPage() {
       // key (submissionId) is untouched, so retrying is safe even if the
       // request actually landed server-side before the connection dropped.
       setSubmitting(false);
-      setStage({ kind: 'party', party, guestId, error: 'Something went wrong — please try again.' });
+      setStage({
+        kind: 'party',
+        party,
+        guestId,
+        error: 'Something went wrong — please try again.',
+      });
       return;
     }
     setSubmitting(false);
 
     if (!response.ok) {
-      setStage({ kind: 'party', party, guestId, error: 'Something went wrong — please try again.' });
+      setStage({
+        kind: 'party',
+        party,
+        guestId,
+        error: 'Something went wrong — please try again.',
+      });
       return;
     }
-    const attendingCount = payload.responses.filter((response) => response.status === 'ATTENDING').length;
+    const attendingCount = payload.responses.filter(
+      (response) => response.status === 'ATTENDING',
+    ).length;
     setStage({ kind: 'confirmation', attendingCount });
   }
 
@@ -100,7 +123,9 @@ export default function RsvpPage() {
       <GlassWash
         imageSrc="/img/p1_Im0.jpg"
         fixed
-        gradients={['radial-gradient(90% 70% at 78% 4%, rgba(79,122,34,.42), transparent 60%)']}
+        gradients={[
+          'radial-gradient(90% 70% at 78% 4%, rgba(79,122,34,.42), transparent 60%)',
+        ]}
         filter="blur(54px) saturate(.9) brightness(.52)"
         opacity={0.85}
       />
@@ -115,10 +140,15 @@ export default function RsvpPage() {
 
       <div className="rsvp-wrap relative z-[1] mx-auto max-w-[560px]">
         {stage.kind === 'confirmation' ? (
-          <Confirmation attendingCount={stage.attendingCount} onBackToHome={goHome} />
+          <Confirmation
+            attendingCount={stage.attendingCount}
+            onBackToHome={goHome}
+          />
         ) : (
           <>
-            <h3 className="mb-[1.4vh] text-center text-[clamp(15px,2.4vh,26px)] font-medium tracking-[.14em]">RSVP</h3>
+            <h3 className="mb-[1.4vh] text-center text-[clamp(15px,2.4vh,26px)] font-medium tracking-[.14em]">
+              RSVP
+            </h3>
             <p className="mb-[5vh] text-center text-[11px] leading-[1.9] tracking-[.12em] opacity-60">
               Type your last name and we&apos;ll find your invitation.
             </p>
@@ -126,17 +156,27 @@ export default function RsvpPage() {
             <GuestSearch onSelectGuest={handleSelectGuest} />
 
             {stage.kind === 'search' && stage.error && (
-              <p className="mt-[2vh] text-center text-[11px] tracking-[.1em] text-red-300">{stage.error}</p>
+              <p className="mt-[2vh] text-center text-[11px] tracking-[.1em] text-red-300">
+                {stage.error}
+              </p>
             )}
             {stage.kind === 'loading' && (
-              <p className="mt-[3vh] text-center text-[11px] tracking-[.1em] opacity-50">Loading your party…</p>
+              <p className="mt-[3vh] text-center text-[11px] tracking-[.1em] opacity-50">
+                Loading your party…
+              </p>
             )}
             {stage.kind === 'party' && (
               <>
                 <RsvpBanner party={stage.party} />
-                <PartyForm party={stage.party} onSubmit={handleSubmit} submitting={submitting} />
+                <PartyForm
+                  party={stage.party}
+                  onSubmit={handleSubmit}
+                  submitting={submitting}
+                />
                 {stage.error && (
-                  <p className="mt-[2vh] text-center text-[11px] tracking-[.1em] text-red-300">{stage.error}</p>
+                  <p className="mt-[2vh] text-center text-[11px] tracking-[.1em] text-red-300">
+                    {stage.error}
+                  </p>
                 )}
               </>
             )}

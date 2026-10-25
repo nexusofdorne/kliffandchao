@@ -22,7 +22,10 @@ export default async function AdminPage() {
         <div className="flex items-center gap-3">
           <SyncNowButton />
           <form action={signOutAdmin}>
-            <button type="submit" className="rounded-md border border-input px-3 py-1.5 text-sm text-foreground">
+            <button
+              type="submit"
+              className="rounded-md border border-input px-3 py-1.5 text-sm text-foreground"
+            >
               Sign out
             </button>
           </form>

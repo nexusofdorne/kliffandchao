@@ -17,5 +17,6 @@ export const siteConfig = {
   // Referrer-Policy: no-referrer, so without them Instagram logs these
   // clicks as direct traffic with no idea they came from here — the UTMs
   // live in the URL itself, so they survive that header.
-  chaodesignUrl: 'https://www.instagram.com/chaodesign.ph/?utm_source=kliffandchao&utm_medium=wedding-site',
+  chaodesignUrl:
+    'https://www.instagram.com/chaodesign.ph/?utm_source=kliffandchao&utm_medium=wedding-site',
 } as const;

@@ -5,7 +5,11 @@ import Image from 'next/image';
 import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { chapters, stories } from '@/content/chapters';
-import { computeActiveStoryIndex, computeParallaxOffset, computeScrollBudget } from '@/lib/track/progress';
+import {
+  computeActiveStoryIndex,
+  computeParallaxOffset,
+  computeScrollBudget,
+} from '@/lib/track/progress';
 import { ChapterArrows } from './ChapterArrows';
 import { ChapterStepper } from './ChapterStepper';
 import { Coverflow, type CoverflowHandle } from './Coverflow';
@@ -13,9 +17,12 @@ import { Coverflow, type CoverflowHandle } from './Coverflow';
 // Same reasoning as GateScreen: Ambience generates its randomized grass and
 // motes via a lazy useState initializer, not an effect, so it must never
 // be server-rendered — a plain static import crashes SSR on `window`.
-const Ambience = dynamic(() => import('@/components/site/gate/Ambience').then((mod) => mod.Ambience), {
-  ssr: false,
-});
+const Ambience = dynamic(
+  () => import('@/components/site/gate/Ambience').then((mod) => mod.Ambience),
+  {
+    ssr: false,
+  },
+);
 
 const JOURNEY_LAYER_INDEX = 1;
 const MOBILE_BREAKPOINT_PX = 768;
@@ -50,7 +57,11 @@ function firstStoryOfChapter(chapterIndex: number): number {
 // Coverflow reports its own native scroll position back up instead.
 export function JourneyPanel() {
   const { progress, panel, jumpToStory } = useTrackProgress();
-  const isMobile = useSyncExternalStore(subscribeToViewportChange, getIsMobileSnapshot, getIsMobileServerSnapshot);
+  const isMobile = useSyncExternalStore(
+    subscribeToViewportChange,
+    getIsMobileSnapshot,
+    getIsMobileServerSnapshot,
+  );
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
   const coverflowRef = useRef<CoverflowHandle>(null);
@@ -63,19 +74,33 @@ export function JourneyPanel() {
   }, []);
 
   const { p1, p2 } = computeScrollBudget(stories.length);
-  const desktopActiveIndex = computeActiveStoryIndex(progress, p1, p2, stories.length);
+  const desktopActiveIndex = computeActiveStoryIndex(
+    progress,
+    p1,
+    p2,
+    stories.length,
+  );
   const activeStoryIndex = isMobile ? mobileActiveIndex : desktopActiveIndex;
   const activeStory = stories[activeStoryIndex];
 
-  const [displayedParagraph, setDisplayedParagraph] = useState(activeStory.paragraph);
+  const [displayedParagraph, setDisplayedParagraph] = useState(
+    activeStory.paragraph,
+  );
   useEffect(() => {
     if (displayedParagraph === activeStory.paragraph) return;
-    const timeout = setTimeout(() => setDisplayedParagraph(activeStory.paragraph), COPY_CROSSFADE_MS);
+    const timeout = setTimeout(
+      () => setDisplayedParagraph(activeStory.paragraph),
+      COPY_CROSSFADE_MS,
+    );
     return () => clearTimeout(timeout);
   }, [activeStory.paragraph, displayedParagraph]);
   const copyFaded = displayedParagraph !== activeStory.paragraph;
 
-  const parallaxX = computeParallaxOffset(panel, JOURNEY_LAYER_INDEX, viewportWidth);
+  const parallaxX = computeParallaxOffset(
+    panel,
+    JOURNEY_LAYER_INDEX,
+    viewportWidth,
+  );
 
   // Mobile has no registered jumpToStory on the pinned track (there isn't
   // one), so the chapter dots and prev/next arrows drive Coverflow's own
@@ -87,25 +112,43 @@ export function JourneyPanel() {
 
   function handlePrevChapter() {
     const ci = activeStory.chapterIndex;
-    handleJumpToStory(firstStoryOfChapter(activeStory.storyIndexInChapter > 0 ? ci : Math.max(0, ci - 1)));
+    handleJumpToStory(
+      firstStoryOfChapter(
+        activeStory.storyIndexInChapter > 0 ? ci : Math.max(0, ci - 1),
+      ),
+    );
   }
 
   function handleNextChapter() {
     const ci = activeStory.chapterIndex;
-    handleJumpToStory(ci >= chapters.length - 1 ? stories.length - 1 : firstStoryOfChapter(ci + 1));
+    handleJumpToStory(
+      ci >= chapters.length - 1
+        ? stories.length - 1
+        : firstStoryOfChapter(ci + 1),
+    );
   }
 
   return (
     <div className="relative h-full overflow-hidden bg-[#0d0f0a] text-white">
       <div className="absolute inset-0 overflow-hidden opacity-70 motion-safe:[animation:gate-drift_52s_ease-in-out_infinite_alternate] [transform-origin:48%_58%]">
-        <Image src="/img/p1_Im0.jpg" alt="" fill sizes="100vw" className="object-cover" />
+        <Image
+          src="/img/p1_Im0.jpg"
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover"
+        />
       </div>
       <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,.35),rgba(0,0,0,.82))]" />
 
       {/* Same ambience as the gate, dialled back behind the timeline —
           z-index 0, not the gate's 2, so the coverflow and copy stay in
           front — docs/PLAN.md "Ambient motion". */}
-      <Ambience zIndex={0} grassHeight="clamp(70px,13vh,150px)" bladeFill="rgba(10,20,3,.45)" />
+      <Ambience
+        zIndex={0}
+        grassHeight="clamp(70px,13vh,150px)"
+        bladeFill="rgba(10,20,3,.45)"
+      />
 
       {/* Full-bleed layout box: GSAP's parallax writes `transform` here, so
           it must NOT also be centred with translateX(-50%) — that gets

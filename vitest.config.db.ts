@@ -11,7 +11,9 @@ export default defineConfig({
     alias: {
       // Same reasoning as vitest.config.ts: Next's bundler swaps this for
       // an empty module server-side; Vitest has no such swap.
-      'server-only': fileURLToPath(new URL('./vitest.setup/server-only-shim.ts', import.meta.url)),
+      'server-only': fileURLToPath(
+        new URL('./vitest.setup/server-only-shim.ts', import.meta.url),
+      ),
     },
   },
   test: {

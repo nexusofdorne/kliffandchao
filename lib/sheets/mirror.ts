@@ -39,14 +39,19 @@ async function appendRsvpLogRows(rows: string[][]): Promise<void> {
   if (rows.length === 0) return;
 
   const response = await withRetry(() =>
-    sheetsFetch('/values/RSVP_Log!A:H:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS', {
-      method: 'POST',
-      body: JSON.stringify({ values: rows }),
-    }),
+    sheetsFetch(
+      '/values/RSVP_Log!A:H:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS',
+      {
+        method: 'POST',
+        body: JSON.stringify({ values: rows }),
+      },
+    ),
   );
 
   if (!response.ok) {
-    throw new Error(`Sheets append failed: ${response.status} ${await response.text()}`);
+    throw new Error(
+      `Sheets append failed: ${response.status} ${await response.text()}`,
+    );
   }
 }
 

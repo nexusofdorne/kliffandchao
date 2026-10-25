@@ -6,7 +6,9 @@ import { z } from 'zod';
 // is grouped separately because it genuinely isn't needed for the site to run.
 const envSchema = z.object({
   // Standard Next.js/Node var — included so nothing reads process.env directly.
-  NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
+  NODE_ENV: z
+    .enum(['development', 'test', 'production'])
+    .default('development'),
   // Gate
   SITE_PASSWORD_HASH: z.string().min(1),
   SESSION_SECRET: z.string().min(32),

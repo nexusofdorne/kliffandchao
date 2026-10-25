@@ -2,7 +2,12 @@ import { NextResponse } from 'next/server';
 import { requireGateApi } from '@/lib/auth/require-gate';
 import { loadPartyView } from '@/lib/rsvp/build-party';
 import { notifyCouple } from '@/lib/rsvp/notify';
-import { findGuestOutsideParty, hashIp, hasDuplicateGuestIds, isPastDeadline } from '@/lib/rsvp/rules';
+import {
+  findGuestOutsideParty,
+  hashIp,
+  hasDuplicateGuestIds,
+  isPastDeadline,
+} from '@/lib/rsvp/rules';
 import { submitRsvp } from '@/lib/rsvp/submit';
 import { env } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
@@ -34,14 +39,22 @@ export async function POST(request: Request) {
 
   const submitter = await prisma.guest.findFirst({
     where: { id: parsed.data.submittedByGuestId, archivedAt: null },
-    select: { partyId: true, party: { select: { label: true, members: { select: { id: true } } } } },
+    select: {
+      partyId: true,
+      party: { select: { label: true, members: { select: { id: true } } } },
+    },
   });
   if (!submitter) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  const partyMemberIds = new Set(submitter.party.members.map((member) => member.id));
-  const outsideGuestId = findGuestOutsideParty(parsed.data.responses, partyMemberIds);
+  const partyMemberIds = new Set(
+    submitter.party.members.map((member) => member.id),
+  );
+  const outsideGuestId = findGuestOutsideParty(
+    parsed.data.responses,
+    partyMemberIds,
+  );
   if (outsideGuestId) {
     return NextResponse.json({ error: 'outside_party' }, { status: 403 });
   }
@@ -51,7 +64,9 @@ export async function POST(request: Request) {
   }
 
   const forwardedFor = request.headers.get('x-forwarded-for');
-  const ipHash = forwardedFor ? hashIp(forwardedFor.split(',')[0].trim(), env.IP_HASH_SALT) : null;
+  const ipHash = forwardedFor
+    ? hashIp(forwardedFor.split(',')[0].trim(), env.IP_HASH_SALT)
+    : null;
 
   const result = await submitRsvp(prisma, {
     clientSubmissionId: parsed.data.clientSubmissionId,

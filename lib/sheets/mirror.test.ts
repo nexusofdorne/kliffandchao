@@ -19,8 +19,26 @@ describe('buildRsvpLogRows', () => {
     });
 
     expect(rows).toEqual([
-      [createdAt.toISOString(), 'sub_1', 'g01', 'p01', 'g01', 'ATTENDING', 'See you there!', 'hash123'],
-      [createdAt.toISOString(), 'sub_1', 'g01', 'p01', 'g02', 'NOT_ATTENDING', 'See you there!', 'hash123'],
+      [
+        createdAt.toISOString(),
+        'sub_1',
+        'g01',
+        'p01',
+        'g01',
+        'ATTENDING',
+        'See you there!',
+        'hash123',
+      ],
+      [
+        createdAt.toISOString(),
+        'sub_1',
+        'g01',
+        'p01',
+        'g02',
+        'NOT_ATTENDING',
+        'See you there!',
+        'hash123',
+      ],
     ]);
   });
 

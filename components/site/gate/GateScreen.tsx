@@ -12,8 +12,13 @@ import { Loader } from './Loader';
 // positions) via a lazy useState initializer rather than an effect, so
 // there must be no server-rendered version for the client to mismatch
 // against.
-const Ambience = dynamic(() => import('./Ambience').then((mod) => mod.Ambience), { ssr: false });
-const Birds = dynamic(() => import('./Birds').then((mod) => mod.Birds), { ssr: false });
+const Ambience = dynamic(
+  () => import('./Ambience').then((mod) => mod.Ambience),
+  { ssr: false },
+);
+const Birds = dynamic(() => import('./Birds').then((mod) => mod.Birds), {
+  ssr: false,
+});
 
 export function GateScreen({ next }: { next: string }) {
   const router = useRouter();

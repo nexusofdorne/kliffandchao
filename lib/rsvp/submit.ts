@@ -11,7 +11,8 @@ export type SubmitRsvpInput = {
   ipHash: string | null;
 };
 
-export type SubmitRsvpResult = { outcome: 'submitted' } | { outcome: 'deduped' };
+export type SubmitRsvpResult =
+  { outcome: 'submitted' } | { outcome: 'deduped' };
 
 const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
 
@@ -20,7 +21,10 @@ const UNIQUE_CONSTRAINT_VIOLATION = 'P2002';
 // used, the insert's unique-constraint violation rolls the whole thing back
 // — docs/BUILD_PLAN.md "POST /api/rsvp" step 1 — so a retried request after
 // a dropped response writes nothing twice.
-export async function submitRsvp(prisma: PrismaClient, input: SubmitRsvpInput): Promise<SubmitRsvpResult> {
+export async function submitRsvp(
+  prisma: PrismaClient,
+  input: SubmitRsvpInput,
+): Promise<SubmitRsvpResult> {
   try {
     await prisma.$transaction(async (tx) => {
       await tx.rsvpSubmission.create({
@@ -62,7 +66,10 @@ export async function submitRsvp(prisma: PrismaClient, input: SubmitRsvpInput): 
 
     return { outcome: 'submitted' };
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === UNIQUE_CONSTRAINT_VIOLATION) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === UNIQUE_CONSTRAINT_VIOLATION
+    ) {
       return { outcome: 'deduped' };
     }
     throw error;

@@ -3,7 +3,14 @@
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { forwardRef, useEffect, useImperativeHandle, useLayoutEffect, useRef, type ReactNode } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useLayoutEffect,
+  useRef,
+  type ReactNode,
+} from 'react';
 import {
   computePanel,
   computeScrollBudget,
@@ -40,7 +47,10 @@ type HorizontalTrackProps = {
 // will (Steps 4-7), not here. The one exception is jumpToSection, exposed
 // via ref: TopBar's nav buttons live outside this component (in the gated
 // layout — docs/BUILD_PLAN.md App source) but still need to command it.
-export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrackProps>(function HorizontalTrack(
+export const HorizontalTrack = forwardRef<
+  HorizontalTrackHandle,
+  HorizontalTrackProps
+>(function HorizontalTrack(
   { storyCount, intro, journey, wedding, onUpdate },
   ref,
 ) {
@@ -103,7 +113,10 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
         const el = document.getElementById(id);
         if (el && el.offsetTop <= viewportMid) section = index;
       });
-      onUpdateRef.current?.({ progress: section / (SECTION_IDS.length - 1), panel: section });
+      onUpdateRef.current?.({
+        progress: section / (SECTION_IDS.length - 1),
+        panel: section,
+      });
 
       clearTimeout(snapTimeoutId);
       snapTimeoutId = setTimeout(snapToNearestSection, SNAP_IDLE_MS);
@@ -122,7 +135,10 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
         }
       }
       if (nearest && nearestDistance > SNAP_THRESHOLD_PX) {
-        window.scrollTo({ top: nearest.offsetTop, behavior: reduced ? 'auto' : 'smooth' });
+        window.scrollTo({
+          top: nearest.offsetTop,
+          behavior: reduced ? 'auto' : 'smooth',
+        });
       }
     }
 
@@ -188,7 +204,9 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
         // measuring the pin mid-revert — and whichever commit React keeps
         // still needs a live reference for jumpToSection/jumpToStory to
         // work, even if it wasn't the one that created it.
-        const existing = ScrollTrigger.getAll().find((trigger) => trigger.trigger === pinRef.current);
+        const existing = ScrollTrigger.getAll().find(
+          (trigger) => trigger.trigger === pinRef.current,
+        );
         if (existing) {
           scrollTriggerRef.current = existing;
           return;
@@ -216,7 +234,9 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
             // Pin #hpin, translate #htrack — pinning and transforming the
             // same element makes ScrollTrigger's pin and this transform
             // fight over it (docs/PLAN.md), hence the separate trackRef.
-            gsap.set(trackRef.current, { xPercent: -TRACK_SEGMENT_PERCENT * panel });
+            gsap.set(trackRef.current, {
+              xPercent: -TRACK_SEGMENT_PERCENT * panel,
+            });
             onUpdateRef.current?.({ progress: self.progress, panel });
           },
         });
@@ -242,11 +262,19 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
         // budget to jump within — fall back to a plain offset scroll,
         // matching prototype/index.html's `if(!hST) return scrollIntoView`.
         if (!trigger) {
-          document.getElementById(SECTION_IDS[section])?.scrollIntoView({ behavior: 'smooth' });
+          document
+            .getElementById(SECTION_IDS[section])
+            ?.scrollIntoView({ behavior: 'smooth' });
           return;
         }
         const { p1, p2 } = computeScrollBudget(storyCount);
-        const target = computeSectionScrollTarget(section, p1, p2, trigger.start, trigger.end);
+        const target = computeSectionScrollTarget(
+          section,
+          p1,
+          p2,
+          trigger.start,
+          trigger.end,
+        );
         // Jump, don't smooth-scroll: smoothing from wedding back to intro
         // would scrub the whole timeline, replaying every story on the way.
         window.scrollTo({ top: target, behavior: 'auto' });
@@ -258,7 +286,14 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
         // own native scroll-snap container instead of calling this at all.
         if (!trigger) return;
         const { p1, p2 } = computeScrollBudget(storyCount);
-        const target = computeStoryScrollTarget(storyIndex, storyCount, p1, p2, trigger.start, trigger.end);
+        const target = computeStoryScrollTarget(
+          storyIndex,
+          storyCount,
+          p1,
+          p2,
+          trigger.start,
+          trigger.end,
+        );
         // Smooth, unlike jumpToSection: these are short hops within the
         // story stretch, not a long cross-panel jump that would scrub the
         // whole timeline on the way — prototype/index.html's journey jumpTo().
@@ -269,7 +304,10 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
   );
 
   return (
-    <div ref={pinRef} className="h-screen overflow-hidden max-[768px]:h-auto max-[768px]:overflow-visible">
+    <div
+      ref={pinRef}
+      className="h-screen overflow-hidden max-[768px]:h-auto max-[768px]:overflow-visible"
+    >
       <div
         ref={trackRef}
         className="flex h-screen w-[300vw] will-change-transform max-[768px]:!transform-none max-[768px]:block max-[768px]:h-auto max-[768px]:w-auto"
@@ -278,13 +316,22 @@ export const HorizontalTrack = forwardRef<HorizontalTrackHandle, HorizontalTrack
             #intro,#journey,#wedding{height:100vh} applies at every breakpoint
             — on mobile the panels stack as three full-height sections under
             plain vertical scroll, they don't shrink to their content. */}
-        <section id={SECTION_IDS[0]} className="h-screen w-screen flex-none max-[768px]:w-auto">
+        <section
+          id={SECTION_IDS[0]}
+          className="h-screen w-screen flex-none max-[768px]:w-auto"
+        >
           {intro}
         </section>
-        <section id={SECTION_IDS[1]} className="h-screen w-screen flex-none max-[768px]:w-auto">
+        <section
+          id={SECTION_IDS[1]}
+          className="h-screen w-screen flex-none max-[768px]:w-auto"
+        >
           {journey}
         </section>
-        <section id={SECTION_IDS[2]} className="h-screen w-screen flex-none max-[768px]:w-auto">
+        <section
+          id={SECTION_IDS[2]}
+          className="h-screen w-screen flex-none max-[768px]:w-auto"
+        >
           {wedding}
         </section>
       </div>

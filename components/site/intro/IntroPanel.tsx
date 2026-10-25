@@ -22,7 +22,11 @@ export function IntroPanel() {
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  const parallaxX = computeParallaxOffset(panel, INTRO_LAYER_INDEX, viewportWidth);
+  const parallaxX = computeParallaxOffset(
+    panel,
+    INTRO_LAYER_INDEX,
+    viewportWidth,
+  );
 
   return (
     <div className="relative h-full overflow-hidden bg-black">
