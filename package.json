@@ -16,6 +16,7 @@
     "verify": "npm run lint && npm run typecheck && npm run test",
     "test": "vitest run",
     "test:db": "vitest run --config vitest.config.db.ts",
+    "db:prepare-test": "tsx scripts/prepare-test-db.ts",
     "format": "prettier --write .",
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",

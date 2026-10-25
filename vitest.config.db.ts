@@ -1,11 +1,11 @@
 import { fileURLToPath } from 'node:url';
-import { loadEnv } from 'vite';
-import { defineConfig } from 'vitest/config';
 
-// Real credentials for a throwaway test database — never the production one.
-// Populated in .env.test (gitignored); see .env.example for every var name.
-// (At this stage of the project, before anything is in production, that's
-// the same Supabase project Phase 1 set up and seeded.)
+import { defineConfig } from 'vitest/config';
+import { loadTestDatabaseEnv } from './scripts/test-database-env';
+
+// Share the same fail-closed target checks as the migration/seed command.
+const testEnv = loadTestDatabaseEnv();
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -19,6 +19,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['tests/db/**/*.test.ts'],
-    env: loadEnv('test', process.cwd(), ''),
+    env: {
+      ...testEnv,
+      DATABASE_URL: testEnv.TEST_DATABASE_URL,
+      DIRECT_URL: testEnv.TEST_DATABASE_URL,
+    },
   },
 });
