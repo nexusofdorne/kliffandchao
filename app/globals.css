@@ -199,6 +199,44 @@
    enough interdependent breakpoint overrides (custom properties, calc(),
    a media query) that a class mirrors the source 1:1 and stays legible.
    ============================================================ */
+.story-pin {
+  height: 100vh;
+  overflow: hidden;
+}
+
+.story-track {
+  display: flex;
+  width: 300vw;
+  height: 100vh;
+  will-change: transform;
+}
+
+.story-track > section {
+  width: 100vw;
+  height: 100vh;
+  flex: none;
+}
+
+/* The JS track is unpinned in both modes, so CSS must stack the sections
+   in both too. Leaving a reduced-motion desktop horizontal gives every
+   section top=0 and makes the scroll spy select Wedding immediately. */
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .story-pin {
+    height: auto;
+    overflow: visible;
+  }
+  .story-track {
+    display: block;
+    width: auto;
+    height: auto;
+    transform: none !important;
+    will-change: auto;
+  }
+  .story-track > section {
+    width: auto;
+  }
+}
+
 .journey-content {
   padding: calc(2.4vh + clamp(52px, 7.4vh, 76px) + 3.2vh) 0 3vh;
 }
@@ -246,6 +284,11 @@
   .coverflow-rail {
     --cw: 74vw;
     --ch: min(46vh, 400px);
+  }
+}
+
+@media (max-width: 768px), (prefers-reduced-motion: reduce) {
+  .coverflow-rail {
     cursor: auto;
     display: flex;
     align-items: center;
@@ -276,6 +319,17 @@
   }
   .coverflow-card.is-active {
     transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-track [data-story-parallax] {
+    transform: none !important;
+  }
+  .coverflow-card {
+    transform: none !important;
+    transition: none;
     opacity: 1;
   }
 }

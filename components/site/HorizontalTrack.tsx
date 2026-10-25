@@ -11,6 +11,11 @@ import {
   useRef,
   type ReactNode,
 } from 'react';
+import { useStoryLayout } from './useStoryLayout';
+import {
+  STORY_MOBILE_QUERY,
+  STORY_REDUCED_MOTION_QUERY,
+} from '@/lib/track/layout';
 import {
   computePanel,
   computeScrollBudget,
@@ -22,7 +27,6 @@ import {
 
 gsap.registerPlugin(useGSAP, ScrollTrigger);
 
-const MOBILE_BREAKPOINT_QUERY = '(max-width: 768px)';
 const SECTION_IDS = ['intro', 'journey', 'wedding'] as const;
 
 export type HorizontalTrackUpdate = { progress: number; panel: number };
@@ -58,6 +62,7 @@ export const HorizontalTrack = forwardRef<
   const trackRef = useRef<HTMLDivElement>(null);
   const onUpdateRef = useRef(onUpdate);
   const scrollTriggerRef = useRef<ScrollTrigger | null>(null);
+  const layout = useStoryLayout();
 
   useEffect(() => {
     onUpdateRef.current = onUpdate;
@@ -72,15 +77,18 @@ export const HorizontalTrack = forwardRef<
     window.scrollTo(0, 0);
   }, []);
 
-  // A live breakpoint cross would need every mobile-aware descendant (the
-  // coverflow, its gesture handling) to re-derive its own isMobile state
-  // mid-session. A full reload sidesteps that entirely — matching
-  // prototype/index.html's own `MQ_MOBILE.addEventListener('change', ...)`.
+  // Reload after either layout preference changes so GSAP pin spacers and
+  // the old scroll position cannot carry into the new layout. This extends
+  // prototype/index.html's existing breakpoint-change reload behavior.
   useEffect(() => {
-    const query = matchMedia(MOBILE_BREAKPOINT_QUERY);
+    const queries = [
+      matchMedia(STORY_MOBILE_QUERY),
+      matchMedia(STORY_REDUCED_MOTION_QUERY),
+    ];
     const reload = () => location.reload();
-    query.addEventListener('change', reload);
-    return () => query.removeEventListener('change', reload);
+    queries.forEach((query) => query.addEventListener('change', reload));
+    return () =>
+      queries.forEach((query) => query.removeEventListener('change', reload));
   }, []);
 
   // Mobile (and reduced-motion) never sets up the pinned ScrollTrigger below,
@@ -92,9 +100,7 @@ export const HorizontalTrack = forwardRef<
   // here, so "panel" is simply whichever section's top has passed the
   // viewport's midpoint.
   useEffect(() => {
-    const isMobile = matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
-    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (!isMobile && !reduced) return;
+    if (layout === 'horizontal') return;
 
     // Without a pinned ScrollTrigger to snap for it (desktop's own `snap`
     // option above), a guest could let go mid-flick and be left parked
@@ -107,11 +113,12 @@ export const HorizontalTrack = forwardRef<
     let snapTimeoutId: ReturnType<typeof setTimeout>;
 
     function reportActiveSection() {
-      const viewportMid = window.scrollY + window.innerHeight / 2;
+      const viewportMid = window.innerHeight / 2;
       let section = 0;
       SECTION_IDS.forEach((id, index) => {
         const el = document.getElementById(id);
-        if (el && el.offsetTop <= viewportMid) section = index;
+        if (el && el.getBoundingClientRect().top <= viewportMid)
+          section = index;
       });
       onUpdateRef.current?.({
         progress: section / (SECTION_IDS.length - 1),
@@ -119,7 +126,10 @@ export const HorizontalTrack = forwardRef<
       });
 
       clearTimeout(snapTimeoutId);
-      snapTimeoutId = setTimeout(snapToNearestSection, SNAP_IDLE_MS);
+      // Reduced-motion visitors get ordinary scrolling, without an idle
+      // correction unexpectedly jumping them to another section.
+      if (layout === 'mobile')
+        snapTimeoutId = setTimeout(snapToNearestSection, SNAP_IDLE_MS);
     }
 
     function snapToNearestSection() {
@@ -128,7 +138,7 @@ export const HorizontalTrack = forwardRef<
       let nearestDistance = Infinity;
       for (const el of sections) {
         if (!el) return;
-        const distance = Math.abs(el.offsetTop - window.scrollY);
+        const distance = Math.abs(el.getBoundingClientRect().top);
         if (distance < nearestDistance) {
           nearestDistance = distance;
           nearest = el;
@@ -136,8 +146,8 @@ export const HorizontalTrack = forwardRef<
       }
       if (nearest && nearestDistance > SNAP_THRESHOLD_PX) {
         window.scrollTo({
-          top: nearest.offsetTop,
-          behavior: reduced ? 'auto' : 'smooth',
+          top: window.scrollY + nearest.getBoundingClientRect().top,
+          behavior: 'smooth',
         });
       }
     }
@@ -148,7 +158,7 @@ export const HorizontalTrack = forwardRef<
       clearTimeout(snapTimeoutId);
       window.removeEventListener('scroll', reportActiveSection);
     };
-  }, []);
+  }, [layout]);
 
   // useGSAP scopes a gsap.context() to pinRef and calls context.revert() on
   // cleanup instead of manually killing the trigger, which matters because
@@ -188,9 +198,7 @@ export const HorizontalTrack = forwardRef<
           return;
         }
 
-        const isMobile = matchMedia(MOBILE_BREAKPOINT_QUERY).matches;
-        const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (isMobile || reduced) return;
+        if (layout !== 'horizontal') return;
 
         // Belt and braces against a second ScrollTrigger ever stacking on
         // top of the first: Next's RSC client-navigation can commit this
@@ -250,7 +258,7 @@ export const HorizontalTrack = forwardRef<
         scrollTriggerRef.current = null;
       };
     },
-    { scope: pinRef, dependencies: [storyCount] },
+    { scope: pinRef, dependencies: [storyCount, layout], revertOnUpdate: true },
   );
 
   useImperativeHandle(
@@ -264,7 +272,9 @@ export const HorizontalTrack = forwardRef<
         if (!trigger) {
           document
             .getElementById(SECTION_IDS[section])
-            ?.scrollIntoView({ behavior: 'smooth' });
+            ?.scrollIntoView({
+              behavior: layout === 'reduced' ? 'auto' : 'smooth',
+            });
           return;
         }
         const { p1, p2 } = computeScrollBudget(storyCount);
@@ -300,40 +310,19 @@ export const HorizontalTrack = forwardRef<
         window.scrollTo({ top: target, behavior: 'smooth' });
       },
     }),
-    [storyCount],
+    [storyCount, layout],
   );
 
   return (
-    <div
-      ref={pinRef}
-      className="h-screen overflow-hidden max-[768px]:h-auto max-[768px]:overflow-visible"
-    >
-      <div
-        ref={trackRef}
-        className="flex h-screen w-[300vw] will-change-transform max-[768px]:!transform-none max-[768px]:block max-[768px]:h-auto max-[768px]:w-auto"
-      >
+    <div ref={pinRef} className="story-pin">
+      <div ref={trackRef} className="story-track">
         {/* h-screen unconditionally, not just on desktop: prototype/index.html's
             #intro,#journey,#wedding{height:100vh} applies at every breakpoint
             — on mobile the panels stack as three full-height sections under
             plain vertical scroll, they don't shrink to their content. */}
-        <section
-          id={SECTION_IDS[0]}
-          className="h-screen w-screen flex-none max-[768px]:w-auto"
-        >
-          {intro}
-        </section>
-        <section
-          id={SECTION_IDS[1]}
-          className="h-screen w-screen flex-none max-[768px]:w-auto"
-        >
-          {journey}
-        </section>
-        <section
-          id={SECTION_IDS[2]}
-          className="h-screen w-screen flex-none max-[768px]:w-auto"
-        >
-          {wedding}
-        </section>
+        <section id={SECTION_IDS[0]}>{intro}</section>
+        <section id={SECTION_IDS[1]}>{journey}</section>
+        <section id={SECTION_IDS[2]}>{wedding}</section>
       </div>
     </div>
   );

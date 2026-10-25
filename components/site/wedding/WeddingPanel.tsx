@@ -49,6 +49,7 @@ export function WeddingPanel() {
           pairs #wedding .tabs with the wedding panel index, not the panel
           content. */}
       <div
+        data-story-parallax
         className="relative z-[1] flex-none"
         style={{ transform: `translateX(${parallaxX}px)` }}
       >

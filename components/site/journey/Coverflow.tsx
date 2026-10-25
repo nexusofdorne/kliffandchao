@@ -7,39 +7,14 @@ import {
   useImperativeHandle,
   useRef,
   useState,
-  useSyncExternalStore,
 } from 'react';
 import { chapters, type FlatStory } from '@/content/chapters';
 import { computeCardTransform, computeStepTarget } from '@/lib/track/coverflow';
 import { StoryCard } from './StoryCard';
 import { useCoverflowGestures } from './useCoverflowGestures';
+import { useStoryLayout } from '@/components/site/useStoryLayout';
 
-const MOBILE_BREAKPOINT_PX = 768;
 const EAGER_LOAD_COUNT = 3;
-
-// useSyncExternalStore, not a lazy useState initializer reading
-// window.innerWidth directly: the server always renders assuming desktop
-// (there's no window to read), so a client render that disagrees during
-// hydration — true on an actual mobile load — logged a hydration mismatch
-// on StoryCard's inline transform/opacity that "won't be patched up".
-// Harmless on its own, but once something else re-rendered this tree
-// afterward (e.g. a scroll-driven state update elsewhere), React's
-// reconciliation hit DOM it no longer recognized and crashed with
-// "Failed to execute 'removeChild'". getServerSnapshot keeps the first
-// client render identical to the server's; useSyncExternalStore then
-// corrects it before paint, with no visible flash and no manual effect.
-function subscribeToViewportChange(onChange: () => void) {
-  window.addEventListener('resize', onChange);
-  return () => window.removeEventListener('resize', onChange);
-}
-
-function getIsMobileSnapshot(): boolean {
-  return window.innerWidth > 0 && window.innerWidth < MOBILE_BREAKPOINT_PX;
-}
-
-function getIsMobileServerSnapshot(): boolean {
-  return false;
-}
 
 // The gap between card centres on the native scroll-snap rail. Not the same
 // as a card's own offsetLeft: the rail's side padding already centres card
@@ -80,15 +55,12 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
     { stories, activeIndex, onSelectStory, onMobileActiveChange },
     ref,
   ) {
-    const isMobile = useSyncExternalStore(
-      subscribeToViewportChange,
-      getIsMobileSnapshot,
-      getIsMobileServerSnapshot,
-    );
+    const layout = useStoryLayout();
+    const usesNativeRail = layout !== 'horizontal';
     const [cardWidth, setCardWidth] = useState(0);
     const firstCardRef = useRef<HTMLDivElement>(null);
     const { containerRef, justSwipedRef } = useCoverflowGestures(
-      !isMobile,
+      !usesNativeRail,
       (direction) => {
         onSelectStory(
           computeStepTarget(activeIndex, direction, stories.length),
@@ -99,7 +71,7 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
     // The stride tracks the card's clamp()-sized real width, so it never
     // drifts from the CSS the moment the viewport crosses a clamp boundary.
     useEffect(() => {
-      if (isMobile) return;
+      if (usesNativeRail) return;
       function measure() {
         if (firstCardRef.current)
           setCardWidth(firstCardRef.current.offsetWidth);
@@ -107,7 +79,7 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
       measure();
       window.addEventListener('resize', measure);
       return () => window.removeEventListener('resize', measure);
-    }, [isMobile]);
+    }, [usesNativeRail]);
 
     const scrollToStory = useCallback(
       (index: number) => {
@@ -115,10 +87,10 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
         if (!container) return;
         container.scrollTo({
           left: index * measureMobileStride(container),
-          behavior: 'smooth',
+          behavior: layout === 'reduced' ? 'auto' : 'smooth',
         });
       },
-      [containerRef],
+      [containerRef, layout],
     );
 
     useImperativeHandle(ref, () => ({ scrollToStory }), [scrollToStory]);
@@ -129,7 +101,7 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
     // and early-returning on an unchanged index keeps DOM writes to once per
     // settled card instead.
     useEffect(() => {
-      if (!isMobile) return;
+      if (!usesNativeRail) return;
       const container = containerRef.current;
       if (!container) return;
       let lastIndex = -1;
@@ -146,7 +118,7 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
       }
       container.addEventListener('scroll', handleScroll, { passive: true });
       return () => container.removeEventListener('scroll', handleScroll);
-    }, [isMobile, stories.length, containerRef, onMobileActiveChange]);
+    }, [usesNativeRail, stories.length, containerRef, onMobileActiveChange]);
 
     function handleSelect(index: number) {
       // A drag ends in a click event too; ignore that one.
@@ -154,7 +126,7 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
         justSwipedRef.current = false;
         return;
       }
-      if (isMobile) {
+      if (usesNativeRail) {
         // Tapping a side card brings it to the centre rather than doing nothing.
         if (index !== activeIndex) scrollToStory(index);
         return;
@@ -172,7 +144,7 @@ export const Coverflow = forwardRef<CoverflowHandle, CoverflowProps>(
             chapter={chapters[story.chapterIndex]}
             isActive={index === activeIndex}
             transform={
-              isMobile
+              usesNativeRail
                 ? null
                 : computeCardTransform(index - activeIndex, cardWidth || 360)
             }

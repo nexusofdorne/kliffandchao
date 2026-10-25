@@ -2,7 +2,8 @@
 
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useStoryLayout } from '@/components/site/useStoryLayout';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { chapters, stories } from '@/content/chapters';
 import {
@@ -26,26 +27,10 @@ const Ambience = dynamic(
 );
 
 const JOURNEY_LAYER_INDEX = 1;
-const MOBILE_BREAKPOINT_PX = 768;
 // A fast scrub can outrun the fade, so the text swap waits for it rather
 // than racing it — prototype/index.html's writeCopy().
 const COPY_CROSSFADE_MS = 170;
 const COPY_OPACITY = 0.84;
-
-// See Coverflow's own isMobile for why this reads via useSyncExternalStore
-// rather than a lazy useState initializer.
-function subscribeToViewportChange(onChange: () => void) {
-  window.addEventListener('resize', onChange);
-  return () => window.removeEventListener('resize', onChange);
-}
-
-function getIsMobileSnapshot(): boolean {
-  return window.innerWidth > 0 && window.innerWidth < MOBILE_BREAKPOINT_PX;
-}
-
-function getIsMobileServerSnapshot(): boolean {
-  return false;
-}
 
 function firstStoryOfChapter(chapterIndex: number): number {
   return stories.findIndex((s) => s.chapterIndex === chapterIndex);
@@ -58,11 +43,7 @@ function firstStoryOfChapter(chapterIndex: number): number {
 // Coverflow reports its own native scroll position back up instead.
 export function JourneyPanel() {
   const { progress, panel, jumpToStory } = useTrackProgress();
-  const isMobile = useSyncExternalStore(
-    subscribeToViewportChange,
-    getIsMobileSnapshot,
-    getIsMobileServerSnapshot,
-  );
+  const usesNativeRail = useStoryLayout() !== 'horizontal';
   const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
   const coverflowRef = useRef<CoverflowHandle>(null);
@@ -81,7 +62,9 @@ export function JourneyPanel() {
     p2,
     stories.length,
   );
-  const activeStoryIndex = isMobile ? mobileActiveIndex : desktopActiveIndex;
+  const activeStoryIndex = usesNativeRail
+    ? mobileActiveIndex
+    : desktopActiveIndex;
   const activeStory = stories[activeStoryIndex];
 
   const [displayedParagraph, setDisplayedParagraph] = useState(
@@ -107,7 +90,7 @@ export function JourneyPanel() {
   // one), so the chapter dots and prev/next arrows drive Coverflow's own
   // native scroll-snap container directly instead.
   function handleJumpToStory(index: number) {
-    if (isMobile) coverflowRef.current?.scrollToStory(index);
+    if (usesNativeRail) coverflowRef.current?.scrollToStory(index);
     else jumpToStory(index);
   }
 
@@ -155,6 +138,7 @@ export function JourneyPanel() {
           it must NOT also be centred with translateX(-50%) — that gets
           wiped and the content lands off the right edge. */}
       <div
+        data-story-parallax
         className="journey-content absolute inset-0 z-[3] flex flex-col items-center justify-start text-center max-[768px]:justify-center"
         style={{ transform: `translateX(${parallaxX}px)` }}
       >

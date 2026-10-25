@@ -52,6 +52,7 @@ export function IntroPanel() {
       {/* Parallax: this foreground layer trails the panel it belongs to, so
           the horizontal slide reads as depth — prototype/index.html's PLX. */}
       <div
+        data-story-parallax
         className="absolute inset-0 flex items-end justify-end gap-[5vw] px-[3.4vw] pb-[9.5vh] max-[768px]:flex-col max-[768px]:items-center max-[768px]:justify-end max-[768px]:gap-[3vh] max-[768px]:pb-[15vh]"
         style={{ transform: `translateX(${parallaxX}px)` }}
       >
