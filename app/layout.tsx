@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import { Montserrat } from 'next/font/google';
 import localFont from 'next/font/local';
 import { AudioProvider } from '@/components/site/AudioProvider';
-import { LenisProvider } from '@/components/site/LenisProvider';
 import { siteConfig } from '@/config/site';
 import './globals.css';
 
@@ -50,9 +49,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
           below it scrolls or responds to a jump. Confirmed by removing it
           and watching the horizontal track's full scroll budget return. */}
       <body>
-        <AudioProvider>
-          <LenisProvider>{children}</LenisProvider>
-        </AudioProvider>
+        <AudioProvider>{children}</AudioProvider>
       </body>
     </html>
   );
