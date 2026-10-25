@@ -7,6 +7,7 @@ import { useEffect, useState, type FormEvent } from 'react';
 import { useAudio } from '@/components/site/AudioProvider';
 import { Wordmark } from '@/components/site/chrome/Wordmark';
 import { Loader } from './Loader';
+import { siteConfig } from '@/config/site';
 
 // Both generate randomized decoration on mount (grass blade paths, bird
 // positions) via a lazy useState initializer rather than an effect, so
@@ -101,7 +102,7 @@ export function GateScreen({ next }: { next: string }) {
     >
       <div className="absolute inset-0">
         <Image
-          src="/img/intro.jpg"
+          src={siteConfig.backgrounds.gate}
           alt=""
           fill
           priority

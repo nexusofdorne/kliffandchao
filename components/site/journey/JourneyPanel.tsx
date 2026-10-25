@@ -13,6 +13,7 @@ import {
 import { ChapterArrows } from './ChapterArrows';
 import { ChapterStepper } from './ChapterStepper';
 import { Coverflow, type CoverflowHandle } from './Coverflow';
+import { siteConfig } from '@/config/site';
 
 // Same reasoning as GateScreen: Ambience generates its randomized grass and
 // motes via a lazy useState initializer, not an effect, so it must never
@@ -132,7 +133,7 @@ export function JourneyPanel() {
     <div className="relative h-full overflow-hidden bg-[#0d0f0a] text-white">
       <div className="absolute inset-0 overflow-hidden opacity-70 motion-safe:[animation:gate-drift_52s_ease-in-out_infinite_alternate] [transform-origin:48%_58%]">
         <Image
-          src="/img/p1_Im0.jpg"
+          src={siteConfig.backgrounds.journey}
           alt=""
           fill
           sizes="100vw"

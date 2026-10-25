@@ -10,6 +10,7 @@ import { FaqTab } from './FaqTab';
 import { MotifTab } from './MotifTab';
 import { TabBar, type WeddingTab } from './TabBar';
 import { TimelineTab } from './TimelineTab';
+import { siteConfig } from '@/config/site';
 
 const WEDDING_LAYER_INDEX = 2;
 
@@ -40,7 +41,7 @@ export function WeddingPanel() {
 
   return (
     <div className="wedding-panel relative flex h-full flex-col overflow-hidden bg-[#f5f3ed] text-[#14180d]">
-      <GlassWash imageSrc="/img/p1_Im0.jpg" />
+      <GlassWash imageSrc={siteConfig.backgrounds.wedding} />
 
       {/* Parallax applies only to the tab bar, not the panels below it: the
           panels scroll internally, and shifting that whole column fought

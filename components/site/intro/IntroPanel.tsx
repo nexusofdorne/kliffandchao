@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { computeParallaxOffset } from '@/lib/track/progress';
 import { VerseCycler } from './VerseCycler';
+import { siteConfig } from '@/config/site';
 
 const INTRO_LAYER_INDEX = 0;
 
@@ -32,8 +33,8 @@ export function IntroPanel() {
     <div className="relative h-full overflow-hidden bg-black">
       <div className="absolute inset-0 overflow-hidden motion-safe:[animation:kb_26s_ease-in-out_infinite_alternate]">
         <video
-          src="/video/intro-web.mp4"
-          poster="/img/intro-poster.jpg"
+          src={siteConfig.backgrounds.introVideo}
+          poster={siteConfig.backgrounds.introPoster}
           autoPlay
           muted
           loop

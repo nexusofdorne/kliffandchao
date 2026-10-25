@@ -37,15 +37,16 @@ chaodesignUrl: 'https://www.instagram.com/chaodesign.ph/...', // keep the utm_so
 
 ### 2. Background images (per page/panel)
 
-There is **no central backgrounds config** — each panel hard-codes its own image path inline. Edit the file directly:
+All page background paths live in **`config/site.ts` → `backgrounds`**:
 
-| Page / panel | File | What to change |
+| Page / panel | Setting | Default |
 |---|---|---|
-| Intro video poster | [components/site/intro/IntroPanel.tsx](components/site/intro/IntroPanel.tsx) (~line 32) | `poster="/img/intro-poster.jpg"` (video itself is `src="/video/intro-web.mp4"`, line 31) |
-| Password / gate screen | [components/site/gate/GateScreen.tsx](components/site/gate/GateScreen.tsx) (~line 88) | `src="/img/intro.jpg"` |
-| Journey panel ambient background | [components/site/journey/JourneyPanel.tsx](components/site/journey/JourneyPanel.tsx) (~line 101) | `<Image src="/img/p1_Im0.jpg" .../>` |
-| Wedding panel background | [components/site/wedding/WeddingPanel.tsx](components/site/wedding/WeddingPanel.tsx) (~line 39) | `<GlassWash imageSrc="/img/p1_Im0.jpg" />` |
-| RSVP overlay background | [app/(gated)/rsvp/page.tsx](<app/(gated)/rsvp/page.tsx>) (~line 81) | `<GlassWash imageSrc="..." />` |
+| Intro video | `introVideo` | `/video/intro-web.mp4` |
+| Intro video poster | `introPoster` | `/img/intro-poster.jpg` |
+| Password / gate screen | `gate` | `/img/intro.jpg` |
+| Journey panel | `journey` | `/img/p1_Im0.jpg` |
+| Wedding panel | `wedding` | `/img/p1_Im0.jpg` |
+| RSVP overlay | `rsvp` | `/img/p1_Im0.jpg` |
 
 The actual image files live in **[public/img/](public/img/)** — anything under `public/` is served from the site root, so `/img/foo.jpg` in code = `public/img/foo.jpg` on disk. Currently only 6 placeholder files exist there (`intro.jpg`, `intro-poster.jpg`, `p1_Im0.jpg`–`p4_Im0.jpg`); drop new photos in alongside them and point the relevant file at the new filename.
 
@@ -101,7 +102,7 @@ This entry has no `answer` field — just a flag. Its content is split across tw
 
 | I want to... | Edit this file |
 |---|---|
-| A page/section background image | The relevant component in `components/site/*` (see table above), plus the image file in `public/img/` |
+| A page/section background image | `config/site.ts` → `backgrounds`, plus the image file in `public/img/` |
 | The journey/story photos or captions | `content/chapters.ts` |
 | How many chapters there are | `content/chapters.ts` — add/remove entries in the `chapters` array |
 | How many stories a chapter has, or a story's photo/text | `content/chapters.ts` — edit the chapter's `stories` array |

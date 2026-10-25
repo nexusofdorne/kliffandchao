@@ -11,6 +11,7 @@ import { PartyForm, type RsvpSubmitPayload } from '@/components/rsvp/PartyForm';
 import { RsvpBanner } from '@/components/rsvp/RsvpBanner';
 import { GlassWash } from '@/components/site/glass/GlassWash';
 import type { PartyView } from '@/lib/rsvp/build-party';
+import { siteConfig } from '@/config/site';
 
 type Stage =
   | { kind: 'search'; error: string | null }
@@ -121,7 +122,7 @@ export default function RsvpPage() {
           site's palette. Darker and more desaturated than the wedding
           panel's wash: it sits behind `.glass`, not `.glass-light`. */}
       <GlassWash
-        imageSrc="/img/p1_Im0.jpg"
+        imageSrc={siteConfig.backgrounds.rsvp}
         fixed
         gradients={[
           'radial-gradient(90% 70% at 78% 4%, rgba(79,122,34,.42), transparent 60%)',

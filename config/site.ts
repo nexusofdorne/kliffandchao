@@ -1,4 +1,12 @@
 export const siteConfig = {
+  backgrounds: {
+    gate: '/img/intro.jpg',
+    introVideo: '/video/intro-web.mp4',
+    introPoster: '/img/intro-poster.jpg',
+    journey: '/img/p1_Im0.jpg',
+    wedding: '/img/p1_Im0.jpg',
+    rsvp: '/img/p1_Im0.jpg',
+  },
   coupleNames: 'Kliff & Chao',
   weddingDateDisplay: 'March 5, 2027',
   weddingDate: '2027-03-05',
