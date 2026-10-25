@@ -18,7 +18,7 @@
     "postinstall": "prisma generate",
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
-    "hash-password": "tsx scripts/hash-password.ts",
+    "hash-password": "node --conditions=react-server --import tsx scripts/hash-password.ts",
     "concurrency-check": "tsx scripts/concurrent-rsvp.ts"
   },
   "dependencies": {
