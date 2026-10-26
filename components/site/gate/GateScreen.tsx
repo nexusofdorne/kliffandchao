@@ -76,10 +76,12 @@ export function GateScreen({ next }: { next: string }) {
       return;
     }
 
-    audio.unmuteAndFadeIn();
     if (matchMedia(STORY_MOBILE_QUERY).matches) {
+      audio.unmuteAndFadeIn();
       setPhase('loader');
     } else {
+      // The song keeps playing silently through the dive and the terminal (it was
+      // started inside the Enter tap); the story brings it in with the intro.
       // warm the next route while the camera is still flying in
       router.prefetch(gateDestination(next));
       setPhase('dive');

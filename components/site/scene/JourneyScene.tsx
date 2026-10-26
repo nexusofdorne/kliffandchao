@@ -315,7 +315,9 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
                   aria-hidden="true"
                   className="block size-[0.55cqw] flex-none rounded-full bg-[#8a9a4b]"
                 />
-                <span className="block max-w-[8cqw]">{chapter.title}</span>
+                <span className="block max-w-[8cqw] whitespace-pre-line">
+                  {chapter.tabLabel ?? chapter.title}
+                </span>
               </button>
             );
           })}

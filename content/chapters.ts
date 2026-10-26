@@ -9,6 +9,8 @@ import { sceneAssets } from '../config/scene-layers.generated';
 export type JourneyChapter = {
   /** Tab label, shown in the journey window and (uppercased) on phones. */
   title: string;
+  /** The tab label with a forced line break, where the window needs one (defaults to `title`). */
+  tabLabel?: string;
   paragraphs: readonly string[];
   video?: string;
 };
@@ -43,6 +45,7 @@ export const journeyChapters: readonly JourneyChapter[] = [
   },
   {
     title: 'Meet family & friends',
+    tabLabel: 'Meet family\n& friends',
     paragraphs: [
       'What started between two people slowly became part of the lives of those closest to them.',
       'There were families to meet, friends to get to know, and two different worlds beginning to come together.',

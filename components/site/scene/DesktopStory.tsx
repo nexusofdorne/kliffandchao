@@ -2,6 +2,7 @@
 
 import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
+import { useAudio } from '@/components/site/AudioProvider';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { IntroScene, type IntroHandle } from './IntroScene';
 import { JourneyScene, type JourneyHandle } from './JourneyScene';
@@ -27,6 +28,7 @@ export function DesktopStory({ arrival }: { arrival: boolean }) {
 function Story({ arrival }: { arrival: boolean }) {
   const { setInputLocked, registerPlayer } = useScene();
   const { setChromeVisible, setChromeLight } = useTrackProgress();
+  const { beginMusic } = useAudio();
   const intro = useRef<IntroHandle>(null);
   const journey = useRef<JourneyHandle>(null);
   const journeyRoot = useRef<HTMLElement>(null);
@@ -81,6 +83,7 @@ function Story({ arrival }: { arrival: boolean }) {
         const settle = { duration: 1.7, ease: 'power2.inOut' } as const;
         gsap.fromTo(parts.stage, { scale: 0.948 }, { scale: 1, ...settle });
         gsap.fromTo(term.stage(), { scale: 1 }, { scale: 1.055, ...settle });
+        beginMusic(); // the song comes in with the intro, not before
         const chrome = setTimeout(() => setChromeVisible(true), 3200);
         signal.addEventListener('abort', () => clearTimeout(chrome));
         await Promise.all([
@@ -92,6 +95,7 @@ function Story({ arrival }: { arrival: boolean }) {
       } else {
         gsap.set(arrivalRoot.current, { display: 'none' });
         gsap.set(introRoot.current, { autoAlpha: 1 });
+        beginMusic();
         setTimeout(() => setChromeVisible(true), 1600);
         await introEl.surface({ fast: true });
       }

@@ -163,8 +163,10 @@ export function DesktopGate({
           </div>
 
           <div ref={formRef} className="absolute inset-0">
+            {/* a soft shade behind the text, so it reads over bright cloud and grass */}
+            <div aria-hidden="true" className="gate-scrim pointer-events-none absolute" />
             <h1
-              className="absolute m-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-medium leading-none text-white [text-shadow:0_0.15cqw_1.4cqw_rgba(0,0,0,.28)]"
+              className="absolute m-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-medium leading-none text-white [text-shadow:0_0.06cqw_0.2cqw_rgba(0,0,0,.4),0_0.15cqw_1.4cqw_rgba(0,0,0,.4)]"
               style={{
                 left: `${a.s01_heading.cx}%`,
                 top: `${a.s01_heading.cy}%`,
@@ -174,7 +176,7 @@ export function DesktopGate({
               You are invited!
             </h1>
             <p
-              className="absolute m-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap tracking-[.14em] text-white/90 [text-shadow:0_0.1cqw_0.9cqw_rgba(0,0,0,.5)]"
+              className="absolute m-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap tracking-[.14em] font-medium text-white [text-shadow:0_0_0.3cqw_rgba(0,0,0,.6),0_0.1cqw_0.9cqw_rgba(0,0,0,.55)]"
               style={{
                 left: `${a.s01_subtitle.cx}%`,
                 top: `${a.s01_subtitle.cy}%`,

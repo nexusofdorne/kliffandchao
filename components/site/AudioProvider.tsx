@@ -1,11 +1,12 @@
 'use client';
 
-import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from 'react';
-import { fadeIn } from '@/lib/audio/fade';
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
+import { DEFAULT_TARGET_VOLUME, fadeIn } from '@/lib/audio/fade';
 import { siteConfig } from '@/config/site';
 
 const MUTED_STORAGE_KEY = 'muted';
 const FADE_IN_MS = 1500;
+const UNMUTE_FADE_MS = 600;
 
 type AudioContextValue = {
   isMuted: boolean;
@@ -16,6 +17,9 @@ type AudioContextValue = {
   // playback is always permitted) — docs/PLAN.md "The autoplay problem".
   playMutedSync: () => void;
   unmuteAndFadeIn: () => void;
+  // The song comes in with the intro, not at the gate: it restarts from the top
+  // and fades up. A no-op once the music is already playing (coming back from RSVP).
+  beginMusic: () => void;
   pause: () => void;
   toggleMute: () => void;
 };
@@ -29,6 +33,18 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   );
   const [isPlaying, setIsPlaying] = useState(false);
 
+  // the handlers below read these, so they stay stable across renders
+  const isMutedRef = useRef(isMuted);
+  const isPlayingRef = useRef(false);
+  useEffect(() => {
+    isMutedRef.current = isMuted;
+  }, [isMuted]);
+
+  const markPlaying = useCallback((playing: boolean) => {
+    isPlayingRef.current = playing;
+    setIsPlaying(playing);
+  }, []);
+
   const playMutedSync = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
@@ -39,33 +55,64 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   const unmuteAndFadeIn = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-    setIsPlaying(true);
-    if (!isMuted) {
+    markPlaying(true);
+    if (!isMutedRef.current) {
       audio.muted = false;
       fadeIn(audio, FADE_IN_MS);
     }
-  }, [isMuted]);
+  }, [markPlaying]);
+
+  const beginMusic = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio || isPlayingRef.current) return;
+    // it may have been playing silently since the Enter tap: start the song over
+    audio.currentTime = 0;
+    audio.muted = isMutedRef.current;
+    audio.volume = 0; // so it does not blip at full volume before the fade starts
+    audio.play().then(
+      () => {
+        markPlaying(true);
+        if (isMutedRef.current) audio.volume = DEFAULT_TARGET_VOLUME;
+        else fadeIn(audio, FADE_IN_MS);
+      },
+      // refused (no tap on this visit): the button stays on "off" and one tap starts it
+      () => markPlaying(false),
+    );
+  }, [markPlaying]);
 
   const pause = useCallback(() => {
     audioRef.current?.pause();
-    setIsPlaying(false);
-  }, []);
+    markPlaying(false);
+  }, [markPlaying]);
 
   const toggleMute = useCallback(() => {
-    setIsMuted((wasMuted) => {
-      const nextMuted = !wasMuted;
-      window.localStorage.setItem(MUTED_STORAGE_KEY, nextMuted ? '1' : '0');
-      const audio = audioRef.current;
-      if (audio) {
-        audio.muted = nextMuted;
-        if (!nextMuted && audio.paused) void audio.play();
-      }
-      return nextMuted;
-    });
-  }, []);
+    const audio = audioRef.current;
+    if (!audio) return;
+    // the music never started (no tap on this visit): this tap is the one that starts it
+    if (!isPlayingRef.current && !isMutedRef.current) {
+      audio.muted = false;
+      audio.volume = 0;
+      audio.play().then(() => {
+        markPlaying(true);
+        fadeIn(audio, FADE_IN_MS);
+      }, () => {});
+      return;
+    }
+    const nextMuted = !isMutedRef.current;
+    isMutedRef.current = nextMuted;
+    setIsMuted(nextMuted);
+    window.localStorage.setItem(MUTED_STORAGE_KEY, nextMuted ? '1' : '0');
+    audio.muted = nextMuted;
+    if (nextMuted) return;
+    if (audio.paused) {
+      audio.volume = 0;
+      audio.play().then(() => markPlaying(true), () => {});
+    }
+    fadeIn(audio, UNMUTE_FADE_MS);
+  }, [markPlaying]);
 
   return (
-    <AudioProviderContext.Provider value={{ isMuted, isPlaying, playMutedSync, unmuteAndFadeIn, pause, toggleMute }}>
+    <AudioProviderContext.Provider value={{ isMuted, isPlaying, playMutedSync, unmuteAndFadeIn, beginMusic, pause, toggleMute }}>
       {children}
       <audio ref={audioRef} loop preload="none" src={siteConfig.audioSrc} />
     </AudioProviderContext.Provider>

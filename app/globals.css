@@ -898,6 +898,21 @@
   }
 }
 
+/* a soft shade behind the heading and subtitle, so they read over bright cloud and grass */
+.gate-scrim {
+  left: 49.35%;
+  top: 54.8%;
+  width: 40cqw;
+  height: 11cqw;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(
+    closest-side,
+    rgba(18, 32, 14, 0.3),
+    rgba(18, 32, 14, 0.14) 55%,
+    rgba(18, 32, 14, 0)
+  );
+}
+
 /* the glass password pill; it reads ENTER when you reach for it */
 .gate-pill {
   position: absolute;
@@ -1032,11 +1047,13 @@
   font-size: 2.72cqh;
   line-height: 3.48cqh;
 }
+/* the block runs from the boot lines to the dino, shifted up so its middle is the
+   screen's middle (it started at 28.3cqh, which left the top of the screen empty) */
 .crt-boot {
-  top: 28.3cqh;
+  top: 19.9cqh;
 }
 .crt-hello {
-  top: 67.1cqh;
+  top: 58.7cqh;
 }
 .crt-caret {
   display: inline-block;
@@ -1056,7 +1073,7 @@
 .crt-login {
   position: absolute;
   left: 25.2cqh;
-  top: 44.9cqh;
+  top: 36.5cqh;
   margin: 0;
   font:
     500 4.55cqh/1 Orbitron,
@@ -1068,10 +1085,9 @@
 .crt-progress {
   position: absolute;
   left: 23.1cqh;
-  top: 54cqh;
+  top: 45.6cqh;
   width: 55.7cqh;
   height: 7.4cqh;
-  background: #1d201e;
   opacity: 0;
 }
 .crt-bar {
@@ -1121,7 +1137,7 @@
 .crt-dino {
   position: absolute;
   left: 25.2cqh;
-  top: 79cqh;
+  top: 70.6cqh;
   width: 9cqh;
   height: 9cqh;
   opacity: 0;
