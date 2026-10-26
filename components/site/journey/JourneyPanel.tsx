@@ -3,15 +3,9 @@
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
-import { useStoryLayout } from '@/components/site/useStoryLayout';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { chapters, stories } from '@/content/chapters';
-import {
-  computeActiveStoryIndex,
-  computeParallaxOffset,
-  computeScrollBudget,
-} from '@/lib/track/progress';
-import { ChapterArrows } from './ChapterArrows';
+import { computeParallaxOffset } from '@/lib/track/progress';
 import { ChapterStepper } from './ChapterStepper';
 import { Coverflow, type CoverflowHandle } from './Coverflow';
 import { siteConfig } from '@/config/site';
@@ -37,14 +31,12 @@ function firstStoryOfChapter(chapterIndex: number): number {
 }
 
 // The whole journey panel: ambient background, chapter stepper, coverflow
-// and prev/next arrows — prototype/index.html's #journey. Desktop's active
-// story comes from the pinned track's live scroll progress (the same one
-// HorizontalTrack reports for the top bar); mobile has no pinned track, so
-// Coverflow reports its own native scroll position back up instead.
+// — prototype/index.html's #journey. This is the phone journey: Coverflow
+// reports its own native scroll position back up to pick the active story.
+// Wide screens show components/site/scene/JourneyScene instead.
 export function JourneyPanel() {
-  const { progress, panel, jumpToStory } = useTrackProgress();
-  const usesNativeRail = useStoryLayout() !== 'horizontal';
-  const [mobileActiveIndex, setMobileActiveIndex] = useState(0);
+  const { panel } = useTrackProgress();
+  const [activeStoryIndex, setActiveStoryIndex] = useState(0);
   const [viewportWidth, setViewportWidth] = useState(0);
   const coverflowRef = useRef<CoverflowHandle>(null);
 
@@ -55,16 +47,6 @@ export function JourneyPanel() {
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
 
-  const { p1, p2 } = computeScrollBudget(stories.length);
-  const desktopActiveIndex = computeActiveStoryIndex(
-    progress,
-    p1,
-    p2,
-    stories.length,
-  );
-  const activeStoryIndex = usesNativeRail
-    ? mobileActiveIndex
-    : desktopActiveIndex;
   const activeStory = stories[activeStoryIndex];
 
   const [displayedParagraph, setDisplayedParagraph] = useState(
@@ -86,30 +68,9 @@ export function JourneyPanel() {
     viewportWidth,
   );
 
-  // Mobile has no registered jumpToStory on the pinned track (there isn't
-  // one), so the chapter dots and prev/next arrows drive Coverflow's own
-  // native scroll-snap container directly instead.
+  // The chapter dots drive Coverflow's native scroll-snap container directly.
   function handleJumpToStory(index: number) {
-    if (usesNativeRail) coverflowRef.current?.scrollToStory(index);
-    else jumpToStory(index);
-  }
-
-  function handlePrevChapter() {
-    const ci = activeStory.chapterIndex;
-    handleJumpToStory(
-      firstStoryOfChapter(
-        activeStory.storyIndexInChapter > 0 ? ci : Math.max(0, ci - 1),
-      ),
-    );
-  }
-
-  function handleNextChapter() {
-    const ci = activeStory.chapterIndex;
-    handleJumpToStory(
-      ci >= chapters.length - 1
-        ? stories.length - 1
-        : firstStoryOfChapter(ci + 1),
-    );
+    coverflowRef.current?.scrollToStory(index);
   }
 
   return (
@@ -152,8 +113,7 @@ export function JourneyPanel() {
           ref={coverflowRef}
           stories={stories}
           activeIndex={activeStoryIndex}
-          onSelectStory={jumpToStory}
-          onMobileActiveChange={setMobileActiveIndex}
+          onActiveChange={setActiveStoryIndex}
         />
 
         <p
@@ -164,7 +124,6 @@ export function JourneyPanel() {
         </p>
       </div>
 
-      <ChapterArrows onPrev={handlePrevChapter} onNext={handleNextChapter} />
     </div>
   );
 }

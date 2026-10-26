@@ -12,7 +12,7 @@ const SECTIONS = [
 
 // The capsule is the scroll-position indicator, not just an active-tab
 // underline — it slides continuously with the track (TrackProgressProvider
-// mirrors HorizontalTrack's onUpdate), so this bar doubles as the "area for
+// mirrors the scene engine's glide), so this bar doubles as the "area for
 // intro-journey-wedding scroll" website2.0.pdf asks for.
 // prototype/index.html's .secnav-items / paintNavInd.
 export function SectionNav() {

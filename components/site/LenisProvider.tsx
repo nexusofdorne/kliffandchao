@@ -15,6 +15,8 @@ gsap.registerPlugin(ScrollTrigger);
 export function LenisProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    // Wide screens run the scene engine, which owns the wheel itself.
+    if (!matchMedia('(max-width: 768px)').matches) return;
 
     // Lenis hijacks every wheel/touch event globally by default, which also
     // blocks native scrolling inside the app's own overflow-y containers

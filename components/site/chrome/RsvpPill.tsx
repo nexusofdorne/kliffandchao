@@ -12,17 +12,11 @@ import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 export function RsvpPill() {
   const { isLight } = useTrackProgress();
 
-  // Desktop's /story has a pinned ScrollTrigger (HorizontalTrack) that
-  // wraps its pinned element in a pin-spacer div outside React's fiber
-  // tree. Navigating to /rsvp before that pin is killed raced React's own
-  // unmount against GSAP's pin-spacer teardown — React would occasionally
-  // try to remove a node from a parent GSAP had already detached it from,
-  // crashing with "Failed to execute removeChild" and leaving /rsvp never
-  // rendering. Mobile never hit this because it never creates the pin in
-  // the first place. Killing every ScrollTrigger here, synchronously
-  // before Next's own Link click handler runs (it calls this onClick
-  // first), guarantees the pin is already gone by the time React starts
-  // tearing down the page. Skipped for a modified click (new tab, etc.),
+  // The old desktop story pinned its track with a ScrollTrigger, whose pin
+  // spacer sits outside React's fiber tree and crashed the unmount when
+  // navigating to /rsvp. The scene engine pins nothing, so this is now a
+  // belt-and-braces: killing any ScrollTrigger before Next's own Link click
+  // handler runs costs nothing. Skipped for a modified click (new tab, etc.),
   // which doesn't navigate away from this tab at all.
   function handleClick(event: MouseEvent<HTMLAnchorElement>) {
     const isModified = event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || event.button !== 0;

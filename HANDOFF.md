@@ -1,31 +1,56 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 26 October 2026 (later): redesign steps 1–3 done (not pushed)
+## Latest update — 26 October 2026: the desktop redesign is built (not pushed)
 
-On `redesign/monitor`, after step 0: **1 assets, 2 scene foundations, 3 desktop gate and
-dive**. Details and results are in the step table of `docs/REDESIGN_PLAN.md`. Next is
-step 4 (terminal arrival + intro). Nothing is pushed; the production migration is still
-unapplied, so don't push or deploy yet.
+Steps 0–7 of `docs/REDESIGN_PLAN.md` are done on `redesign/monitor`: assets, scene engine,
+gate and dive, terminal + intro, journey, wedding and the cleanup. Nothing is pushed, and
+the production migration `rsvp_deliveries` is still unapplied, so **don't push or deploy
+until it is**. What's left is review and the checks below, not building.
 
-- **Assets:** `python scripts/design/prepare_assets.py` writes `public/img/scenes/<scene>/`,
-  `public/video/to-wedding.mp4` and `config/scene-layers.generated.ts` (about 90 s). Screen 01
-  is cut from `docs/design/v3/01-plate-clean.jpg` (Chao's plate). Don't hand-edit the
-  generated file; it's Prettier-ignored. `prototype-v3/assets` is frozen.
-- **Scene engine:** `lib/scene/` (pure, tested) and `components/site/scene/`. It reports into
-  `TrackProgressProvider`, so the top bar is untouched. The scaffold is at `/story?scenes=1`;
-  plain `/story` and phones still get the old pinned track until steps 4-6 replace it.
-- **Gate:** `GateScreen` holds the password check and audio handshake and renders both
-  `MobileGate` and `DesktopGate` (CSS shows one). Desktop dives into the monitor and pushes
-  `/story?arrival=gate`; step 4 must read that flag (`lib/scene/arrival.ts`) and strip it.
-- **Testing locally without real secrets:** run `next dev` with `SESSION_SECRET`,
-  `SESSION_EPOCH` and a throwaway `SITE_PASSWORD_HASH` in the process environment. In
-  that env value, escape each `$` as `\$` (Next expands `$` like dotenv does), or the hash
-  silently stops verifying.
-- **Seen, not changed:** `AudioProvider.playMutedSync` doesn't catch the `play()` promise, so a
-  wrong password logs an unhandled `AbortError` (harmless, older than the redesign). The
-  preview pane's screenshots are cropped at scale 1 here; use scale 0.5.
-- **Not yet checked:** a real Vercel preview (and the Preview database isolation), a real
-  iPhone for the audio handshake, reduced-motion on the gate.
+### How it fits together
+- **Wide screens** (`/story`, above 768px) run the scene engine: `components/site/scene/`.
+  `DesktopStory` composes `Terminal`, `IntroScene`, `JourneyScene`, `WeddingScene`;
+  `transitions.ts` holds the scene-to-scene animations; `SceneProvider` owns input (wheel via
+  GSAP Observer, swipe, keys), the lock while a move plays, and the nav capsule's glide.
+  The rules (what a scroll does, nav jumps, tabs) are the pure state machine in
+  `lib/scene/machine.ts`; camera maths, gestures and the terminal's progress curve are there too.
+- **Phones** (≤768px) keep the stacked story: `StackedStory` + the old panels. Their journey
+  photocards are derived from `content/chapters.ts`, so there is one copy of the words.
+- **Gate:** `GateScreen` keeps the password check and audio handshake and renders both
+  `MobileGate` and `DesktopGate`; desktop dives into the monitor and pushes
+  `/story?arrival=gate`. `/story` reads that flag once (terminal plays) and strips it; any other
+  arrival (cookie, reload, back from RSVP) gets a short intro entrance.
+- **Assets:** `python scripts/design/prepare_assets.py` (about 90 s) writes
+  `public/img/scenes/<scene>/`, `public/video/to-wedding.mp4` and
+  `config/scene-layers.generated.ts`. Screen 01 is cut from `docs/design/v3/01-plate-clean.jpg`.
+  Don't hand-edit the generated file. `prototype-v3/` and its assets are frozen references.
+- **Content:** journey words in `content/chapters.ts` (final copy), per-chapter layout in
+  `config/journey-layout.ts`, terminal copy in `content/terminal.ts`. Photos are still
+  stand-ins cropped from the mockups; each chapter has an empty film slot (`video` field).
+- Removed: the pinned horizontal track, the desktop coverflow and chapter arrows, and the
+  scroll maths only they used. (Older notes below that mention `HorizontalTrack` are history.)
+
+### Testing locally without real secrets
+Run `next dev` with `SESSION_SECRET`, `SESSION_EPOCH` and a throwaway `SITE_PASSWORD_HASH`
+in the process environment (hash made with `npm run hash-password -- <test password> --vercel`).
+In that env value escape each `$` as `\$` (Next expands `$` like dotenv does), or the hash
+silently stops verifying. In this session's preview pane, screenshots are cropped at scale 1
+(use 0.5), and native `scroll` events don't fire, so drive scroll-based code with synthetic events.
+
+### Not yet checked
+- A real Vercel preview, including the Preview database isolation (guest search for "Kho"
+  should return the synthetic Kho Family).
+- A real iPhone: the audio handshake on the phone gate (unchanged, but never re-verified).
+- Reduced motion on the desktop scenes (code paths exist: crossfades, no typing, no glitch).
+- Performance on a mid-range laptop: screen 03 is about 20 layers plus the 11.8 MB film.
+- Portrait/tablet widths (769-1024px) crop the sides of the 16:9 scenes.
+
+### Known rough edges
+- The arrival (terminal) takes about 25 s with no way to skip it; consider a skip.
+- `AudioProvider.playMutedSync` doesn't catch the `play()` promise, so a wrong password logs an
+  unhandled `AbortError` (harmless, older than the redesign).
+- The intro film plate (`intro-web.mp4`) looks soft inside the blob; the original is wanted.
+- Production's `DATABASE_URL` still has no `sslmode` (separate from the redesign).
 
 ## Earlier update — 26 October 2026: redesign step 0 done (not pushed)
 
@@ -289,7 +314,7 @@ Timestamps unchanged since the initial Phase-0 placeholder batch (`1d ago`, or w
 
 ## Hard-won bugs from earlier sessions — don't reintroduce these
 
-1. **`requestAnimationFrame` can be suspended indefinitely** in a backgrounded tab *or* this session's embedded Claude Browser preview pane. `HorizontalTrack`'s pin setup retries via `setTimeout`, not rAF, for exactly this reason.
+1. **`requestAnimationFrame` can be suspended indefinitely** in a backgrounded tab *or* this session's embedded Claude Browser preview pane. The scene engine's timed sequences guard with `setTimeout` (`playToEnd`, `sleep`) for the same reason; the old `HorizontalTrack` did too.
 2. **`<body>{display:flex}` silently breaks GSAP's pin-spacer sizing.** Stays removed; see the comment on `<body>` in `app/layout.tsx`.
 3. **"Run exactly once" guards must flip their flag *after* the async step resolves, not before** (React Strict Mode's dev-only mount→cleanup→remount runs cleanup synchronously before any promise settles).
 4. **Tailwind's utility layer sits below plain unlayered CSS.** `.glass`/`.glass-light` in `globals.css` will beat any Tailwind utility class regardless of specificity. Use inline `style` to override one side of what `.glass` sets.
@@ -299,7 +324,7 @@ Timestamps unchanged since the initial Phase-0 placeholder batch (`1d ago`, or w
 
 ## Architecture notes specific to this codebase
 
-- **`TrackProgressProvider`** bridges `HorizontalTrack`'s live scroll position to everything outside that subtree. Extend this, don't invent a second channel.
+- **`TrackProgressProvider`** bridges the story's scroll engine (the scene engine, or the phone's stacked sections) to everything outside that subtree. Extend this, don't invent a second channel.
 - **`app/admin/` has no shared gated layout** — `requireAdmin()` is called directly in `app/admin/page.tsx` and `app/admin/parties/[id]/page.tsx` individually (not a layout), specifically so `/admin/login` can stay outside any auth gate. If you add more admin pages, follow the same direct-call pattern rather than introducing a layout that would need to carefully exclude `/login`.
 - **`lib/env.public.ts` exists specifically so `lib/supabase/client.ts` (browser-side) can read the two `NEXT_PUBLIC_*` vars without pulling in `lib/env.ts`'s `import 'server-only'` guard**, which throws unconditionally if bundled client-side. If you need another client-safe env var later, extend `env.public.ts`, don't import the main `env` object into client code.
 - **`lib/guests/parse-rows.ts` and `lib/guests/upsert.ts` are shared by `prisma/seed.ts` AND the two Sheets sync routes.** Any change to guest-row validation/upsert logic affects all three call sites — check all of them, not just the one you're editing.

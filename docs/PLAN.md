@@ -849,7 +849,7 @@ This architecture is right for ~200 guests and a few hundred writes. **Past roug
 
 > ⚠️ **Superseded:** follow the phases in `BUILD_PLAN.md`. The frontend guidance below still applies to its Phase 4.
 
-**Frontend — port `prototype/index.html`, don't rebuild from this document.** The prototype is working, client-approved code and is the more accurate spec for anything visual. Order: `HorizontalTrack` (the scroll timeline is what everything else hangs off) → gate + `AudioProvider` → intro/verse → journey (wheel + photo fan) → wedding tabs → RSVP UI.
+**Frontend — port `prototype/index.html`, don't rebuild from this document.** *(Superseded for wide screens: the desktop story was rebuilt from `prototype-v3/` as triggered scenes, see `docs/REDESIGN_PLAN.md`; the pinned `HorizontalTrack` described below no longer exists. Phones still follow this.)* The prototype is working, client-approved code and is the more accurate spec for anything visual. Order: `HorizontalTrack` (the scroll timeline is what everything else hangs off) → gate + `AudioProvider` → intro/verse → journey (wheel + photo fan) → wedding tabs → RSVP UI.
 
 Wire the audio in with the gate screen, not as a late add-on — the muted-play-then-unmute handshake is entangled with how the gate submits and navigates, and retrofitting it means rewriting that handler.
 

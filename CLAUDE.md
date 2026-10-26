@@ -78,7 +78,7 @@ These are the rules most likely to be broken by accident. Treat any violation as
 - RSVP rules: guest outside the party → `outside_party`; duplicate guest ids rejected; past deadline → not editable; message over 500 chars rejected.
 - Building the `Party` view from current answers and the latest submission.
 - `safeCell`: leading `= + - @` escaped, control characters stripped, 500-char cap.
-- Scroll maths in `lib/track/`: progress → panel and story index at the phase boundaries (`P1`, `P2`), capsule position, and the coverflow transform/scale/opacity for offsets 0, ±1, ±3 and beyond ±3.
+- Scene logic in `lib/scene/`: the state machine (what a scroll step, nav jump, window or tab move does), the camera maths for the gate's dive, the wheel/swipe/key gesture gate and the terminal's progress curve. `lib/track/` keeps the nav capsule position and layout decision.
 - Search scoring ladder, if any scoring happens in TypeScript.
 
 **Integration tests (`npm run test:db`).** For things that only exist in Postgres, run against a separate test database, never the production one:

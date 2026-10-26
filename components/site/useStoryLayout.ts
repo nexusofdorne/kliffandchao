@@ -18,26 +18,19 @@ function subscribe(onChange: () => void) {
     queries.forEach((query) => query.removeEventListener('change', onChange));
 }
 
-function snapshot(scenes: boolean): StoryLayout {
+function snapshot(): StoryLayout {
   return resolveStoryLayout(
     matchMedia(STORY_MOBILE_QUERY).matches,
     matchMedia(STORY_REDUCED_MOTION_QUERY).matches,
-    scenes,
   );
 }
 
 // The first client render matches SSR; React then applies the actual media
-// preferences without a hydration mismatch. CSS handles the initial layout.
+// preferences without a hydration mismatch.
 function serverSnapshot(): StoryLayout {
-  return 'horizontal';
+  return 'scenes';
 }
 
-// `scenes` opts the page into the redesigned desktop scene engine; the
-// panels' own calls leave it off and keep resolving the classic layouts.
-export function useStoryLayout(scenes: boolean = false): StoryLayout {
-  return useSyncExternalStore(
-    subscribe,
-    () => snapshot(scenes),
-    serverSnapshot,
-  );
+export function useStoryLayout(): StoryLayout {
+  return useSyncExternalStore(subscribe, snapshot, serverSnapshot);
 }

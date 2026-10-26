@@ -99,7 +99,7 @@ app/
   page.tsx                        password gate (ENTER starts the song)
   (gated)/
     layout.tsx                    await requireGate(); top bar + audio disc
-    story/page.tsx                ONE page: <HorizontalTrack> wrapping Intro/Journey/Wedding panels
+    story/page.tsx                ONE page: DesktopStory (wide) or StackedStory (phones)
     rsvp/page.tsx                 full-screen glass overlay route
   admin/
     login/page.tsx                Supabase Auth
@@ -123,13 +123,13 @@ content/
 components/
   ui/                             shadcn
   site/
-    HorizontalTrack.tsx           the one pinned ScrollTrigger; owns progress
+    StackedStory.tsx              phones: the three sections stacked under native scroll
+    scene/                        desktop scene engine (docs/REDESIGN_PLAN.md): Stage, SceneProvider, scenes, transitions
     glass/GlassWash.tsx           blurred botanical wash so glass has something to refract
     gate/{GateScreen,Loader,Ambience,Birds}.tsx
     chrome/{TopBar,Wordmark,SectionNav,RsvpPill,AudioToggle,Credit}.tsx
     intro/{IntroPanel,VerseCycler}.tsx
-    journey/{JourneyPanel,ChapterStepper,Coverflow,StoryCard,ChapterArrows}.tsx
-    journey/useCoverflowGestures.ts   drag + horizontal wheel → jumpTo()
+    journey/{JourneyPanel,ChapterStepper,Coverflow,StoryCard}.tsx   (phone journey: native scroll-snap rail)
     wedding/{WeddingPanel,TabBar,DetailTab,Countdown,VenueMap,TimelineTab,MotifTab,MotifGroup,EntourageTab,FaqTab}.tsx
   rsvp/{GuestSearch,PartyForm,RsvpBanner,Confirmation}.tsx
 lib/

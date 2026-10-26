@@ -344,7 +344,6 @@ blob_alpha = feather(blob, 1.4)
 ys, xs = np.where(blob)
 bb = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
 manifest["s03_blob"] = dict(x=100 * bb[0] / W, y=100 * bb[1] / H, w=100 * (bb[2] - bb[0]) / W, h=100 * (bb[3] - bb[1]) / H)
-save_rgba(np.full_like(img, 255), blob_alpha, "s03_blobmask.webp", crop=bb, q=80)
 
 # move grass texture over the baked verse so it can be live text
 work = img.copy()

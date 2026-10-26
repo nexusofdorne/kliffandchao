@@ -2,7 +2,6 @@
 
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from 'react';
 import { computeActiveSection } from '@/lib/track/progress';
-import type { HorizontalTrackUpdate } from '@/components/site/HorizontalTrack';
 
 type Section = 0 | 1 | 2;
 
@@ -18,16 +17,15 @@ type TrackProgressContextValue = {
   setChromeLight: (light: boolean | null) => void;
   chromeVisible: boolean;
   setChromeVisible: (visible: boolean) => void;
-  setUpdate: (update: HorizontalTrackUpdate) => void;
+  setUpdate: (update: { progress: number; panel: number }) => void;
   registerJump: (jump: (section: Section) => void) => void;
   jump: (section: Section) => void;
-  registerJumpToStory: (jumpToStory: (storyIndex: number) => void) => void;
-  jumpToStory: (storyIndex: number) => void;
 };
 
 const TrackProgressContext = createContext<TrackProgressContextValue | null>(null);
 
-// Bridges HorizontalTrack (mounted deep inside story/page.tsx) with the
+// Bridges the story's scroll engine (the desktop scenes, or the phone's
+// stacked sections) with the
 // persistent TopBar and JourneyPanel's coverflow (mounted once in the
 // (gated) layout / passed in as the `journey` prop, above where the track
 // itself lives — docs/BUILD_PLAN.md App source) — all three need the same
@@ -40,9 +38,8 @@ export function TrackProgressProvider({ children }: { children: ReactNode }) {
   const [chromeLight, setChromeLight] = useState<boolean | null>(null);
   const [chromeVisible, setChromeVisible] = useState(true);
   const jumpRef = useRef<(section: Section) => void>(() => {});
-  const jumpToStoryRef = useRef<(storyIndex: number) => void>(() => {});
 
-  const setUpdate = useCallback((update: HorizontalTrackUpdate) => {
+  const setUpdate = useCallback((update: { progress: number; panel: number }) => {
     setProgress(update.progress);
     setPanel(update.panel);
   }, []);
@@ -53,14 +50,6 @@ export function TrackProgressProvider({ children }: { children: ReactNode }) {
 
   const jump = useCallback((section: Section) => {
     jumpRef.current(section);
-  }, []);
-
-  const registerJumpToStory = useCallback((jumpToStoryImpl: (storyIndex: number) => void) => {
-    jumpToStoryRef.current = jumpToStoryImpl;
-  }, []);
-
-  const jumpToStory = useCallback((storyIndex: number) => {
-    jumpToStoryRef.current(storyIndex);
   }, []);
 
   const value = useMemo<TrackProgressContextValue>(
@@ -75,10 +64,8 @@ export function TrackProgressProvider({ children }: { children: ReactNode }) {
       setUpdate,
       registerJump,
       jump,
-      registerJumpToStory,
-      jumpToStory,
     }),
-    [progress, panel, chromeLight, chromeVisible, setUpdate, registerJump, jump, registerJumpToStory, jumpToStory],
+    [progress, panel, chromeLight, chromeVisible, setUpdate, registerJump, jump],
   );
 
   return <TrackProgressContext.Provider value={value}>{children}</TrackProgressContext.Provider>;

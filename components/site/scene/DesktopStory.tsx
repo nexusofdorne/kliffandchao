@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { IntroScene, type IntroHandle } from './IntroScene';
 import { JourneyScene, type JourneyHandle } from './JourneyScene';
-import { SceneRoot } from './ScenePlayground';
+import { SceneRoot } from './SceneRoot';
 import { WeddingScene, type WeddingHandle } from './WeddingScene';
 import { SceneProvider, useScene } from './SceneProvider';
 import { Terminal, type TerminalHandle } from './Terminal';

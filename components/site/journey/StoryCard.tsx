@@ -3,16 +3,11 @@
 import Image from 'next/image';
 import { forwardRef, type KeyboardEvent } from 'react';
 import type { Chapter, FlatStory } from '@/content/chapters';
-import type { CardTransform } from '@/lib/track/coverflow';
 
 type StoryCardProps = {
   story: FlatStory;
   chapter: Chapter;
   isActive: boolean;
-  // null on mobile: the .coverflow-card.is-active CSS rule owns transform
-  // and opacity there (native scroll-snap), so no inline style is set —
-  // setting one would out-specificity the media-query class entirely.
-  transform: CardTransform | null;
   priority: boolean;
   onSelect: () => void;
 };
@@ -22,7 +17,7 @@ type StoryCardProps = {
 // that's its own layer rather than a border (a border would sit outside
 // the overflow-clipped photo and leave a hairline gap at the corners).
 export const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function StoryCard(
-  { story, chapter, isActive, transform, priority, onSelect },
+  { story, chapter, isActive, priority, onSelect },
   ref,
 ) {
   function handleKeyDown(event: KeyboardEvent) {
@@ -40,16 +35,6 @@ export const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function Sto
       aria-label={story.caption ? `${chapter.title} — ${story.caption}` : chapter.title}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
-      style={
-        transform
-          ? {
-              transform: `translate3d(${transform.translateX}px,0,0) scale(${transform.scale})`,
-              opacity: transform.opacity,
-              zIndex: transform.zIndex,
-              pointerEvents: transform.opacity === 0 ? 'none' : 'auto',
-            }
-          : undefined
-      }
       className={`coverflow-card cursor-pointer overflow-hidden rounded-[30px] bg-[#1a1f12] text-left focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[var(--lime)] ${
         isActive ? 'is-active' : ''
       }`}

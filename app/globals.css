@@ -199,42 +199,10 @@
    enough interdependent breakpoint overrides (custom properties, calc(),
    a media query) that a class mirrors the source 1:1 and stays legible.
    ============================================================ */
-.story-pin {
-  height: 100vh;
-  overflow: hidden;
-}
-
-.story-track {
-  display: flex;
-  width: 300vw;
-  height: 100vh;
-  will-change: transform;
-}
-
+/* The phone story: three full-height sections stacked under native scroll
+   (components/site/StackedStory). Wide screens use the scene engine. */
 .story-track > section {
-  width: 100vw;
   height: 100vh;
-  flex: none;
-}
-
-/* The JS track is unpinned in both modes, so CSS must stack the sections
-   in both too. Leaving a reduced-motion desktop horizontal gives every
-   section top=0 and makes the scroll spy select Wedding immediately. */
-@media (max-width: 768px), (prefers-reduced-motion: reduce) {
-  .story-pin {
-    height: auto;
-    overflow: visible;
-  }
-  .story-track {
-    display: block;
-    width: auto;
-    height: auto;
-    transform: none !important;
-    will-change: auto;
-  }
-  .story-track > section {
-    width: auto;
-  }
 }
 
 .journey-content {
