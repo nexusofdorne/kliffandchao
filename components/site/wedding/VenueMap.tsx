@@ -52,6 +52,8 @@ export function VenueMap({ active, fill = false }: VenueMapProps) {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
         maxZoom: 19,
         crossOrigin: 'anonymous',
+        // the site sends no referrer (vercel.json), and OpenStreetMap blocks tile requests without one
+        referrerPolicy: 'strict-origin-when-cross-origin',
       }).addTo(map);
       L.marker([lat, lng], {
         icon: L.divIcon({ className: 'venue-pin', html: '<span></span>', iconSize: [15, 15], iconAnchor: [8, 8] }),
