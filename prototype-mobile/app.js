@@ -2,9 +2,11 @@
  * Kliff & Chao, phone prototype. Plain HTML/CSS/JS, no build step.
  * Same story as prototype-v3, framed for a portrait phone:
  *   01 gate     →(Enter: dive into the monitor)→ 02 terminal
- *   02 terminal →(types, loads, glitches)→       03 intro (grass frame, film)
+ *   02 terminal →(types, loads, glitches)→       03 intro (the film on the whole screen)
  *   03 intro    →(swipe up / JOURNEY)→           04 journey (folder → glass card, 5 chapters)
- *   04 journey  →(swipe past the last chapter)→  fly-through → 05 wedding (folder → glass sheet)
+ *   04 journey  →(swipe past the last chapter)→  05 wedding (folder → glass sheet)
+ * The meadow and the river are depth layers (assets/world.js): moving between them is a camera
+ * travelling forward, each layer scaled about its vanishing point, the nearer ones faster.
  * Swipe up = further in, swipe down = back. A scrolling card keeps the swipe until
  * it reaches its end. The password is not checked here (any word works).
  */
@@ -20,6 +22,22 @@
   const site = p => 'site' + p;
 
   // ---------------------------------------------------------------- layout from the manifest
+  // 02: no monitor on the phone, the terminal is the whole screen
+  M.p02_screen = { x: 0, y: 0, w: 100, h: 100, src: M.p02_screen.src };
+  // 01: the picture is scaled up from the bottom edge so the monitor sits in the middle of the
+  // screen (not low on it), with the heading and the password pill under it
+  const GATE_SCALE = 1.32;
+  Object.keys(M).filter(k => /^p01_(sky|fg|monitor|screen|bubble\d+)$/.test(k)).forEach(k => {
+    const a = M[k];
+    a.x = 50 + (a.x - 50) * GATE_SCALE;
+    a.y = 100 + (a.y - 100) * GATE_SCALE;
+    a.w *= GATE_SCALE;
+    a.h *= GATE_SCALE;
+  });
+  const gateBottom = M.p01_monitor.y + M.p01_monitor.h;
+  M.p01_heading.cy = gateBottom + 7.6;
+  M.p01_subtitle.cy = gateBottom + 10.6;
+  M.p01_input.y = gateBottom + 12.8;
   $$('[data-asset]').forEach(el => {
     const a = M[el.dataset.asset];
     if (!a) return;
@@ -29,15 +47,6 @@
   });
   $$('[data-src]').forEach(el => { el.src = M[el.dataset.src].src; });
   $$('.monitor__ghost').forEach(g => { g.style.backgroundImage = `url(${M.p01_screen.src})`; });
-  const bub03 = $('#bubbles03');
-  for (let i = 0; i < M.p03_bubbles; i++) {
-    const a = M[`p03_bubble${i}`];
-    const d = document.createElement('div');
-    d.className = 'layer bub';
-    Object.assign(d.style, { left: a.x + '%', top: a.y + '%', width: a.w + '%', height: a.h + '%' });
-    d.innerHTML = `<img src="${a.src}" alt="">`;
-    bub03.append(d);
-  }
   const heading = $('.s01-h');
   heading.style.top = M.p01_heading.cy + '%';
   $('.s01-sub').style.top = M.p01_subtitle.cy + '%';
@@ -74,32 +83,55 @@
   const chrome = on => phone.classList.toggle('chrome-on', on);
 
   // ---------------------------------------------------------------- music: the real song
-  // The same handshake as the site: play() muted inside the Enter tap (iOS only
-  // allows audio started inside a gesture), then unmute once the password is accepted.
+  // The Enter tap starts it muted (iOS only lets audio start inside a gesture) and it stays
+  // silent through the dive and the terminal; the intro brings it in from the top. The button
+  // shows bars while it plays and a crossed speaker while it is off or muted; if the browser
+  // refuses to start it, one tap on the button does.
   const Music = (() => {
     const el = new Audio(site(C.siteConfig.audioSrc));
     el.loop = true;
     el.preload = 'none';
     let muted = false;
+    let playing = false;
+    let fade = 0;
+    const ui = () => {
+      const on = playing && !muted;
+      phone.classList.toggle('music-on', on);
+      const b = $('#mute');
+      b.setAttribute('aria-pressed', String(!on));
+      b.setAttribute('aria-label', on ? 'Mute the music' : 'Turn the music on');
+    };
+    const fadeIn = () => {
+      clearInterval(fade);
+      el.volume = 0;
+      let v = 0;
+      fade = setInterval(() => { v = Math.min(0.55, v + 0.03); el.volume = v; if (v >= 0.55) clearInterval(fade); }, 100);
+    };
     return {
       playMutedSync() { el.muted = true; el.play().catch(() => {}); },
-      unmute() {
+      begin() {
+        el.currentTime = 0;
         el.muted = muted;
         el.volume = 0;
-        let v = 0;
-        const t = setInterval(() => { v = Math.min(0.55, v + 0.03); el.volume = v; if (v >= 0.55) clearInterval(t); }, 100);
+        el.play().then(() => { playing = true; if (!muted) fadeIn(); ui(); }, () => { playing = false; ui(); });
       },
-      stop() { el.pause(); },
-      setMuted(m) { muted = m; el.muted = m; if (!m && el.paused) el.play().catch(() => {}); },
+      stop() { el.pause(); playing = false; ui(); },
+      toggle() {
+        if (!playing) {
+          muted = false;
+          el.muted = false;
+          el.volume = 0;
+          el.play().then(() => { playing = true; fadeIn(); ui(); }, () => {});
+          return;
+        }
+        muted = !muted;
+        el.muted = muted;
+        if (!muted) fadeIn();
+        ui();
+      },
     };
   })();
-  $('#mute').addEventListener('click', e => {
-    e.stopPropagation();
-    const m = e.currentTarget.getAttribute('aria-pressed') !== 'true';
-    e.currentTarget.setAttribute('aria-pressed', String(m));
-    e.currentTarget.setAttribute('aria-label', m ? 'Play music' : 'Mute music');
-    Music.setMuted(m);
-  });
+  $('#mute').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); });
 
   // ================================================================ 01 · gate
   const pw = $('#pw');
@@ -121,7 +153,6 @@
       return;
     }
     pw.blur();
-    Music.unmute();
     go12();
   }
 
@@ -361,19 +392,10 @@
     }
   }
 
-  // the grass frame grows in over the terminal while it breaks up into scanlines and
-  // teal static; then the film takes the screen
+  // the terminal breaks up into scanlines and teal static (the screen washes to the colour
+  // the film starts from), then the film tunes in on the same screen
   async function go23() {
     busy = true;
-    const s3 = scenes[3];
-    const st3 = stageOf(3);
-    s3.style.background = 'transparent';
-    $('.s03-black', st3).style.opacity = 0;
-    show(3);
-    const done = surface03(0, ['bottom', 'right', 'left', 'top']);
-    const settle = { duration: 1700, easing: 'cubic-bezier(.5,0,.2,1)' };
-    play(stageOf(2), [{ transform: 'scale(1)' }, { transform: 'scale(1.05)' }], settle);
-    play(st3, [{ transform: 'scale(.95)' }, { transform: 'none' }], settle);
     play($('.crt__wash', s2), [
       { opacity: 0, backgroundColor: 'rgb(28,52,34)' },
       { opacity: 0.85, backgroundColor: 'rgb(28,52,34)', offset: 0.35 },
@@ -384,10 +406,9 @@
     clearInterval(dinoTimer);
     await erase02();
     await play(cv, [{ opacity: 0.4 }, { opacity: 0 }], { duration: 300 });
-    await done;
+    show(3);
     hide(2);
-    s3.style.background = '';
-    $('.s03-black', st3).style.removeProperty('opacity');
+    await surface03(0);
   }
 
   // ================================================================ 03 · intro
@@ -409,32 +430,17 @@
     verseBusy = false;
   });
 
-  // grass, flowers and bubbles surface one layer after another, then the film, then the UI
-  function surface03(delay, order = ['left', 'top', 'right', 'bottom'], fast = 1) {
-    const st = stageOf(3);
+  // the film tunes in (bright and soft, then settling), then the verse; the song comes in with it
+  function surface03(delay = 0, fast = 1) {
     const T = ms => ms * fast;
-    const from = {
-      left: 'translateX(-75%) scale(1.1)', top: 'translateY(-60%) scale(1.1)',
-      right: 'translateX(70%) scale(1.1)', bottom: 'translateY(40%) scale(1.1)',
-    };
-    const out = 'cubic-bezier(.16,1,.3,1)';
-    order.forEach((side, i) => {
-      play($(`.grass[data-from="${side}"]`, st),
-        [{ transform: from[side], opacity: 0, filter: 'blur(6px)' }, { transform: 'none', opacity: 1, filter: 'blur(0)' }],
-        { duration: T(1700), delay: delay + T(i * 300), easing: out });
-    });
-    play($('.flowers', st),
-      [{ transform: 'translateY(2%) scale(1.04)', opacity: 0, filter: 'blur(5px)' }, { transform: 'none', opacity: 1, filter: 'blur(0)' }],
-      { duration: T(1500), delay: delay + T(1250), easing: out });
-    $$('.bub', st).sort(() => Math.random() - 0.5).forEach((b, i) => {
-      play(b, [{ transform: 'translateY(30%) scale(.2)', opacity: 0 }, { transform: 'scale(1.08)', opacity: 1, offset: 0.7 }, { transform: 'none', opacity: 1 }],
-        { duration: T(950), delay: delay + T(1350 + i * 90), easing: 'ease-out' });
-    });
-    play($('.s03-video', st), [{ opacity: 0, filter: 'brightness(1.5) blur(8px)' }, { opacity: 1, filter: 'none' }],
-      { duration: T(1500), delay: delay + T(2700), easing: 'ease-out' });
-    play($('.s03-ui', st), [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: delay + T(3200) });
-    setTimeout(() => { chrome(true); video3.play().catch(() => {}); }, delay + T(2900));
-    return wait(delay + T(4200)).then(() => { current = 3; busy = false; });
+    const st = stageOf(3);
+    chrome(true);
+    Music.begin();
+    video3.play().catch(() => {});
+    play(video3, [{ opacity: 0, filter: 'brightness(2.2) contrast(.7) blur(10px)' }, { opacity: 1, filter: 'none' }],
+      { duration: T(1500), delay, easing: 'cubic-bezier(.2,.7,.2,1)' });
+    play($('.s03-ui', st), [{ opacity: 0 }, { opacity: 1 }], { duration: T(800), delay: delay + T(1400) });
+    return wait(delay + T(2300)).then(() => { current = 3; busy = false; });
   }
 
   // the highlight slides along the bottom nav (0 intro, 1 journey, 2 wedding)
@@ -445,64 +451,178 @@
       { duration: 480, easing: 'cubic-bezier(.6,0,.2,1)' });
   }
 
-  // 03 -> 04: the next scene appears inside the frame, then the grass rushes past the camera
-  const THROUGH = { world: 2.9, bubbles: 4, bezel: 1.3, behind: 1.12 };
-  function openScreen(on) {
-    scenes[3].style.zIndex = on ? 2 : '';
-    scenes[3].style.background = on ? 'transparent' : '';
-    if (on) $('.s03-black', stageOf(3)).style.opacity = 0;
-    else $('.s03-black', stageOf(3)).style.removeProperty('opacity');
+  // ---------------------------------------------------------------- the world: the meadow and the river as depth layers
+  // Same camera as the website (lib/scene/world.ts): a layer's scale is 1 / (1 - nearness x camera)
+  // about its scene's vanishing point, so the nearer layers rush past and the far ones barely move.
+  const WORLD = window.WORLD;
+  const NEAR = { sky: 0, far: 0.1, mid: 0.66, near: 0.8, fore: 0.9, glint: 0.5 };
+  const ARRIVAL_BACK = -0.22;
+  const RIVER_LAG = 0.55;
+  const clamp01 = n => Math.min(1, Math.max(0, n));
+  const sstep = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
+  const pscale = (n, c) => 1 / Math.max(0.04, 1 - n * c);
+  const easeOut3 = p => 1 - Math.pow(1 - p, 3);
+  const easeIn2 = p => p * p;
+  const easeInOut2 = p => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2);
+  const SWAY = { mid: { deg: 0.12, x: 1, t: 12 }, near: { deg: 0.22, x: 2, t: 9 }, fore: { deg: 0.34, x: 3, t: 7.5 } };
+  // back to front: the river's sky and hills sit under the meadow's, which give way to them
+  const ORDER = [['wedding', 'sky'], ['wedding', 'far'], ['journey', 'sky'], ['journey', 'far'], ['wedding', 'mid'],
+    ['wedding', 'near'], ['wedding', 'fore'], ['wedding', 'glint'], ['journey', 'mid'], ['journey', 'near'], ['journey', 'fore']];
+  const layerEls = {};
+  ORDER.forEach(([scene, kind]) => {
+    const w = WORLD[scene];
+    const l = w.layers.find(x => x.kind === kind);
+    if (!l) return;
+    const wrap = document.createElement('div');
+    wrap.className = 'wlayer';
+    Object.assign(wrap.style, { transformOrigin: `${w.vp.x}% ${w.vp.y}%`, visibility: 'hidden' });
+    const image = () => {
+      const img = new Image();
+      img.alt = '';
+      img.decoding = 'async';
+      img.src = l.src;
+      Object.assign(img.style, { left: l.x + '%', top: l.y + '%', width: l.w + '%', height: l.h + '%' });
+      return img;
+    };
+    const box = cls => { const d = document.createElement('div'); d.className = cls; d.append(image()); return d; };
+    if (kind === 'glint') {
+      wrap.append(box('wglint wglint--a'), box('wglint wglint--b'));
+    } else if (SWAY[kind]) {
+      const d = box('wsway');
+      const sw = SWAY[kind];
+      d.style.setProperty('--sway', sw.deg + 'deg');
+      d.style.setProperty('--sway-x', sw.x + 'px');
+      d.style.setProperty('--sway-t', sw.t + 's');
+      d.style.setProperty('--sway-d', -(scene === 'journey' ? 2.5 : 6) - sw.t / 3 + 's');
+      wrap.append(d);
+    } else {
+      wrap.append(image());
+    }
+    $('#worldStage').append(wrap);
+    layerEls[scene + '-' + kind] = wrap;
+  });
+  function pose({ camera, on, backdrop = 1, front = 1 }) {
+    ORDER.forEach(([scene, kind]) => {
+      const el = layerEls[scene + '-' + kind];
+      if (!el) return;
+      const sc = pscale(NEAR[kind], camera[scene]);
+      let o = 1;
+      if (scene === 'journey' && (kind === 'sky' || kind === 'far')) o = backdrop;
+      if (scene === 'wedding' && kind !== 'sky' && kind !== 'far') o = front;
+      const vis = on.includes(scene) && o > 0.002 && sc < 14;
+      el.style.visibility = vis ? 'visible' : 'hidden';
+      if (!vis) return;
+      el.style.transform = `scale(${sc.toFixed(4)})`;
+      el.style.opacity = o >= 0.998 ? '' : o.toFixed(3);
+    });
+  }
+  const restWorld = scene => pose({ camera: { journey: 0, wedding: 0 }, on: scene ? [scene] : [] });
+  const poseArrival = p => pose({ camera: { journey: ARRIVAL_BACK * (1 - clamp01(p)), wedding: 0 }, on: ['journey'] });
+  const poseCross = q => pose({
+    camera: { journey: q, wedding: (q - 1) * RIVER_LAG }, on: ['journey', 'wedding'],
+    backdrop: 1 - sstep(0.12, 0.55, q), front: sstep(0.22, 0.62, q),
+  });
+  // runs fn(eased progress) over ms; a timer finishes it if frames stop (a background tab)
+  function tween(ms, ease, fn) {
+    return new Promise(res => {
+      const t0 = performance.now();
+      let done = false;
+      const finish = () => { if (done) return; done = true; fn(1); res(); };
+      const step = now => {
+        if (done) return;
+        const p = Math.min(1, (now - t0) / ms);
+        fn(ease(p));
+        if (p < 1) requestAnimationFrame(step); else finish();
+      };
+      requestAnimationFrame(step);
+      setTimeout(finish, ms + 400);
+    });
+  }
+  // a short burst of analog-TV static over the cut between the film and the meadow
+  const burstEl = $('#burst');
+  const burstCv = $('canvas', burstEl);
+  const bars = Array.from({ length: 5 }, () => { const i = document.createElement('i'); burstEl.append(i); return i; });
+  async function burst(ms = 560) {
+    if (reduced) { await wait(150); return; }
+    const ctx = burstCv.getContext('2d');
+    const t0 = performance.now();
+    burstEl.style.opacity = 1;
+    const tick = () => {
+      const k = Math.sin(Math.min(1, (performance.now() - t0) / ms) * Math.PI);
+      const img = ctx.createImageData(burstCv.width, burstCv.height);
+      const hot = 0.04 + 0.2 * k;
+      for (let i = 0; i < img.data.length; i += 4) {
+        const v = Math.random() < hot ? 255 : Math.random() * 120;
+        img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
+        img.data[i + 3] = 255;
+      }
+      ctx.putImageData(img, 0, 0);
+      burstCv.style.opacity = (0.15 + 0.7 * k * rand(0.5, 1)).toFixed(2);
+      bars.forEach(b => {
+        b.style.top = rand(0, 95) + '%';
+        b.style.height = rand(1.5, 9) * (0.4 + k) + '%';
+        b.style.transform = `translateX(${rand(-6, 6) * k}%)`;
+        b.style.opacity = Math.random() < 0.8 ? (0.35 + 0.5 * k).toFixed(2) : 0;
+      });
+    };
+    const iv = setInterval(tick, 33);
+    await wait(ms);
+    clearInterval(iv);
+    burstEl.style.opacity = 0;
   }
 
+  // 03 -> 04: the camera pushes into the screen until the film fills the view, a burst of static
+  // covers the cut, and the camera travels on into the meadow (its layers come up from a little
+  // way back, the nearer ones moving faster)
   async function go34(target = 4) {
     busy = true;
-    const st = stageOf(3);
+    const st3 = stageOf(3);
     await slideNav(target === 5 ? 2 : 1);
     reset04();
-    openScreen(true);
-    show(4);
-    const D = 1800;
-    const dive = 'cubic-bezier(.5,0,.8,.3)';
-    play(stageOf(4), [{ transform: `scale(${THROUGH.behind})` }, { transform: 'none' }], { duration: D + 500, easing: 'cubic-bezier(.3,.1,.2,1)' });
-    play($('.s03-ui', st), [{ opacity: 1 }, { opacity: 0 }], { duration: 350 });
-    play($('.s03-video', st), [{ opacity: 1 }, { opacity: 0 }], { duration: 650, easing: 'ease-in-out' });
-    play($('.bezel', st), [{ transform: 'none', opacity: 1 }, { transform: `scale(${THROUGH.bezel})`, opacity: 0 }], { duration: 700, easing: 'ease-in' });
-    play($('.s03-bubbles', st), [{ transform: 'none', opacity: 1 }, { transform: `scale(${THROUGH.bubbles})`, opacity: 0 }], { duration: D, delay: 250, easing: dive });
-    await play($('.s03-world', st), [
-      { transform: 'none', filter: 'blur(0)', opacity: 1 },
-      { transform: 'scale(1.12)', filter: 'blur(0)', opacity: 1, offset: 0.3 },
-      { transform: `scale(${THROUGH.world})`, filter: 'blur(4px)', opacity: 1, offset: 0.85 },
-      { transform: `scale(${THROUGH.world * 1.08})`, filter: 'blur(5px)', opacity: 0 },
-    ], { duration: D, delay: 250, easing: dive });
+    poseArrival(0);
+    folder4.style.opacity = 0;
+    play($('.s03-ui', st3), [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+    await play(st3, [{ transform: 'none' }, { transform: 'scale(1.6)' }], { duration: 1300, easing: 'cubic-bezier(.45,0,.9,.6)' });
+    const cover = burst(560);
+    await wait(230);
     hide(3);
-    openScreen(false);
+    resetStyles(st3, $('.s03-ui', st3));
     video3.pause();
+    show(4);
+    await Promise.all([
+      cover,
+      tween(reduced ? 200 : 2100, easeOut3, poseArrival),
+      play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1500 }),
+    ]);
+    restWorld('journey');
     current = 4;
     if (target === 4) await autoOpenFolder();
     busy = false;
   }
 
+  // 04 -> 03: the camera backs out of the meadow, static covers the cut, the film pulls back
   async function go43() {
     busy = true;
-    const st = stageOf(3);
-    openScreen(true);
-    show(3);
-    video3.play().catch(() => {});
-    const out = 'cubic-bezier(.2,.75,.2,1)';
-    play(stageOf(4), [{ transform: 'none' }, { transform: `scale(${THROUGH.behind})` }], { duration: 1600, easing: out });
-    play($('.s03-world', st), [
-      { transform: `scale(${THROUGH.world * 1.08})`, filter: 'blur(5px)', opacity: 0 },
-      { transform: `scale(${THROUGH.world})`, filter: 'blur(4px)', opacity: 1, offset: 0.15 },
-      { transform: 'none', filter: 'blur(0)', opacity: 1 },
-    ], { duration: 1600, easing: out });
-    play($('.s03-bubbles', st), [{ transform: `scale(${THROUGH.bubbles})`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 1600, easing: out });
-    play($('.bezel', st), [{ transform: `scale(${THROUGH.bezel})`, opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 700, delay: 900, easing: 'ease-out' });
-    play($('.s03-ui', st), [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 1200 });
+    const st3 = stageOf(3);
     slideNav(0);
-    await play($('.s03-video', st), [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1000, easing: 'ease-in-out' });
+    if (winOpen) play(win4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
+    play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
+    await tween(reduced ? 200 : 1200, easeIn2, q => poseArrival(1 - q));
+    const cover = burst(560);
+    await wait(230);
+    st3.style.transform = 'scale(1.6)';
+    $('.s03-ui', st3).style.opacity = 0;
+    show(3);
+    video3.style.opacity = 1;  // the film may never have tuned in (a ?scene= jump)
+    video3.play().catch(() => {});
     hide(4);
     reset04();
-    openScreen(false);
+    restWorld(null);
+    await Promise.all([
+      cover,
+      play(st3, [{ transform: 'scale(1.6)' }, { transform: 'none' }], { duration: 1600, easing: 'cubic-bezier(.2,.75,.2,1)' }),
+      play($('.s03-ui', st3), [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1000 }),
+    ]);
     current = 3;
     busy = false;
   }
@@ -542,7 +662,7 @@
     chipEls.forEach((c, i) => c.setAttribute('aria-selected', String(i + 1 === n)));
     paneEls.forEach((p, i) => { p.classList.toggle('is-on', i + 1 === n); if (i + 1 === n) p.scrollTop = 0; });
     const c = chipEls[n - 1];
-    if (c) chips.scrollTo({ left: c.offsetLeft - 40, behavior: reduced ? 'auto' : 'smooth' });
+    if (c) chips.scrollTo({ left: c.offsetLeft - chips.offsetLeft - 24, behavior: reduced ? 'auto' : 'smooth' });
   }
   function stepTab(n) {
     busy = true;
@@ -625,15 +745,6 @@
 
   // ================================================================ 05 · wedding
   const s5 = scenes[5];
-  const haze = $('.haze');
-  const fly = $('.fly', s4);
-  const FLY_CUT = 4.9;  // seconds into the clip: deep in the motion blur, where the river takes over
-  let flyReady = false;
-  fly.addEventListener('loadeddata', () => { flyReady = true; }, { once: true });
-  const until = (test, max = 8000) => new Promise(res => {
-    const t0 = performance.now();
-    (function poll() { test() || performance.now() - t0 > max ? res() : setTimeout(poll, 30); })();
-  });
 
   async function cursorTo5() {
     if (reduced) { c5.style.opacity = 1; return; }
@@ -644,90 +755,69 @@
     ], { duration: 1300, easing: 'cubic-bezier(.45,0,.2,1)' });
   }
 
-  // the camera dashes low through the meadow (the clip) and comes out at the river;
-  // the clip has the old nav baked in, so the real chrome hides while it plays
+  // 04 -> 05: the camera travels on through the meadow. Its plants rush past the lens, its ground
+  // slides away underneath, and the river's valley, water and banks come up behind them; the
+  // meadow's sky and hills give way to the river's while the plants are passing. The header
+  // stays where it is.
   async function go45() {
     busy = true;
     await slideNav(2);
-    if (!flyReady || reduced) return go45Css();
-    const st5 = stageOf(5);
+    resetStyles(subtree(s5));
+    folder5.style.opacity = 0;
+    poseCross(0);
     if (winOpen) {
       win4.style.transformOrigin = '50% 50%';
-      play(win4, [{ transform: 'none', opacity: 1, filter: 'blur(0)' }, { transform: 'scale(.95)', opacity: 0, filter: 'blur(6px)' }], { duration: 600, easing: 'ease-in' });
+      play(win4, [{ transform: 'none', opacity: 1 }, { transform: 'scale(.95)', opacity: 0 }], { duration: 600, easing: 'ease-in' });
     }
-    play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
-    chrome(false);
-    fly.currentTime = 0;
-    await until(() => !fly.seeking, 1500);
-    await wait(550);
-    fly.style.opacity = 1;
-    fly.playbackRate = 1.3;
-    await fly.play().catch(() => {});
-    await until(() => fly.currentTime >= FLY_CUT || fly.ended || fly.paused);
-    resetStyles(subtree(s5));
+    play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 450 });
+    let river = false;
+    await tween(reduced ? 300 : 3800, easeInOut2, q => {
+      poseCross(q);
+      if (!river && q > 0.84) {
+        river = true;
+        show(5);
+        play(folder5, [{ opacity: 0 }, { opacity: 1 }], { duration: 800 });
+      }
+    });
     show(5);
-    play(st5, [{ transform: 'scale(1.2)', filter: 'blur(14px)' }, { transform: 'none', filter: 'blur(0)' }], { duration: 1600, easing: 'cubic-bezier(.2,.7,.2,1)' });
-    await play(s5, [{ opacity: 0 }, { opacity: 1 }], { duration: 750, easing: 'ease-in-out' });
-    settleGlass(st5);
-    fly.pause();
-    fly.style.opacity = 0;
     hide(4);
+    restWorld('wedding');
     current = 5;
-    chrome(true);
-    await wait(900);
+    await wait(reduced ? 0 : 900);
     await cursorTo5();
     busy = false;
   }
 
-  // the clip can't play (or motion is reduced): push up and forward through a haze
-  async function go45Css() {
-    const st4 = stageOf(4);
-    const st5 = stageOf(5);
-    if (winOpen) {
-      win4.style.transformOrigin = '50% 50%';
-      play(win4, [{ transform: 'none', opacity: 1, filter: 'blur(0)' }, { transform: 'translateY(-16%) scale(.9)', opacity: 0, filter: 'blur(6px)' }], { duration: 850, easing: 'cubic-bezier(.5,0,.75,0)' });
-    }
-    play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 500 });
-    play(st4, [{ transform: 'none', filter: 'blur(0)' }, { transform: 'translateY(-7%) scale(1.6)', filter: 'blur(10px)' }], { duration: 2100, delay: 250, easing: 'cubic-bezier(.55,0,.6,.4)' });
-    play(haze, [{ opacity: 0 }, { opacity: 0.88, offset: 0.5 }, { opacity: 0 }], { duration: 2700, delay: 450, easing: 'ease-in-out' });
-    await wait(reduced ? 200 : 1450);
-    resetStyles(subtree(s5));
-    show(5);
-    play(st5, [{ transform: 'translateY(9%) scale(1.3)', filter: 'blur(10px)' }, { transform: 'none', filter: 'blur(0)' }], { duration: 2100, easing: 'cubic-bezier(.15,.6,.2,1)' });
-    await play(s5, [{ opacity: 0 }, { opacity: 1 }], { duration: 900, easing: 'ease-out' });
-    settleGlass(st5);
-    hide(4);
-    resetStyles(st4);
-    current = 5;
-    await wait(reduced ? 0 : 1300);
-    await cursorTo5();
-    busy = false;
-  }
-
+  // 05 -> 04: back the way we came
   async function go54() {
     busy = true;
-    const st4 = stageOf(4);
-    const st5 = stageOf(5);
-    resetStyles(st4);
-    fly.style.opacity = 0;
-    show(4);
     slideNav(1);
-    play(st4, [{ transform: 'scale(1.25)', filter: 'blur(10px)' }, { transform: 'none', filter: 'blur(0)' }], { duration: 1800, easing: 'cubic-bezier(.2,.7,.2,1)' });
-    if (winOpen) {
-      play(win4, [{ transform: 'scale(.95)', opacity: 0, filter: 'blur(6px)' }, { transform: 'none', opacity: 1, filter: 'blur(0)' }], { duration: 900, delay: 800, easing: 'cubic-bezier(.2,.8,.2,1)' })
-        .then(() => settleGlass(win4));
-    }
-    play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 600 });
-    play(haze, [{ opacity: 0 }, { opacity: 0.7, offset: 0.45 }, { opacity: 0 }], { duration: 1900, easing: 'ease-in-out' });
-    play(st5, [{ transform: 'none', filter: 'blur(0)' }, { transform: 'translateY(9%) scale(1.3)', filter: 'blur(10px)' }], { duration: 1500, easing: 'cubic-bezier(.5,0,.75,0)' });
-    await play(s5, [{ opacity: 1 }, { opacity: 0 }], { duration: 1100, delay: 300 });
-    hide(5);
-    settleGlass(st4);
+    if (win5Open) play(win5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
+    play(folder5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
+    play(c5, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+    folder4.style.opacity = 0;
+    if (winOpen) win4.style.opacity = 0;
+    show(4);
+    poseCross(1);
+    let meadow = false;
+    await tween(reduced ? 300 : 3400, easeInOut2, q => {
+      poseCross(1 - q);
+      if (!meadow && q > 0.55) {
+        meadow = true;
+        hide(5);
+        play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 700 });
+        if (winOpen) {
+          play(win4, [{ transform: 'scale(.95)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, easing: 'cubic-bezier(.2,.8,.2,1)' })
+            .then(() => settleGlass(win4));
+        }
+      }
+    });
+    restWorld('journey');
     win5.classList.remove('is-open');
-    resetStyles(win5, c5);
+    resetStyles(win5, c5, folder5);
     win5Open = false;
     current = 4;
-    await wait(600);
+    await wait(reduced ? 0 : 400);
     busy = false;
   }
 
@@ -739,7 +829,7 @@
   let win5Open = false;
   const icon = d => `<svg viewBox="0 0 16 16" aria-hidden="true">${d}</svg>`;
   const TABS5 = [
-    ['DETAIL', icon('<path d="M8 14s4.5-4.2 4.5-7.5a4.5 4.5 0 0 0-9 0C3.5 9.8 8 14 8 14z"/><circle cx="8" cy="6.5" r="1.6"/>')],
+    ['DETAILS', icon('<path d="M8 14s4.5-4.2 4.5-7.5a4.5 4.5 0 0 0-9 0C3.5 9.8 8 14 8 14z"/><circle cx="8" cy="6.5" r="1.6"/>')],
     ['TIMELINE', icon('<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 7h11M5.5 2v3M10.5 2v3"/>')],
     ['MOTIF', icon('<path d="M6 2.5 3 4.5l1.3 2.3L5.5 6v7.5h5V6l1.2.8L13 4.5l-3-2a2 2 0 0 1-4 0z"/>')],
     ['ENTOURAGE', icon('<circle cx="6" cy="5.5" r="2"/><circle cx="11.5" cy="6.5" r="1.6"/><path d="M2.5 13c0-2.2 1.6-3.8 3.5-3.8s3.5 1.6 3.5 3.8M10 9.6c1.6 0 3 1.2 3 3.2"/>')],
@@ -908,7 +998,7 @@
     hide(1);
     if (jump === 2) { reset02(); show(2); current = 2; run02(); }
     if (jump === 3) { busy = true; show(3); surface03(200); }
-    if (jump === 4) { chrome(true); slideNav(1); show(4); current = 4; busy = true; autoOpenFolder().then(() => { busy = false; }); }
-    if (jump === 5) { chrome(true); slideNav(2); show(5); current = 5; cursorTo5(); }
+    if (jump === 4) { chrome(true); slideNav(1); restWorld('journey'); show(4); current = 4; busy = true; autoOpenFolder().then(() => { busy = false; }); }
+    if (jump === 5) { chrome(true); slideNav(2); restWorld('wedding'); show(5); current = 5; cursorTo5(); }
   }
 })();

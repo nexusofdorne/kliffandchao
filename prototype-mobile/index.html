@@ -13,6 +13,9 @@
 <body>
 <main id="phone">
 
+  <!-- the meadow and the river, drawn as depth layers (assets/world.js); scenes 04 and 05 are clear panes over it -->
+  <div class="world" aria-hidden="true"><div class="stage" id="worldStage"></div></div>
+
   <!-- ============================================================ 01 · gate -->
   <section class="scene is-active" id="s01" aria-label="You are invited">
     <div class="stage">
@@ -54,7 +57,6 @@
   <!-- ============================================================ 02 · terminal -->
   <section class="scene" id="s02" aria-label="Logging in">
     <div class="stage">
-      <img class="layer full" data-src="p02_bg" alt="">
       <div class="layer crt" data-asset="p02_screen">
         <div class="crt__wash"></div>
         <div class="term">
@@ -80,19 +82,10 @@
   <!-- ============================================================ 03 · intro -->
   <section class="scene" id="s03" aria-label="Intro">
     <div class="stage">
-      <div class="layer s03-black" data-asset="p03_interior"></div>
-      <div class="s03-world">
-        <div class="layer s03-video" data-asset="p03_interior">
-          <video class="intro-video" muted loop playsinline preload="auto" src="site/video/intro-web.mp4"></video>
-        </div>
-        <img class="layer grass" data-asset="p03_grass_left" data-from="left" alt="">
-        <img class="layer grass" data-asset="p03_grass_top" data-from="top" alt="">
-        <img class="layer grass" data-asset="p03_grass_right" data-from="right" alt="">
-        <img class="layer grass" data-asset="p03_grass_bottom" data-from="bottom" alt="">
-        <img class="layer flowers" data-asset="p03_flowers" alt="">
+      <div class="layer full s03-video">
+        <video class="intro-video" muted loop playsinline preload="auto" src="site/video/intro-web.mp4"></video>
+        <div class="s03-shade"></div>
       </div>
-      <div class="s03-bubbles" id="bubbles03"></div>
-      <img class="layer bezel" data-asset="p03_bezel" alt="">
       <div class="s03-ui">
         <button class="verse" id="verse" type="button" aria-live="polite"><span class="verse__t"></span><cite></cite></button>
       </div>
@@ -102,8 +95,6 @@
   <!-- ============================================================ 04 · journey -->
   <section class="scene" id="s04" aria-label="Journey">
     <div class="stage">
-      <img class="layer full" data-src="p04_bg" alt="">
-      <video class="layer full fly" muted playsinline preload="auto" src="site/video/to-wedding.mp4"></video>
       <button class="layer folder" data-asset="p04_folder" id="folder4" aria-label="Open the journey folder">
         <img data-src="p04_folder" alt="">
       </button>
@@ -121,7 +112,6 @@
   <!-- ============================================================ 05 · wedding -->
   <section class="scene" id="s05" aria-label="Wedding">
     <div class="stage">
-      <img class="layer full" data-src="p05_bg" alt="">
       <button class="layer folder" data-asset="p05_folder" id="folder5" aria-label="Open the new chapter folder">
         <img data-src="p05_folder" alt="">
       </button>
@@ -136,30 +126,31 @@
     </div>
   </section>
 
-  <!-- ============================================================ chrome (03 onward) -->
+  <!-- ============================================================ chrome (03 onward): fixed above every scene and move -->
   <header class="chrome-top" id="chromeTop">
     <button class="wordmark" data-go="3" aria-label="Back to the intro"><img data-src="p01_logo" alt="Kliff and Chao"></button>
-    <button class="mute" id="mute" aria-label="Mute music" aria-pressed="false">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/>
-        <path class="on" d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.8a7.4 7.4 0 0 1 0 10.4"/>
-        <path class="off" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>
-      </svg>
-    </button>
+    <nav class="chrome-nav" id="chromeNav" aria-label="Sections">
+      <span class="chrome-nav__pill" aria-hidden="true"></span>
+      <button data-go="3" aria-current="page">INTRO</button>
+      <button data-go="4">JOURNEY</button>
+      <button data-go="5">WEDDING</button>
+    </nav>
     <button class="rsvp" data-rsvp>RSVP</button>
   </header>
-  <nav class="chrome-nav" id="chromeNav" aria-label="Sections">
-    <span class="chrome-nav__pill" aria-hidden="true"></span>
-    <button data-go="3" aria-current="page">INTRO</button>
-    <button data-go="4">JOURNEY</button>
-    <button data-go="5">WEDDING</button>
-  </nav>
+  <button class="music" id="mute" aria-pressed="false" aria-label="Turn the music on">
+    <span class="eq" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <svg class="spk" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" stroke="none"/>
+      <path d="M17 9l5 6M22 9l-5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
 
-  <div class="haze" aria-hidden="true"></div>
+  <div class="burst" id="burst" aria-hidden="true"><canvas width="108" height="234"></canvas></div>
   <div class="toast" role="status"></div>
 </main>
 
 <script src="assets/manifest.js"></script>
+<script src="assets/world.js"></script>
 <script src="assets/content.js"></script>
 <script src="app.js"></script>
 </body>
