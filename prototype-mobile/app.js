@@ -881,7 +881,7 @@
       <div class="count" id="count"></div>
       <a class="map" href="https://www.google.com/maps/search/?api=1&query=${sc.venueCoordinates.lat},${sc.venueCoordinates.lng}" target="_blank" rel="noopener">MAP · TAP TO OPEN</a>
       <div class="addr">${C.venueAddressLines.join('<br>')}</div>
-      <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=Jpark+Island+Resort+and+Waterpark+Mactan+Cebu" target="_blank" rel="noopener">GET DIRECTIONS →</a>
+      <a class="btn" href="https://www.google.com/maps/dir/?api=1&destination=${sc.venueCoordinates.lat},${sc.venueCoordinates.lng}" target="_blank" rel="noopener">GET DIRECTIONS →</a>
     </div>`,
     `<p>${C.timelineIntroLines.join('<br>')}</p>
      <ul class="tl">${C.daySchedule.map(s => `<li><time>${s.time}</time><span>${s.label}</span></li>`).join('')}</ul>`,
