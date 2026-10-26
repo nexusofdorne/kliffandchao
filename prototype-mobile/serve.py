@@ -29,8 +29,54 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 return str(target)
         return super().translate_path(path)
 
+    # Safari on iPhone only plays <video> from servers that answer byte-range requests
+    def send_head(self):
+        rng = self.headers.get("Range")
+        path = self.translate_path(self.path)
+        if not rng or not rng.startswith("bytes=") or not Path(path).is_file():
+            return super().send_head()
+        size = Path(path).stat().st_size
+        start_s, _, end_s = rng[len("bytes="):].split(",")[0].partition("-")
+        try:
+            if start_s:
+                start = int(start_s)
+                end = min(int(end_s), size - 1) if end_s else size - 1
+            else:  # the last N bytes
+                start, end = max(0, size - int(end_s)), size - 1
+        except ValueError:
+            return super().send_head()
+        if start >= size or start > end:
+            self.send_error(416, "Range not satisfiable")
+            return None
+        f = open(path, "rb")
+        f.seek(start)
+        self.send_response(206)
+        self.send_header("Content-Type", self.guess_type(path))
+        self.send_header("Content-Range", f"bytes {start}-{end}/{size}")
+        self.send_header("Content-Length", str(end - start + 1))
+        self.end_headers()
+        self._range_left = end - start + 1
+        return f
+
+    def copyfile(self, source, outputfile):
+        left = getattr(self, "_range_left", None)
+        try:
+            if left is None:
+                return super().copyfile(source, outputfile)
+            while left > 0:
+                chunk = source.read(min(64 * 1024, left))
+                if not chunk:
+                    break
+                outputfile.write(chunk)
+                left -= len(chunk)
+        except (ConnectionResetError, BrokenPipeError):
+            pass  # the browser stopped reading (it does this with video all the time)
+        finally:
+            self._range_left = None
+
     def end_headers(self):
         self.send_header("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0")
+        self.send_header("Accept-Ranges", "bytes")
         super().end_headers()
 
     def send_header(self, keyword, value):
