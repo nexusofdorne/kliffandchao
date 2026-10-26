@@ -2,10 +2,10 @@
 
 This replaces the earlier `BUILD_PLAN.md`. It merges two documents:
 
-- **`PLAN.md`** is the spec for **design, frontend and the password gate**. `prototype/index.html` is the spec for look-and-feel; `docs/design/website2.0.pdf` (glass) is the current client direction behind it.
+- **`PLAN.md`** is the spec for **design, frontend and the password gate**. `prototype-v3/` (with `docs/design/v3/`) is the spec for look-and-feel of the redesigned desktop experience, and `prototype/index.html` still is for mobile; `docs/design/website2.0.pdf` (glass) is the earlier client direction behind them. The redesign is planned in `docs/REDESIGN_PLAN.md`.
 - **This file** is the spec for **architecture**: Supabase Postgres as the source of truth, Prisma, admin, Sheets sync, launch.
 
-**Precedence rule.** Where the two disagree, the prototype wins on visuals, `PLAN.md` wins on the gate, and this file wins on data, RSVP, admin and sync. Every `PLAN.md` section about the Sheets append-only log, `RSVP_Current` as source of truth, Sheets read caching, and `lib/sheets/guests.ts` is **superseded** here.
+**Precedence rule.** Where the two disagree, the prototypes win on visuals (`prototype-v3/` on desktop, `prototype/` on mobile), `PLAN.md` wins on the gate, and this file wins on data, RSVP, admin and sync. Every `PLAN.md` section about the Sheets append-only log, `RSVP_Current` as source of truth, Sheets read caching, and `lib/sheets/guests.ts` is **superseded** here.
 
 ---
 
@@ -64,8 +64,11 @@ kliffandchao/
     BUILD_PLAN.md           this file
     design/
       website.pdf           original 7-frame mock
-      website2.0.pdf        client review board (glass), current
-  prototype/                REFERENCE ONLY: ported from, never built or edited
+      website2.0.pdf        client review board (glass), earlier direction
+      v3/                   redesign mockups, transitions.txt, motion videos (see its README)
+    REDESIGN_PLAN.md        the desktop redesign: decisions, approach, steps
+  prototype/                REFERENCE ONLY: the original design, still the mobile reference
+  prototype-v3/             REFERENCE ONLY: the redesigned desktop experience (monitor)
     index.html
     serve.py
     img/  audio/  video/
@@ -81,7 +84,8 @@ kliffandchao/
 
 Rules that go with it:
 
-- **`prototype/` is excluded** from `tsconfig.json`, ESLint and Prettier, so its single-file code doesn't fail the checks.
+- **`prototype/` and `prototype-v3/` are excluded** from `tsconfig.json`, ESLint, Prettier and Vitest, so their code doesn't fail the checks.
+- **`scripts/design/prepare_assets.py`** is offline tooling (Python) that cuts the v3 mockups into layers; it isn't part of the build.
 - **`.gitignore`** covers `.env*` (except `.env.example`), `prototype/video/intro2.mp4` (the 2 GB source, per `PLAN.md`), and any raw exports.
 - **Don't port `prototype/index-timeline.html`.** It's the rejected linear variant; delete it or leave it out of the repo.
 - Unit tests sit next to the file they test (`match.ts` → `match.test.ts`); database tests go in `tests/db/`.

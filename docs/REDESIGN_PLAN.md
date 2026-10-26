@@ -209,7 +209,7 @@ Each step is one or a few small commits.
 
 | Step | Scope | Done when | Size |
 |---|---|---|---|
-| **0. Prepare** | Commit the pending Phase 7 work (small commits); merge `origin/main` and resolve the `chapters.ts`/intro image overlap; settle the preview-database option (section 2); create `redesign/monitor`; copy the new reference material in (location to agree); update the spec table in `CLAUDE.md`, `PLAN.md` and `BUILD_PLAN.md`; baseline `npm run verify`. | Clean tree, branch created, specs point at the new prototype, baseline green | S |
+| **0. Prepare** ✅ *done 26 Oct* | Commit the pending Phase 7 work (small commits); merge `origin/main` and resolve the `chapters.ts`/intro image overlap; settle the preview-database option (section 2); create `redesign/monitor`; copy the new reference material in (location to agree); update the spec table in `CLAUDE.md`, `PLAN.md` and `BUILD_PLAN.md`; baseline `npm run verify`. | Clean tree, branch created, specs point at the new prototype, baseline green | S |
 | **1. Assets** | Run the pipeline against the mockups with the extra inpainting (section 6.3); crop chapter photo stand-ins; re-encode the fly-through; export to `public/img/scenes/`; write the typed layer manifest. | Every scene's layers exist with no baked UI or text (or the fallback is agreed); weight per scene measured | M |
 | **2. Foundations** | `<Stage>`, shared ambient keyframes (cloud drift, grass sway, bubble bob, CRT jitter) as theme tokens, `lib/scene/` state machine and camera maths with unit tests, `SceneProvider` implementing the `TrackProgressProvider` API, desktop/mobile split at `resolveStoryLayout`, reduced-motion crossfades. | Unit tests cover scene transitions and zoom maths; a scaffold steps through placeholder scenes with the chrome reacting; **mobile unchanged** | M |
 | **3. Gate + zoom** | Desktop `GateScreen` as screen 01 (audio handshake and API untouched), ENTER pill, zoom timeline, prefetch, cut to `/story?arrival=gate`. | `PLAN.md` Verification 1, 2, 16 and 20 pass; zoom matches the prototype; mobile gate unchanged | M |
@@ -236,14 +236,9 @@ and the **whole mobile experience** (until it's redesigned).
 1. ~~Preview database~~: done (decision 10). Verify it on the first redesign preview: guest
    search for "Kho" should return the synthetic Kho Family, not real guests.
 2. ~~`origin/kliff`'s `fd021e9`~~: decided, left unmerged.
-3. **Where the new reference material lives** (`CLAUDE.md` says to ask before inventing a
-   folder). Proposal:
-   - the HTML prototype at `prototype-v3/`, excluded from tsconfig, ESLint and Prettier
-     like `prototype/`;
-   - mockups, `transitions.txt` and both videos in `docs/design/v3/`;
-   - the asset pipeline at `scripts/design/prepare_assets.py`.
-
-   The four PNG mockups are about 23 MB in total: commit them as-is, or convert them to
-   high-quality JPEG first?
+3. ~~Where the new reference material lives~~: decided and done. The prototype is at
+   `prototype-v3/` (excluded from tsconfig, ESLint, Prettier and Vitest); the mockups,
+   `transitions.txt` and both videos are in `docs/design/v3/` (PNGs converted to JPEG,
+   17.4 MB in total); the asset pipeline is at `scripts/design/prepare_assets.py`.
 4. ~~The broken `intro.jpg` references on `origin/main`~~: fixed on GitHub by `d365d0a`, now
    merged.

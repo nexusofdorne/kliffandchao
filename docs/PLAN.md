@@ -1,8 +1,8 @@
 # Kliff & Chao — Private Wedding Website
 
-> **Read this with `BUILD_PLAN.md`.** This file is the spec for **design, frontend and the password gate**; `prototype/index.html` is the spec for look-and-feel. **`BUILD_PLAN.md` is the spec for architecture**: Supabase Postgres (via Prisma) is the source of truth, Google Sheets is the guest-list input and an RSVP mirror, plus admin, sync, phases and env vars.
+> **Read this with `BUILD_PLAN.md`.** This file is the spec for **design, frontend and the password gate**; `prototype-v3/` (with `docs/design/v3/`) is the spec for look-and-feel of the redesigned desktop experience, and `prototype/index.html` still is for mobile (see `docs/REDESIGN_PLAN.md`). **`BUILD_PLAN.md` is the spec for architecture**: Supabase Postgres (via Prisma) is the source of truth, Google Sheets is the guest-list input and an RSVP mirror, plus admin, sync, phases and env vars.
 >
-> Where they disagree: the prototype wins on visuals, this file wins on design and the password gate, `BUILD_PLAN.md` wins on data, RSVP, admin and sync. Sections below that are partly or fully superseded are marked **⚠️ Superseded**.
+> Where they disagree: the prototypes win on visuals (`prototype-v3/` on desktop, `prototype/` on mobile), this file wins on design and the password gate, `BUILD_PLAN.md` wins on data, RSVP, admin and sync. Sections below that are partly or fully superseded are marked **⚠️ Superseded**.
 
 ## Context
 

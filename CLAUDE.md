@@ -8,7 +8,9 @@ Private, password-gated wedding website for Kliff & Chao (5 March 2027, Cebu). I
 |---|---|---|
 | `docs/BUILD_PLAN.md` | Architecture, data model, repo layout, phases, env vars | Data, RSVP, admin, sync |
 | `docs/PLAN.md` | Design, frontend, password gate | Design and the gate |
-| `prototype/index.html` | Look-and-feel | Visuals |
+| `docs/REDESIGN_PLAN.md` | The desktop redesign: decisions, approach, steps | The redesign's scope and order |
+| `prototype-v3/` + `docs/design/v3/` | Look-and-feel and motion of the redesigned **desktop** experience | Desktop visuals and transitions |
+| `prototype/index.html` | Look-and-feel of the original design | **Mobile** visuals, until portrait designs exist |
 | `docs/design/website2.0.pdf` | Current client direction (glass) | Behind the prototype; read it when the prototype is ambiguous |
 
 Work one phase of `docs/BUILD_PLAN.md` at a time. Put new files where its "Repo layout" and "App source" sections say; if something doesn't fit, ask before inventing a folder. If the specs conflict or are silent on something that matters, **stop and ask**. Don't pick one.
@@ -94,6 +96,6 @@ Test behaviour, not implementation. Don't mock the function under test; mock onl
 - **Explain as you go.** This is a learning project: say why you chose an approach, and name the concept (for example "server/client boundary", "idempotency key").
 - **Ask before adding a dependency.** Say what it's for and what it costs.
 - **Stop at the end of each phase.** Report what was built, the checks run and their results, and anything left open. Don't start the next phase unasked.
-- **Don't edit `prototype/`.** It's the reference; port from it.
+- **Don't edit `prototype/` or `prototype-v3/`.** They're the references; port from them.
 - **Edit files as UTF-8.** Never round-trip files through PowerShell `Get-Content`/`Set-Content` (see `PLAN.md`); keep non-ASCII in JS source as `\uXXXX` escapes.
 - **Small commits,** one logical change each, with a message that says what and why.

@@ -1,6 +1,155 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 25 October 2026 (uncommitted)
+## Latest update — 26 October 2026: redesign step 0 done (not pushed)
+
+**Read `docs/REDESIGN_PLAN.md` first.** It holds every decision (section 1), the
+prototype → component mapping (4), the approach (6), the step table (7) and the open
+items (9). The project is porting a new desktop design (the "monitor" prototype,
+screens 01–05) into the live site. The phases in `docs/BUILD_PLAN.md` are finished;
+this is new work on top of them.
+
+### Where things are
+
+- **Work in `Downloads/projects/kliffandchao` only.** The duplicate at
+  `Downloads/new website/kliffandchao` is stale; don't use it.
+  `Downloads/new website/` holds the prototype's original source and the original
+  mockups; everything needed is now copied into this repo.
+- **Branch `redesign/monitor` is checked out.**
+  - Local `main`: ten Phase 7 commits (`418e8aa`…`49cd52d`), then the merge of
+    `origin/main` (`a3c73c5`, clean).
+  - `redesign/monitor` adds `2cc428a` (the plan doc).
+- **Nothing is pushed.** `origin/main` is at `d365d0a`; local `main` is 11 commits
+  ahead. Production deploys from GitHub, so nothing new is live.
+- **Last full `npm run verify`:** green on `2cc428a` (lint, typecheck, 164/164 unit
+  tests). DB integration tests weren't run this session.
+
+### Step 0: what's done
+
+- **Pending work committed in small steps.** Prettier pass, Node 24, hash-password,
+  check:setup/verify, test-DB isolation, durable deliveries, backgrounds config, Lenis
+  scope, reduced-motion fix, docs. Before committing, these were dropped (all backed
+  up):
+  - the user's test copy edits in `chapters.ts`;
+  - the `.env*` line in `.gitignore`;
+  - `intro2.jpg`, identical to the old `intro.jpg`;
+  - a local boat-photo swap of `intro.jpg` (that photo is still on `origin/kliff` as
+    `screensaver.JPG`).
+- **`origin/main` merged.** `public/img/intro.jpg` is now **Chao's hill-and-monitor
+  plate: a clean screen-01 background with no text and no pill** (1858×1045). That
+  matters for redesign step 1. `origin/kliff` was deliberately left unmerged.
+- **Vercel Preview isolated from production** (details below).
+
+### Step 0: uncommitted work on `redesign/monitor` (finish this first)
+
+- **`docs/design/v3/`** (17.4 MB): the mockups renamed to kebab-case, with the four
+  PNGs converted to JPEG (quality 92, no chroma subsampling; PSNR 47–54 dB, so
+  visually lossless). Also `transitions.txt`, `transition-04-05-flythrough.mp4`
+  (was `1.mp4`), `walkthrough-fast-forward.mp4`, and a `README.md` index mapping
+  every file to its original name.
+- **`prototype-v3/`:** `index.html`, `app.js`, `styles.css`, `assets/` (44 files,
+  4.9 MB, including `fly.mp4` and `manifest.js`), `serve.py` (copied from
+  `prototype/`), `README.md`.
+  - Run it with `python prototype-v3/serve.py` and open `http://localhost:4321`;
+    confirmed working.
+  - Dev shortcut: `?scene=2`…`5` jumps to a screen and exposes `window.proto.go12`
+    etc.
+- **`prototype-v3/` excluded from tooling,** the same four places as `prototype/`:
+  `tsconfig.json` exclude, `eslint.config.mjs` globalIgnores, `.prettierignore`, and
+  the `vitest.config.ts` exclude (Prettier-formatted after the edit).
+- **`scripts/design/prepare_assets.py`:** the asset pipeline, moved from the
+  prototype's `tools/`.
+  - Reads `docs/design/v3/` (the new filenames), writes `prototype-v3/assets/` by
+    default, takes `--out DIR`, copies the fly-through to `fly.mp4`, and uses
+    `Image.Resampling.LANCZOS`.
+  - Python 3 with numpy, scipy and Pillow; takes about 3 minutes; not part of the
+    build.
+  - **Tested on 26 October** with
+    `python -W error::DeprecationWarning scripts/design/prepare_assets.py --out <tmp dir>`.
+    It exited cleanly, wrote 44 files, and its `manifest.js` has the same 47 layers as
+    `prototype-v3/assets/manifest.js`. The largest position shift is 0.07% of the stage
+    (about 1 px), from the JPEG inputs. The committed `prototype-v3/assets/` were left
+    as they were.
+
+### Step 0: still to do, in order
+
+1. ~~Confirm the pipeline test run~~: done (above).
+2. **Update the spec tables** (the user asked for this):
+   - **`CLAUDE.md`, "Where the specs live":**
+     - `prototype-v3/` + `docs/design/v3/` win on **desktop** visuals.
+     - `docs/REDESIGN_PLAN.md` is the redesign plan.
+     - `prototype/index.html` stays the visual reference for **mobile** until portrait
+       designs exist.
+     - Extend "Don't edit `prototype/`" to `prototype-v3/`.
+   - **`docs/PLAN.md`:** the precedence note in the header.
+   - **`docs/BUILD_PLAN.md`:** the precedence paragraph, plus the "Repo layout" tree
+     (add `prototype-v3/`, `docs/design/v3/`, `scripts/design/`,
+     `docs/REDESIGN_PLAN.md`).
+3. Mark step 0 done in `docs/REDESIGN_PLAN.md`: section 7, and section 9 item 3 (the
+   folder layout is decided).
+4. `npm run verify`, then small commits on `redesign/monitor`. Suggested split:
+   - `docs(design): add the v3 mockups, motion spec and videos`
+   - `chore: add prototype-v3 as a reference and exclude it from tooling`
+   - `chore(design): add the asset pipeline`
+   - `docs: point the spec table at prototype-v3`, including the plan status
+
+   **Don't push.**
+5. **Stop and report.** `CLAUDE.md` says to stop at the end of each step. Step 1
+   (assets) is next and needs a go-ahead.
+
+### Vercel environment (changed 26 October)
+
+- **Preview** now has its own:
+  - `DATABASE_URL`: the `kliffandchao-test` pooler
+    (`aws-0-ap-southeast-1.pooler.supabase.com:6543`, user
+    `app_test_runner.yplulqnwnlkuzemkebjv`, `sslmode=no-verify`);
+  - `DIRECT_URL`: the test project's direct host;
+  - `COUPLE_NOTIFY_EMAIL=delivered@resend.dev` (Resend's test inbox);
+  - `GOOGLE_SHEET_ID=preview-no-sheet` (the Sheets mirror and "Sync now" fail safely).
+- **Production and Development are unchanged,** and `RESEND_API_KEY` is still shared.
+- **Not yet confirmed on a live preview:** on the first redesign preview, guest search
+  for "Kho" should return the synthetic Kho Family. Previews deployed before 26 October
+  still use production until they're redeployed.
+- **To split a variable that's shared across environments:**
+  `vercel env remove NAME --environment preview --yes`, then
+  `vercel env add NAME --environment preview --sensitive < file`.
+  **Never use `vercel env update` on a shared entry: it rewrites every environment it
+  covers, production included.**
+
+### Still open, outside step 0
+
+- The `rsvp_deliveries` migration is **still not applied to production**. It must be
+  applied (`npm run db:deploy` against production, deliberately) before local `main`
+  is pushed or deployed.
+- Production's `DATABASE_URL` has no `sslmode`, so the app's connection to the Supabase
+  pooler is unencrypted. This is a separate fix, not done.
+- `README.md` doesn't mention the redesign yet. Add it when the redesign lands.
+
+### Hard-won this session
+
+- **`origin/main` can move under you.** Fetch before merging. `d365d0a` appeared mid-step
+  and changed which `intro.jpg` won the merge.
+- **Line endings:** `core.autocrlf=true`. Some working files are CRLF (`README.md`,
+  `HANDOFF.md`, `docs/BUILD_PLAN.md`); the repository stores LF. Normalise before
+  comparing file contents.
+- **Prettier run on files outside the repo ignores `.prettierrc`** (it switched
+  everything to double quotes). Pass `--config .prettierrc`.
+- **Splitting one file across commits without `git add -p`:** build the in-between
+  content, then run `git hash-object -w --path=<file> <tmp>` and
+  `git update-index --cacheinfo 100644,<blob>,<file>`.
+- **Hidden preview pane:** rAF and timers are throttled, and scripts that await rAF
+  hang. To check a transition, pause every Web Animation and set `currentTime`, then
+  take screenshots. Screenshots force frames.
+- **Leftover `filter` values:** a committed `filter: blur(0px)`, which WAAPI's
+  `commitStyles()` writes instead of `none`, switches off `backdrop-filter` inside that
+  element. Remove the property after the animation.
+- **Backups of everything dropped in step 0** are in this session's scratchpad
+  (`step0-backup/`: the patch of the dropped edits, `intro2.jpg`, and a tar of all 58
+  pre-step-0 files). The scratchpad is temporary and may not survive the session. The
+  only content not also in git is the two test copy edits.
+
+---
+
+## Earlier update — 25 October 2026 (now committed)
 
 **Latest follow-up: fixed the laptop-specific reduced-motion layout bug.** The user confirmed Windows Accessibility → Visual effects → Animation effects is off. Reproduced with a desktop browser emulating `prefers-reduced-motion: reduce`: JS disabled the pinned track but CSS still placed the three sections horizontally, so all section tops were zero, the scroll spy chose Wedding, the verse received an offscreen parallax offset, and Journey selected its last story.
 
