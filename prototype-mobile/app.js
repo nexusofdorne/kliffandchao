@@ -8,18 +8,24 @@
  * The meadow and the river are depth layers (assets/world.js): moving between them is a camera
  * travelling forward, each layer scaled about its vanishing point, the nearer ones faster.
  * Swipe up = further in, swipe down = back. A scrolling card keeps the swipe until
- * it reaches its end. The password is not checked here (any word works).
+ * it reaches its end.
+ *
+ * Two homes: here, as the prototype (assets/content.js holds all the words, any password
+ * works), and on the site at /m/ (copied by scripts/design/publish-phone.ts), where the page
+ * only carries the public words and the rest comes from /api/phone-content once the real
+ * password check (/api/gate) has passed.
  */
 (() => {
   const M = window.MANIFEST;
-  const C = window.CONTENT;
+  const LIVE = !window.CONTENT;
+  const C = window.CONTENT || window.PUBLIC_CONTENT;
   const $ = (s, r = document) => r.querySelector(s);
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const rand = (a, b) => a + Math.random() * (b - a);
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const phone = $('#phone');
-  const site = p => 'site' + p;
+  const site = p => (LIVE ? p : 'site' + p);  // the prototype's server maps /site/ to public/
 
   // ---------------------------------------------------------------- layout from the manifest
   // 02: no monitor on the phone, the terminal is the whole screen
@@ -187,7 +193,28 @@
       return;
     }
     pw.blur();
-    go12();
+    if (!LIVE) { loadContent(); go12(); return; }
+    busy = true;
+    fetch('/api/gate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: pw.value }) })
+      .then(async r => {
+        if (!r.ok) throw new Error('wrong');
+        // signed in on the way to another page (the RSVP form): go there
+        const next = new URLSearchParams(location.search).get('next');
+        if (next && next.startsWith('/') && !next.startsWith('//') && next !== '/story') { location.href = next; return; }
+        if (!(await loadContent())) throw new Error('content');
+        busy = false;
+        go12();
+      })
+      .catch(() => {
+        busy = false;
+        Music.stop();
+        pw.value = '';
+        go.hidden = true;
+        pill.classList.remove('is-wrong');
+        void pill.offsetWidth;
+        pill.classList.add('is-wrong');
+        err.textContent = "That password didn't work. Try again?";
+      });
   }
 
   // the on-screen keyboard covers the bottom of the screen: lift the scene so the pill stays visible
@@ -642,6 +669,9 @@
   let tab = 0;
   let winOpen = false;
 
+  let chipEls = [];
+  let paneEls = [];
+  function buildJourney() {
   C.journeyChapters.forEach((ch, i) => {
     const b = document.createElement('button');
     b.className = 'chip';
@@ -659,8 +689,9 @@
       <div class="photos">${photos}</div>`;
     panes4.append(pane);
   });
-  const chipEls = $$('.chip', chips);
-  const paneEls = $$('.pane', panes4);
+  chipEls = $$('.chip', chips);
+  paneEls = $$('.pane', panes4);
+  }
 
   function setTab(n) {
     tab = n;
@@ -840,6 +871,9 @@
     ['ENTOURAGE', icon('<circle cx="6" cy="5.5" r="2"/><circle cx="11.5" cy="6.5" r="1.6"/><path d="M2.5 13c0-2.2 1.6-3.8 3.5-3.8s3.5 1.6 3.5 3.8M10 9.6c1.6 0 3 1.2 3 3.2"/>')],
     ['FAQ', icon('<circle cx="8" cy="8" r="5.5"/><path d="M6.3 6.4a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.1"/>')],
   ];
+  let tab5Els = [];
+  let pane5Els = [];
+  function buildWedding() {
   const sc = C.siteConfig;
   const content5 = [
     `<div class="pane--center">
@@ -870,23 +904,24 @@
     p.innerHTML = content5[i];
     panes5.append(p);
   });
-  const tab5Els = $$('.itab', tabs5);
-  const pane5Els = $$('.pane', panes5);
+  tab5Els = $$('.itab', tabs5);
+  pane5Els = $$('.pane', panes5);
+  setTab5(0);
+  countdown();
+  setInterval(countdown, 30000);
+  }
   function setTab5(i) {
     tab5Els.forEach((t, j) => t.setAttribute('aria-selected', String(i === j)));
     pane5Els.forEach((p, j) => p.classList.toggle('is-on', i === j));
   }
-  setTab5(0);
   function countdown() {
-    const ms = new Date(sc.weddingDateTime) - Date.now();
+    const ms = new Date(C.siteConfig.weddingDateTime) - Date.now();
     const d = Math.max(0, ms);
     const days = Math.floor(d / 864e5);
     const parts = [['MONTHS', Math.floor(days / 30.44)], ['DAYS', Math.floor(days % 30.44)],
       ['HOURS', Math.floor(d / 36e5) % 24], ['MINS', Math.floor(d / 6e4) % 60]];
     $('#count').innerHTML = parts.map(([l, v]) => `<div><b>${String(v).padStart(2, '0')}</b><span>${l}</span></div>`).join('');
   }
-  countdown();
-  setInterval(countdown, 30000);
 
   folder5.addEventListener('click', async () => {
     if (busy || current !== 5 || win5Open) return;
@@ -914,6 +949,21 @@
     busy = false;
   });
 
+  // ================================================================ the words behind the password
+  let contentReady = false;
+  async function loadContent() {
+    if (contentReady) return true;
+    if (LIVE) {
+      const r = await fetch('/api/phone-content', { credentials: 'same-origin', cache: 'no-store' }).catch(() => null);
+      if (!r || !r.ok) return false;
+      Object.assign(C, await r.json());
+    }
+    buildJourney();
+    buildWedding();
+    contentReady = true;
+    return true;
+  }
+
   // ================================================================ navigation
   function onStep(dir) {
     if (busy) return;
@@ -930,7 +980,11 @@
     else if (current === 5) { await go54(); if (n === 3) await go43(); }
   }
   $$('[data-go]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); goTo(+b.dataset.go); }));
-  $$('[data-rsvp]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); toast('RSVP opens the real form on the site'); }));
+  $$('[data-rsvp]').forEach(b => b.addEventListener('click', e => {
+    e.stopPropagation();
+    if (LIVE) location.href = '/rsvp';
+    else toast('RSVP opens the real form on the site');
+  }));
 
   let toastTimer = 0;
   function toast(msg) {
@@ -1002,9 +1056,16 @@
     if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); if (!canScroll(openPane(), -1)) onStep(-1); }
   });
 
-  // ================================================================ dev shortcut: ?scene=N
-  const jump = +new URLSearchParams(location.search).get('scene');
-  if (jump >= 2 && jump <= 5) {
+  // ================================================================ start
+  // ?scene=N jumps to a screen (the site sends a signed-in phone to ?scene=3). On the site a
+  // visitor who is already signed in skips the password; anyone else starts at it.
+  const asked = +new URLSearchParams(location.search).get('scene');
+  loadContent().then(signedIn => {
+    if (!signedIn) return;
+    const jump = asked >= 2 && asked <= 5 ? asked : LIVE ? 3 : 0;
+    if (jump) jumpTo(jump);
+  });
+  function jumpTo(jump) {
     hide(1);
     if (jump === 2) { reset02(); show(2); current = 2; run02(); }
     if (jump === 3) { busy = true; show(3); surface03(200); }

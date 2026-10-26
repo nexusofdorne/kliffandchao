@@ -16,6 +16,7 @@ const eslintConfig = defineConfig([
     'prototype/**',
     'prototype-v3/**',
     'prototype-mobile/**',
+    'public/m/**', // copied from prototype-mobile by scripts/design/publish-phone.ts
     // Generated Prisma Client — not our code style to enforce.
     'generated/**',
   ]),

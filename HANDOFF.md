@@ -1,6 +1,22 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 26 October 2026 (evening): the owner's review is built locally (not pushed, not deployed)
+## Latest update — 26 October 2026 (night): the phone design is on the site
+
+- **Phones now get the new design.** It is the phone prototype, published by
+  `npx tsx scripts/design/publish-phone.ts` from `prototype-mobile/` into `public/m/` (commit both;
+  edit only `prototype-mobile/`). The gate (`GateScreen`) and the story page send phones (width
+  768 or less, no reduced motion) to `/m/index.html`; with reduced motion they keep the old stacked
+  layout.
+- **Security:** `public/m/` holds only public things (the scenes, the terminal lines, the verses).
+  Everything else (chapters, photos list, schedule, venue, entourage, motif, FAQ) comes from
+  `/api/phone-content`, which checks the session like every gated API (`requireGateApi`). The phone
+  password screen calls the real `/api/gate`. RSVP goes to the real `/rsvp`; its way back lands on
+  `/story`, which sends the phone to `/m/index.html?scene=3`.
+- Checked on the dev server at 390x844 with a throwaway password: redirect, wrong password message,
+  sign-in, terminal, intro film, journey and wedding content, RSVP, and back. **Not checked on a real
+  phone after publishing.**
+
+## Earlier update — 26 October 2026 (evening): the owner's review is built locally (not pushed, not deployed)
 
 The owner's review (verbatim in `docs/review/2026-10-26-feedback.md`) was planned in
 `docs/REVIEW_PLAN.md` (read its sections 5 to 8 for what each step became) and built as six

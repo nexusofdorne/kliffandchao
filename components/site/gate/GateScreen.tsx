@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { useAudio } from '@/components/site/AudioProvider';
 import { unlockTyping } from '@/lib/audio/typing';
 import { gateDestination } from '@/lib/scene/arrival';
-import { STORY_MOBILE_QUERY } from '@/lib/track/layout';
+import { phoneStoryUrl, STORY_MOBILE_QUERY, STORY_REDUCED_MOTION_QUERY } from '@/lib/track/layout';
 import { DesktopGate } from './DesktopGate';
 import { MobileGate } from './MobileGate';
 
@@ -31,6 +31,13 @@ export function GateScreen({ next }: { next: string }) {
   // reports the keyboard's real, shrunk visible area even there, so the
   // screen's own height follows it and the centred form re-centres above
   // the keyboard rather than being covered by it.
+  // Phones get the phone design, which has its own password screen (public/m). With reduced
+  // motion they keep the stacked layout here.
+  useEffect(() => {
+    if (!matchMedia(STORY_MOBILE_QUERY).matches || matchMedia(STORY_REDUCED_MOTION_QUERY).matches) return;
+    location.replace(phoneStoryUrl(next === '/story' ? {} : { next }));
+  }, [next]);
+
   useEffect(() => {
     const viewport = window.visualViewport;
     if (!viewport) return;

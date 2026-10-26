@@ -12,6 +12,7 @@ import { WeddingPanel } from '@/components/site/wedding/WeddingPanel';
 import { sceneAssets } from '@/config/scene-layers.generated';
 import { ARRIVAL_PARAM, isGateArrival } from '@/lib/scene/arrival';
 import {
+  phoneStoryUrl,
   STORY_MOBILE_QUERY,
   STORY_REDUCED_MOTION_QUERY,
 } from '@/lib/track/layout';
@@ -53,6 +54,11 @@ export default function StoryPage() {
       queries.forEach((query) => query.removeEventListener('change', reload));
   }, []);
 
+  // phones (without reduced motion) have their own design at /m/, already signed in: the intro
+  useEffect(() => {
+    if (layout === 'mobile') location.replace(phoneStoryUrl({ scene: '3' }));
+  }, [layout]);
+
   // Until the client knows the screen size, show the gate's last frame (the
   // terminal's black screen on wide screens, plain black on phones), so the
   // cut from the gate never flashes the wrong layout.
@@ -70,6 +76,7 @@ export default function StoryPage() {
       </div>
     );
   }
+  if (layout === 'mobile') return <div className="fixed inset-0 bg-black" />;
   return layout === 'scenes' ? (
     <DesktopStory arrival={arrival} />
   ) : (
