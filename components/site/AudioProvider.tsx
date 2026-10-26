@@ -16,7 +16,6 @@ type AudioContextValue = {
   // `await` has run, so play() has to happen before that, muted (muted
   // playback is always permitted) — docs/PLAN.md "The autoplay problem".
   playMutedSync: () => void;
-  unmuteAndFadeIn: () => void;
   // The song comes in with the intro, not at the gate: it restarts from the top
   // and fades up. A no-op once the music is already playing (coming back from RSVP).
   beginMusic: () => void;
@@ -51,16 +50,6 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     audio.muted = true;
     void audio.play();
   }, []);
-
-  const unmuteAndFadeIn = useCallback(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-    markPlaying(true);
-    if (!isMutedRef.current) {
-      audio.muted = false;
-      fadeIn(audio, FADE_IN_MS);
-    }
-  }, [markPlaying]);
 
   const beginMusic = useCallback(() => {
     const audio = audioRef.current;
@@ -112,7 +101,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
   }, [markPlaying]);
 
   return (
-    <AudioProviderContext.Provider value={{ isMuted, isPlaying, playMutedSync, unmuteAndFadeIn, beginMusic, pause, toggleMute }}>
+    <AudioProviderContext.Provider value={{ isMuted, isPlaying, playMutedSync, beginMusic, pause, toggleMute }}>
       {children}
       <audio ref={audioRef} loop preload="none" src={siteConfig.audioSrc} />
     </AudioProviderContext.Provider>

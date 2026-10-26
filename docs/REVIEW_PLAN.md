@@ -1,7 +1,7 @@
 # Review plan: the 26 October 2026 feedback
 
-Status: **step 1 committed (`d73a459`), step 2 built but not committed or deployed; steps 3-8 waiting.** Written 26 October 2026.
-The owner approved the plan with the recommended answers to the five decisions in section 2.
+Status: **steps 1-6 and 8 are built and committed locally; step 4 (the phone prototype) is built; step 7 is done only in its small form (music at the intro); nothing is pushed or deployed.** Written 26 October 2026, updated the same day.
+The owner approved the plan with the recommended answers to the five decisions in section 2. Section 8 below says what steps 4, 7 and 8 turned out to be.
 
 Step 1 (26 Oct): the password text has a stronger shadow plus a faint shade behind it
 (`.gate-scrim`); the terminal's progress bar has no box and the block is moved up 8.4cqh so it
@@ -300,3 +300,43 @@ The full run, Password → Login → Intro → Journey → Wedding and back:
 - **Known limits:** the layers are cut from single pictures, so up close the cut-outs and fills show
   a painted softness; the pad around each layer is a softened mirror of its edge.
 
+## 8. Steps 4, 7 and 8 as built (26 Oct)
+
+**Step 4, the phone prototype (`prototype-mobile/`, commit `9f243b7`)**
+- Password: the monitor is vertically centred, heading, hint and Enter button under it.
+- Login: no monitor; the terminal fills the screen and its block is centred (the old monitor art
+  `p02_bg` is gone from the page).
+- Intro: the film fills the whole screen; no grass, flowers or bubbles. The song starts here.
+- Header (logo, Intro / Journey / Wedding, RSVP) is one fixed row at the top from the intro on; it
+  does not move in any transition. The music button is one fixed button bottom-left: speaker with a
+  cross when off, moving bars when on; a first tap starts the song if the browser refused autoplay.
+- Journey and wedding: the same depth layers as the desktop (cut again for the portrait frame by
+  `build_world.py`: `prototype-mobile/assets/world/`, 11 files, about 340 KB, and
+  `assets/world.js`), the same camera moves (03 to 04 behind a burst of static; 04 to 05 straight
+  through the meadow), plants that sway and ripples that drift. The windows are CSS glass.
+- Fixed while checking: the first journey tab's scroll offset put it under the traffic lights;
+  the wedding tab reads DETAILS like the site; going back to the intro after a `?scene=` jump showed
+  no film.
+- Checked at 390 x 844 in headless Chrome (a real 390-wide layout): password, login, intro, 03 to
+  04 (frame by frame), the journey window, 04 to 05 (frame by frame), the wedding sheet, and the way
+  back 05 to 04 to 03. **Not checked: a real phone** (Safari, touch, performance, the song).
+
+**Step 7, the phone port: only the small part**
+- The full port (portrait stage mode in the site, phone assets, retiring `StackedStory`) is **not
+  done**; it waits for you to try the prototype on a phone. The live phone site keeps its stacked
+  layout, which already has the fixed header (logo, nav capsule, RSVP) and the music button
+  bottom-left (checked at 390 wide on the dev server).
+- The song now starts with the story on phones too: the gate no longer brings it in at the loader;
+  `StackedStory` calls `beginMusic()` when it mounts (it restarts the song and fades it up). The
+  same call fixes the narrow-reduced-motion and wide-reduced-motion paths, which use `StackedStory`.
+  `unmuteAndFadeIn()` had no callers left and was removed. The muted start inside the Enter tap and
+  client-side navigation are unchanged.
+
+**Step 8, the final check**
+- Typecheck, lint, 217 tests and the production build pass on the final tree.
+- Desktop: every move was walked in the browser pane in earlier steps (password, login, intro, 03 to
+  04 to 05 and back, windows open, close and reopen, music timing); fixed-pose frames were checked
+  because the pane throttles animation frames. Phone prototype: see step 4.
+- **Not verified, and what that means:** a real iPhone or Android phone, Messenger's in-app browser,
+  Safari on a Mac, a laptop at 125% zoom, 1366 x 768, real-time smoothness of the camera moves (judged
+  from frames), and performance on a mid-range phone. These are the things to watch after a deploy.

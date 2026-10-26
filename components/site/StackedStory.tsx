@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useLayoutEffect, type ReactNode } from 'react';
+import { useAudio } from '@/components/site/AudioProvider';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { useStoryLayout } from './useStoryLayout';
 
@@ -29,6 +30,12 @@ export function StackedStory({
 }) {
   const layout = useStoryLayout();
   const { setUpdate, registerJump } = useTrackProgress();
+  const { beginMusic } = useAudio();
+
+  // the song comes in with the intro, not at the gate or the loader
+  useEffect(() => {
+    beginMusic();
+  }, [beginMusic]);
 
   // Must run before anything measures: a restored scroll offset would start
   // the visit part-way down — docs/PLAN.md "Start every visit at the top."

@@ -1,6 +1,47 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 26 October 2026: desktop redesign live; phone prototype built
+## Latest update — 26 October 2026 (evening): the owner's review is built locally (not pushed, not deployed)
+
+The owner's review (verbatim in `docs/review/2026-10-26-feedback.md`) was planned in
+`docs/REVIEW_PLAN.md` (read its sections 5 to 8 for what each step became) and built as six
+local commits on `main`, on top of the three earlier local ones (9 ahead of `origin/main`
+before this note's commit). **Nothing from the review is on GitHub or Vercel yet**; production
+still has the desktop redesign as first deployed. Pushing needs the owner's terminal.
+
+- **Desktop:** password text readable (`.gate-scrim`); the terminal block centred with no
+  progress-bar box; the song starts at the intro (`beginMusic()`), not at the gate; the intro film
+  plays on the login monitor's own screen (no grass, flowers or bubbles); journey and wedding
+  windows are one CSS glass component (`GlassWindow`, `.gw*`, `config/glass-windows.ts`) with
+  "MEET FAMILY / & FRIENDS" on two lines; the meadow and river are depth layers
+  (`scripts/design/build_world.py`, `public/img/world/`, `lib/scene/world.ts`, `WorldScene`) and
+  the three camera moves (intro to journey behind a burst of static, journey to wedding straight
+  through, and back) replaced the fly-through clip; plants sway and the river's ripples drift.
+- **Phone prototype (`prototype-mobile/`):** the same changes in portrait: centred monitor on the
+  password screen, a full-screen centred terminal, a full-screen film for the intro, one fixed
+  header row, one bottom-left music button, glass sheets, the depth-layer moves. See its README.
+- **Live phone site:** unchanged layout (it already had the fixed header and the bottom-left
+  music button). Small change: the song now starts with the story (`StackedStory` calls
+  `beginMusic()`), not at the loader; `unmuteAndFadeIn` was removed. The full phone port is
+  **still waiting for the owner to try the prototype on a phone.**
+- **Gate and audio rules that still hold:** `playMutedSync()` inside the Enter tap, client-side
+  navigation only, and the music button starts the song on a tap if autoplay was refused.
+  (The old note that `unmuteAndFadeIn()` after `/api/gate` is load-bearing is out of date: the
+  song is brought in later now.)
+- **Verified:** typecheck, lint, 217 tests and the production build. In the browser: the desktop
+  moves and windows (earlier steps), and the phone prototype at 390 x 844 in headless Chrome
+  (frame by frame through 03 to 04 and 04 to 05, plus the way back).
+- **Not verified:** a real iPhone or Android, Messenger's in-app browser, Safari on a Mac,
+  1366 x 768 and a laptop at 125% zoom, real-time smoothness and phone performance of the camera
+  moves (judged from frames), and the pixel match against the designer's mockups.
+- **Preview-pane tip:** the pane's screenshots crop or zoom a phone-sized viewport and throttle
+  animation. For phone layouts, drive headless Chrome with a script over DevTools instead (set the
+  device metrics, click, take frames); `chrome.exe --headless=new --screenshot` alone clamps the
+  window to about 500 px wide.
+- **Next:** (1) the owner reviews on a desktop and a phone; (2) push and deploy on their OK
+  (Vercel → Instant Rollback is the way back; no database change is involved); (3) the phone port
+  after the prototype sign-off; (4) the older open items below.
+
+## Earlier update — 26 October 2026: desktop redesign live; phone prototype built
 
 **Where things stand**
 - **Production is live with the desktop redesign.** `main` was pushed (by the owner, from their

@@ -126,6 +126,7 @@ This entry has no `answer` field — just a flag. Its content is split across tw
 | A page/section background image | `config/site.ts` → `backgrounds`, plus the image file in `public/img/` |
 | The journey words, or a chapter's film | `content/chapters.ts` |
 | The journey photos and layout | `public/img/scenes/journey/standin/`, `config/journey-layout.ts` |
+| The meadow and river pictures (the layers the camera moves through) | `python scripts/design/build_world.py` rebuilds `public/img/world/`, `config/world-layers.generated.ts` and the phone prototype's set; the source paintings and the depth rules are in `scripts/design/` |
 | Wedding schedule, venue address | `content/wedding.ts` |
 | Attire / motif colours | `content/motif.ts` |
 | Entourage names/roles | `content/entourage.ts` |
