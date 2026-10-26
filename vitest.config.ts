@@ -40,6 +40,7 @@ export default defineConfig({
       'node_modules/**',
       'prototype/**',
       'prototype-v3/**',
+    'prototype-mobile/**',
       'tests/db/**',
     ],
     env: dummyEnv,

@@ -30,5 +30,5 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "prototype", "prototype-v3"]
+  "exclude": ["node_modules", "prototype", "prototype-v3", "prototype-mobile"]
 }

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-visual">
+  <meta name="theme-color" content="#000000">
+  <title>Kliff &amp; Chao (phone prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@400;500;600&family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="phone">
+
+  <!-- ============================================================ 01 · gate -->
+  <section class="scene is-active" id="s01" aria-label="You are invited">
+    <div class="stage">
+      <div class="s01-bg">
+        <img class="layer amb-cloud" data-asset="p01_sky" alt="">
+        <img class="layer" data-asset="p01_fg" alt="">
+        <div class="layer sway sway--far" data-asset="p01_fg" data-bg></div>
+        <div class="layer sway sway--near-l" data-asset="p01_fg" data-bg></div>
+        <div class="layer sway sway--near-r" data-asset="p01_fg" data-bg></div>
+        <div class="layer bub" data-asset="p01_bubble0"><img data-src="p01_bubble0" alt=""></div>
+        <div class="layer bub" data-asset="p01_bubble1"><img data-src="p01_bubble1" alt=""></div>
+        <div class="layer bub" data-asset="p01_bubble2"><img data-src="p01_bubble2" alt=""></div>
+        <div class="layer bub" data-asset="p01_bubble3"><img data-src="p01_bubble3" alt=""></div>
+        <img class="layer" data-asset="p01_logo" alt="Kliff and Chao">
+      </div>
+      <img class="layer" data-asset="p01_monitor" alt="">
+      <div class="layer monitor" data-asset="p01_screen">
+        <img class="monitor__img" data-src="p01_screen" alt="">
+        <div class="monitor__ghost monitor__ghost--r"></div>
+        <div class="monitor__ghost monitor__ghost--b"></div>
+        <div class="monitor__scan"></div>
+        <div class="monitor__dark"></div>
+      </div>
+      <div class="s01-form">
+        <h1 class="s01-h">You are invited!</h1>
+        <p class="s01-sub">Please enter the password from your invitation</p>
+        <div class="layer pill" data-asset="p01_input">
+          <input id="pw" type="password" placeholder="ENTER" aria-label="Password from your invitation"
+                 autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="go">
+          <button class="pill__go" id="go" type="button" aria-label="Enter" hidden>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
+        <p class="s01-err" role="alert"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 02 · terminal -->
+  <section class="scene" id="s02" aria-label="Logging in">
+    <div class="stage">
+      <img class="layer full" data-src="p02_bg" alt="">
+      <div class="layer crt" data-asset="p02_screen">
+        <div class="crt__wash"></div>
+        <div class="term">
+          <div class="t-boot"><p></p><p></p><p></p></div>
+          <h1 class="t-login"></h1>
+          <div class="t-progress">
+            <div class="t-bar"><i></i></div>
+            <span class="t-pct">0%</span>
+            <svg class="t-hourglass" viewBox="0 0 9 12" aria-hidden="true">
+              <path d="M0 0h9v1.5H0zM0 10.5h9V12H0zM1 1.5h7v1l-2.5 3 2.5 3v2H1v-2l2.5-3L1 2.5z"/>
+            </svg>
+          </div>
+          <div class="t-hello"><p></p><p></p><p></p></div>
+          <div class="t-dino" aria-hidden="true"><svg class="dino" viewBox="0 0 20 20"></svg><i class="t-ground"></i></div>
+        </div>
+        <canvas class="crt__noise" width="108" height="234"></canvas>
+        <div class="crt__roll"></div>
+        <div class="crt__scan"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 03 · intro -->
+  <section class="scene" id="s03" aria-label="Intro">
+    <div class="stage">
+      <div class="layer s03-black" data-asset="p03_interior"></div>
+      <div class="s03-world">
+        <div class="layer s03-video" data-asset="p03_interior">
+          <video class="intro-video" muted loop playsinline preload="auto" src="site/video/intro-web.mp4"></video>
+        </div>
+        <img class="layer grass" data-asset="p03_grass_left" data-from="left" alt="">
+        <img class="layer grass" data-asset="p03_grass_top" data-from="top" alt="">
+        <img class="layer grass" data-asset="p03_grass_right" data-from="right" alt="">
+        <img class="layer grass" data-asset="p03_grass_bottom" data-from="bottom" alt="">
+        <img class="layer flowers" data-asset="p03_flowers" alt="">
+      </div>
+      <div class="s03-bubbles" id="bubbles03"></div>
+      <img class="layer bezel" data-asset="p03_bezel" alt="">
+      <div class="s03-ui">
+        <button class="verse" id="verse" type="button" aria-live="polite"><span class="verse__t"></span><cite></cite></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 04 · journey -->
+  <section class="scene" id="s04" aria-label="Journey">
+    <div class="stage">
+      <img class="layer full" data-src="p04_bg" alt="">
+      <video class="layer full fly" muted playsinline preload="auto" src="site/video/to-wedding.mp4"></video>
+      <button class="layer folder" data-asset="p04_folder" id="folder4" aria-label="Open the journey folder">
+        <img data-src="p04_folder" alt="">
+      </button>
+      <div class="win" id="win4" role="dialog" aria-label="Our journey">
+        <div class="win__bar">
+          <button class="dot dot--close" data-close aria-label="Close window"></button><i class="dot dot--mid"></i><i class="dot dot--end"></i>
+          <div class="chips" id="chips" role="tablist"></div>
+        </div>
+        <div class="win__body" id="panes4" data-scroll></div>
+      </div>
+      <img class="layer cursor" data-asset="p04_cursor" id="cursor4" alt="">
+    </div>
+  </section>
+
+  <!-- ============================================================ 05 · wedding -->
+  <section class="scene" id="s05" aria-label="Wedding">
+    <div class="stage">
+      <img class="layer full" data-src="p05_bg" alt="">
+      <button class="layer folder" data-asset="p05_folder" id="folder5" aria-label="Open the new chapter folder">
+        <img data-src="p05_folder" alt="">
+      </button>
+      <div class="win win--sheet" id="win5" role="dialog" aria-label="The wedding">
+        <div class="win__bar">
+          <button class="dot dot--close" data-close aria-label="Close window"></button><i class="dot dot--mid"></i><i class="dot dot--end"></i>
+          <div class="icontabs" id="tabs5" role="tablist"></div>
+        </div>
+        <div class="win__body" id="panes5" data-scroll></div>
+      </div>
+      <img class="layer cursor" data-asset="p04_cursor" id="cursor5" alt="">
+    </div>
+  </section>
+
+  <!-- ============================================================ chrome (03 onward) -->
+  <header class="chrome-top" id="chromeTop">
+    <button class="wordmark" data-go="3" aria-label="Back to the intro"><img data-src="p01_logo" alt="Kliff and Chao"></button>
+    <button class="mute" id="mute" aria-label="Mute music" aria-pressed="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/>
+        <path class="on" d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.8a7.4 7.4 0 0 1 0 10.4"/>
+        <path class="off" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>
+      </svg>
+    </button>
+    <button class="rsvp" data-rsvp>RSVP</button>
+  </header>
+  <nav class="chrome-nav" id="chromeNav" aria-label="Sections">
+    <span class="chrome-nav__pill" aria-hidden="true"></span>
+    <button data-go="3" aria-current="page">INTRO</button>
+    <button data-go="4">JOURNEY</button>
+    <button data-go="5">WEDDING</button>
+  </nav>
+
+  <div class="haze" aria-hidden="true"></div>
+  <div class="toast" role="status"></div>
+</main>
+
+<script src="assets/manifest.js"></script>
+<script src="assets/content.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
