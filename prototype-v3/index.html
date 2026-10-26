@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kliff &amp; Chao</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=Inter:wght@400;500;600&family=Orbitron:wght@500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<main id="app">
+
+  <!-- ============================================================ 01 · password -->
+  <section class="scene is-active" id="s01" aria-label="You are invited">
+    <div class="stage">
+      <!-- everything except the monitor: this is what goes out of focus during the zoom -->
+      <div class="s01-bg">
+        <div class="layer s01-sky" data-asset="s01_sky"></div>
+        <img class="layer" data-asset="s01_fg" alt="">
+        <div class="layer sway sway--far" data-asset="s01_fg"></div>
+        <div class="layer sway sway--near-l" data-asset="s01_fg"></div>
+        <div class="layer sway sway--near-r" data-asset="s01_fg"></div>
+        <div class="layer bub" data-asset="s01_bubble0"><img data-src="s01_bubble0" alt=""></div>
+        <div class="layer bub" data-asset="s01_bubble1"><img data-src="s01_bubble1" alt=""></div>
+        <div class="layer bub" data-asset="s01_bubble2"><img data-src="s01_bubble2" alt=""></div>
+        <div class="layer bub" data-asset="s01_bubble3"><img data-src="s01_bubble3" alt=""></div>
+        <img class="layer" data-asset="s01_logo" alt="Kliff and Chao">
+      </div>
+      <img class="layer" data-asset="s01_monitor" alt="">
+
+      <div class="layer monitor" data-asset="s01_screen">
+        <img class="monitor__img" data-src="s01_screen" alt="">
+        <div class="monitor__ghost monitor__ghost--r"></div>
+        <div class="monitor__ghost monitor__ghost--b"></div>
+        <!-- optional: drop assets/monitor.mp4 in to replace the CSS glitch -->
+        <video class="monitor__video" muted loop playsinline preload="auto" data-optional-src="assets/monitor.mp4"></video>
+        <div class="monitor__scan"></div>
+        <div class="monitor__dark"></div>
+      </div>
+
+      <form class="pw" id="pwForm" autocomplete="off">
+        <input class="layer pw__input" id="pw" data-asset="s01_input" type="password" placeholder="ENTER"
+               aria-label="Password from your invitation" spellcheck="false">
+      </form>
+    </div>
+  </section>
+
+  <!-- ============================================================ 02 · splash login -->
+  <section class="scene" id="s02" aria-label="Logging in">
+    <div class="stage">
+      <img class="layer full" data-src="s02_bg" alt="">
+      <div class="layer crt" data-asset="s02_screen">
+        <div class="crt__wash"></div>
+        <div class="term">
+          <div class="t-boot">
+            <p data-text="> initializing wedding.exe"></p>
+            <p data-text="> loading love story..."></p>
+            <p data-text="> verifying guest access..."></p>
+          </div>
+          <h1 class="t-login">LOGIN SUCCESFUL</h1>
+          <div class="t-progress">
+            <div class="t-bar"><i></i></div>
+            <span class="t-pct">0%</span>
+            <svg class="t-hourglass" viewBox="0 0 9 12" aria-hidden="true">
+              <path d="M0 0h9v1.5H0zM0 10.5h9V12H0zM1 1.5h7v1l-2.5 3 2.5 3v2H1v-2l2.5-3L1 2.5z" />
+              <path class="sand" d="M2.4 2.6h4.2L4.5 4.9zM3.2 9.6h2.6L4.5 8.2z" />
+            </svg>
+          </div>
+          <div class="t-hello">
+            <p data-text="Hello, favorite human!"></p>
+            <p data-text="We're so grateful you're part of our lives."></p>
+            <p data-text="We can't wait to celebrate with you!"></p>
+          </div>
+          <div class="t-dino" aria-hidden="true"><svg class="dino" viewBox="0 0 20 20"></svg><i class="t-ground"></i></div>
+        </div>
+        <canvas class="crt__noise" width="192" height="108"></canvas>
+        <div class="crt__roll"></div>
+        <div class="crt__scan"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 03 · intro video -->
+  <section class="scene" id="s03" aria-label="Intro">
+    <div class="stage">
+      <div class="layer s03-black" data-asset="s03_interior"></div>
+      <div class="s03-world">
+        <div class="layer s03-video" data-asset="s03_blob">
+          <div class="video-ph"><span>intro.vid</span></div>
+          <!-- drop the real clip in as assets/intro.mp4 -->
+          <video class="intro-video" muted loop playsinline autoplay preload="auto" data-optional-src="assets/intro.mp4"></video>
+        </div>
+        <img class="layer grass" data-asset="s03_grass_left" data-from="left" alt="">
+        <img class="layer grass" data-asset="s03_grass_top" data-from="top" alt="">
+        <img class="layer grass" data-asset="s03_grass_right" data-from="right" alt="">
+        <img class="layer grass" data-asset="s03_grass_bottom" data-from="bottom" alt="">
+        <img class="layer flowers" data-asset="s03_flowers" alt="">
+      </div>
+      <div class="s03-bubbles">
+        <div class="layer bub" data-asset="s03_bubble0"><img data-src="s03_bubble0" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble1"><img data-src="s03_bubble1" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble2"><img data-src="s03_bubble2" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble3"><img data-src="s03_bubble3" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble4"><img data-src="s03_bubble4" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble5"><img data-src="s03_bubble5" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble6"><img data-src="s03_bubble6" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble7"><img data-src="s03_bubble7" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble8"><img data-src="s03_bubble8" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble9"><img data-src="s03_bubble9" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble10"><img data-src="s03_bubble10" alt=""></div>
+        <div class="layer bub" data-asset="s03_bubble11"><img data-src="s03_bubble11" alt=""></div>
+      </div>
+      <img class="layer bezel" data-asset="s03_bezel" alt="">
+
+      <div class="s03-ui">
+        <img class="layer ui-logo" data-asset="s03_logo" alt="Kliff and Chao">
+        <nav class="nav3" aria-label="Sections">
+          <span class="nav3__pill" aria-hidden="true"></span>
+          <button aria-current="page" data-go="3">INTRO</button>
+          <button data-go="4">JOURNEY</button>
+          <button data-go="5">WEDDING</button>
+        </nav>
+        <button class="rsvp3" data-rsvp>RSVP</button>
+        <button class="mute" id="mute" aria-label="Mute music" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/>
+            <path class="on" d="M16 9.2a4 4 0 0 1 0 5.6M18.6 6.8a7.4 7.4 0 0 1 0 10.4"/>
+            <path class="off" d="M16.5 9.5l5 5M21.5 9.5l-5 5"/>
+          </svg>
+        </button>
+        <blockquote class="verse" id="verse" aria-live="polite">
+          <p></p>
+          <cite></cite>
+        </blockquote>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ 04 · journey -->
+  <section class="scene" id="s04" aria-label="Journey">
+    <div class="stage">
+      <img class="layer full" data-src="j00_bg" alt="">
+      <!-- fly-through to the next chapter (its first frame is this meadow) -->
+      <video class="layer full fly" muted playsinline preload="auto" src="assets/fly.mp4"></video>
+      <button class="layer folder" data-asset="j00_folder" aria-label="Open the journey folder">
+        <img data-src="j00_folder" alt="">
+      </button>
+
+      <div class="layer window" data-asset="win0" role="dialog" aria-label="Our journey">
+        <img class="win" data-src="win0" alt="">
+        <img class="win" data-src="win1" alt="It started with a wedding">
+        <img class="win" data-src="win2" alt="It shouldn't have happened">
+        <img class="win" data-src="win3" alt="But it did">
+        <img class="win" data-src="win4" alt="Meet family and friends">
+        <img class="win" data-src="win5" alt="We're engaged!">
+        <button class="dot dot--close" aria-label="Close window"></button>
+        <button class="tab" data-tab="1" style="left:8.6%;width:12.5%">It started with a wedding</button>
+        <button class="tab" data-tab="2" style="left:21.4%;width:13.5%">It shouldn't have happened</button>
+        <button class="tab" data-tab="3" style="left:35.2%;width:13.5%">But it did</button>
+        <button class="tab" data-tab="4" style="left:49%;width:13.5%">Meet family &amp; friends</button>
+        <button class="tab" data-tab="5" style="left:62.8%;width:12.8%">We're engaged!</button>
+      </div>
+
+      <img class="layer cursor" data-asset="cursor" alt="">
+      <nav class="hotnav" aria-label="Sections">
+        <button data-go="3" style="left:30.6%;width:12.5%">INTRO</button>
+        <button data-go="4" style="left:43.1%;width:12.5%">JOURNEY</button>
+        <button data-go="5" style="left:55.6%;width:12.9%">WEDDING</button>
+        <button data-rsvp style="left:90%;width:7.6%">RSVP</button>
+      </nav>
+    </div>
+  </section>
+
+  <!-- ============================================================ 05 · new chapter -->
+  <section class="scene" id="s05" aria-label="Wedding">
+    <div class="stage">
+      <img class="layer full" data-src="j05_bg" alt="">
+      <button class="layer folder" data-asset="j05_folder" id="chapterFolder" aria-label="Open the new chapter folder">
+        <img data-src="j05_folder" alt="">
+      </button>
+
+      <!-- not designed yet: an empty glass window like the walkthrough video shows -->
+      <div class="layer window5" role="dialog" aria-label="New chapter">
+        <div class="w5-bar">
+          <button class="w5-dot w5-dot--close" aria-label="Close window"></button><i class="w5-dot"></i><i class="w5-dot"></i>
+          <button class="w5-tab is-on" title="Schedule"><svg viewBox="0 0 16 16"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 7h11M5.5 2v3M10.5 2v3"/></svg></button>
+          <button class="w5-tab" title="Venue"><svg viewBox="0 0 16 16"><path d="M8 14s4.5-4.2 4.5-7.5a4.5 4.5 0 0 0-9 0C3.5 9.8 8 14 8 14z"/><circle cx="8" cy="6.5" r="1.6"/></svg></button>
+          <button class="w5-tab" title="Dress code"><svg viewBox="0 0 16 16"><path d="M6 2.5 3 4.5l1.3 2.3L5.5 6v7.5h5V6l1.2.8L13 4.5l-3-2a2 2 0 0 1-4 0z"/></svg></button>
+          <button class="w5-tab" title="Gifts"><svg viewBox="0 0 16 16"><rect x="2.5" y="6" width="11" height="7.5" rx="1"/><path d="M2 6h12M8 6v7.5M8 6S6.5 2.5 5 3.4C3.6 4.2 5.5 6 8 6zm0 0s1.5-3.5 3-2.6C12.4 4.2 10.5 6 8 6z"/></svg></button>
+          <button class="w5-tab" title="FAQ"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="5.5"/><path d="M6.3 6.4a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.1"/></svg></button>
+          <span class="w5-tab w5-tab--rest"></span>
+        </div>
+        <div class="w5-body"></div>
+      </div>
+
+      <img class="layer cursor" data-asset="cursor" alt="">
+      <nav class="hotnav" aria-label="Sections">
+        <button data-go="3" style="left:30.6%;width:12.5%">INTRO</button>
+        <button data-go="4" style="left:43.1%;width:12.5%">JOURNEY</button>
+        <button data-go="5" style="left:55.6%;width:12.9%">WEDDING</button>
+        <button data-rsvp style="left:90%;width:7.6%">RSVP</button>
+      </nav>
+    </div>
+  </section>
+
+  <div class="haze" aria-hidden="true"></div>
+  <div class="toast" role="status"></div>
+</main>
+
+<script src="assets/manifest.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

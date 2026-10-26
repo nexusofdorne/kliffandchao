@@ -36,7 +36,12 @@ export default defineConfig({
   test: {
     environment: 'node',
     include: ['**/*.test.ts'],
-    exclude: ['node_modules/**', 'prototype/**', 'tests/db/**'],
+    exclude: [
+      'node_modules/**',
+      'prototype/**',
+      'prototype-v3/**',
+      'tests/db/**',
+    ],
     env: dummyEnv,
   },
 });

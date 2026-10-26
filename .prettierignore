@@ -1,6 +1,7 @@
 .next
 node_modules
 prototype
+prototype-v3
 public
 docs/design
 generated
