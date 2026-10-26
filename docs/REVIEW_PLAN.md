@@ -359,3 +359,14 @@ The full run, Password → Login → Intro → Journey → Wedding and back:
 - **Phone fit and swipes (prototype):** the password logo and the windows sit on the visible part of
   the stage on phones shorter than 9:19.5; swipes register on move, and swiping down from an open
   wedding sheet no longer goes back to the journey.
+
+## 10. Portrait and square desktop screens (26 Oct)
+
+The 16:9 stage used to cover the screen at any shape, so a portrait monitor showed only the
+middle half of it (the terminal text and the verse ran off the sides). Now the stage crops the
+sides by at most 6% each (`--stage-w` / `--stage-h` in `app/globals.css`): on screens squarer than
+about 1.56:1 it is shorter than the screen and centred, and `.scene-ambient` fills above and below
+with the colours of the painting's top and bottom edges (the monitor's bezel; sky and grass), with
+a soft band over the seam. The top bar and the music button are placed from the stage's corner.
+16:9 and wider screens are unchanged. Checked in headless Chrome at 1080x1920, 1830x1920,
+1440x1440, 1920x1080 and 2560x1080 through gate, terminal, intro, journey and wedding.

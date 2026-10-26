@@ -11,6 +11,7 @@ export function SceneRoot({
   id,
   visible = false,
   clear = false,
+  ambient,
   z,
   rootRef,
   children,
@@ -19,6 +20,8 @@ export function SceneRoot({
   visible?: boolean;
   /** A scene that only holds interface over the world (no background of its own). */
   clear?: boolean;
+  /** Colours above and below the stage, where it doesn't fill the screen (tall screens). */
+  ambient?: { top: string; bottom: string };
   z?: number;
   rootRef?: RefObject<HTMLElement | null>;
   children: ReactNode;
@@ -35,6 +38,13 @@ export function SceneRoot({
       className={clear ? 'scene-root scene-root--clear' : 'scene-root'}
       style={{ ...(visible ? undefined : HIDDEN), zIndex: z }}
     >
+      {ambient && (
+        <div
+          aria-hidden
+          className="scene-ambient"
+          style={{ '--amb-top': ambient.top, '--amb-bottom': ambient.bottom } as CSSProperties}
+        />
+      )}
       {children}
     </section>
   );

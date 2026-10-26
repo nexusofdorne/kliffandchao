@@ -109,6 +109,12 @@ export function DesktopGate({
 
   return (
     <div className="scene-root">
+      {/* tall screens: the sky above the stage and the hill's grass below it */}
+      <div
+        aria-hidden
+        className="scene-ambient"
+        style={{ '--amb-top': '#83a6b3', '--amb-bottom': '#5e5d29' } as CSSProperties}
+      />
       <Stage>
         {/* the stage itself is what the camera moves; transform-origin 0 0 */}
         <div

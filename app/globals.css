@@ -569,9 +569,14 @@
    placed in % of it (config/scene-layers.generated.ts), so they stay
    locked together at any window size. Text on a stage is sized in cqw.
    ============================================================ */
+/* The stage covers the screen, cropping the long side, but on screens squarer than about
+   1.56:1 (a portrait or square monitor) it crops the sides by at most 6% each: the monitor
+   and the text near its edges have to stay on screen. The stage is then shorter than the
+   screen, and `.scene-ambient` (the colours of the scene's top and bottom edges) fills
+   above and below it. */
 :root {
-  --stage-w: max(100vw, 177.7778vh);
-  --stage-h: max(56.25vw, 100vh);
+  --stage-w: max(100vw, min(177.7778vh, 113.64vw));
+  --stage-h: calc(var(--stage-w) * 0.5625);
 }
 
 .scene-root {
@@ -582,6 +587,40 @@
 }
 .scene-root--clear {
   background: transparent;
+}
+.scene-ambient {
+  display: none;
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--amb-top) 0 50%, var(--amb-bottom) 50% 100%);
+  pointer-events: none;
+}
+/* soft bands over the stage's top and bottom edges, so the painting runs into the fill */
+.scene-ambient::before,
+.scene-ambient::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  height: 4vh;
+}
+.scene-ambient::before {
+  top: calc((100vh - var(--stage-h)) / 2 - 1px);
+  background: linear-gradient(var(--amb-top), transparent);
+}
+.scene-ambient::after {
+  bottom: calc((100vh - var(--stage-h)) / 2 - 1px);
+  background: linear-gradient(transparent, var(--amb-bottom));
+}
+@media (max-aspect-ratio: 39/25) {
+  .scene-ambient {
+    display: block;
+  }
+  /* the layers' padding (there for the camera moves) would otherwise show in the fill */
+  .stage {
+    overflow: hidden;
+  }
 }
 
 .stage {
@@ -1349,12 +1388,13 @@
 
 /* The music button sits inside the monitor's screen on desktop scenes */
 html[data-scenes] .audio-toggle {
-  left: 6.6vw;
-  bottom: 7.6vh;
+  /* 6.6% / 7.6% of the stage in from its corner (the stage can be wider or shorter than the screen) */
+  left: max(2vw, calc(50vw - var(--stage-w) * 0.434));
+  bottom: max(7.6vh, calc(50vh - var(--stage-h) * 0.424));
 }
 /* The real top bar sits inside the monitor's bezel on desktop scenes */
 html[data-scenes] .topbar {
-  top: 6vh;
+  top: max(6vh, calc(50vh - var(--stage-h) * 0.44));
   width: min(86vw, 1180px);
 }
 @media (max-width: 768px) {

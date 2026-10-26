@@ -20,6 +20,13 @@ import { isAbort } from './timing';
 // plays, tears apart, and the intro film tunes in on the same monitor. Any other
 // way in (a returning cookie, a reload, "back to home" from RSVP) gets a short
 // tune-in.
+// What fills the screen above and below the stage on tall screens (.scene-ambient): the
+// colours of the paintings' top and bottom edges, so the picture seems to carry on.
+const AMBIENT = {
+  monitor: { top: '#c2ae8f', bottom: '#e0d2bd' }, // the monitor's bezel
+  world: { top: '#a3bbcd', bottom: '#4a5139' }, // sky above, the meadow's grass below
+};
+
 export function DesktopStory({ arrival }: { arrival: boolean }) {
   return (
     <SceneProvider>
@@ -114,7 +121,7 @@ function Story({ arrival }: { arrival: boolean }) {
 
   return (
     <>
-      <SceneRoot id="world" visible z={0}>
+      <SceneRoot id="world" visible z={0} ambient={AMBIENT.world}>
         <WorldScene ref={world} />
       </SceneRoot>
       <SceneRoot id="journey" rootRef={journeyRoot} z={2} clear>
@@ -123,10 +130,10 @@ function Story({ arrival }: { arrival: boolean }) {
       <SceneRoot id="wedding" rootRef={weddingRoot} z={1} clear>
         <WeddingScene ref={wedding} />
       </SceneRoot>
-      <SceneRoot id="intro" rootRef={introRoot} z={3}>
+      <SceneRoot id="intro" rootRef={introRoot} z={3} ambient={AMBIENT.monitor}>
         <IntroScene ref={intro} startHidden />
       </SceneRoot>
-      <SceneRoot id="arrival" rootRef={arrivalRoot} visible z={5}>
+      <SceneRoot id="arrival" rootRef={arrivalRoot} visible z={5} ambient={AMBIENT.monitor}>
         <Terminal ref={terminal} />
       </SceneRoot>
       <GlitchBurst ref={glitch} />
