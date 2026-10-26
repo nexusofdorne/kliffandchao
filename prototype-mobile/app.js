@@ -681,7 +681,7 @@
     chips.append(b);
     const pane = document.createElement('article');
     pane.className = 'pane';
-    const photos = (C.photos[String(i + 1)] || []).slice(0, 5)
+    const photos = (C.photos[String(i + 1)] || [])
       .map(p => `<img src="${site(p.src)}" alt="" loading="lazy">`).join('');
     pane.innerHTML = `<h2>${ch.title}</h2>
       ${ch.video ? `<video class="film" src="${site(ch.video)}" muted loop playsinline autoplay></video>` : '<div class="film">Film coming soon</div>'}
