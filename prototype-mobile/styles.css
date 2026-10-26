@@ -307,10 +307,16 @@ img.layer, .bub, .grass, .flowers, .bezel { pointer-events: none; }
 
 /* the glass window: a tall card on the phone */
 .win {
-  position: absolute; left: 5%; right: 5%; top: 13%; bottom: 13%;
+  /* placed on the part of the stage that is on screen (a phone shorter than 9:19.5 crops the
+     stage top and bottom), below the fixed header and above the music button */
+  position: absolute; left: 5%; right: 5%;
+  top: calc((var(--sh) - var(--ph)) / 2 + var(--safe-t) + 16cqw);
+  bottom: calc((var(--sh) - var(--ph)) / 2 + var(--safe-b) + 19cqw);
   display: flex; flex-direction: column;
   visibility: hidden;
 }
+/* the password screen's logo stays inside the visible part of the stage too */
+img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(--safe-t) + 4cqw) !important; }
 .win.is-open { visibility: inherit; }  /* inherit, not visible: a hidden scene must hide it too */
 .win__bar { position: relative; display: flex; align-items: flex-end; height: 6.4cqh; padding-left: 16.5cqw; }
 .dot { position: absolute; top: 46%; width: 3cqw; height: 3cqw; border-radius: 50%; background: #eedc8e; box-shadow: inset 0 .3cqw .5cqw rgba(255,255,255,.45), 0 .1cqw .4cqw rgba(0,0,0,.12); }
