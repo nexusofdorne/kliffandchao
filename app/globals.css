@@ -1170,7 +1170,7 @@
   position: absolute;
   inset: 0;
   color: var(--term);
-  font-family: 'Courier Prime', 'Courier New', monospace;
+  font-family: var(--font-courier-prime), 'Courier New', monospace;
   text-shadow:
     0 0 0.35cqh var(--term-glow),
     0 0 1.4cqh rgba(80, 255, 120, 0.2);
@@ -1216,7 +1216,7 @@
   top: 36.5cqh;
   margin: 0;
   font:
-    500 3.7cqh/1 Orbitron,
+    500 3.7cqh/1 var(--font-orbitron),
     'Courier New',
     monospace;
   letter-spacing: 0.03em;
@@ -1254,7 +1254,7 @@
   left: 47.1cqh;
   top: 2.75cqh;
   font:
-    500 1.6cqh/1 Orbitron,
+    500 1.6cqh/1 var(--font-orbitron),
     monospace;
 }
 .crt-hourglass {

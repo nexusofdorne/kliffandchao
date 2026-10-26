@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Montserrat } from 'next/font/google';
+import { Courier_Prime, Montserrat, Orbitron } from 'next/font/google';
 import localFont from 'next/font/local';
 import { AudioProvider } from '@/components/site/AudioProvider';
 import { siteConfig } from '@/config/site';
@@ -21,6 +21,22 @@ const montserrat = Montserrat({
   display: 'swap',
 });
 
+// The terminal's faces (as in prototype-v3): Courier Prime for its lines, Orbitron for
+// LOGIN SUCCESSFUL and the percentage. Without these it fell back to Courier New.
+const courierPrime = Courier_Prime({
+  variable: '--font-courier-prime',
+  subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
+});
+
+const orbitron = Orbitron({
+  variable: '--font-orbitron',
+  subsets: ['latin'],
+  weight: '500',
+  display: 'swap',
+});
+
 export const metadata: Metadata = {
   title: `${siteConfig.coupleNames} — ${siteConfig.weddingDateDisplay}`,
   description: `A private wedding site for ${siteConfig.coupleNames}.`,
@@ -39,7 +55,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${generalSans.variable} ${montserrat.variable} h-full antialiased`}
+      className={`${generalSans.variable} ${montserrat.variable} ${courierPrime.variable} ${orbitron.variable} h-full antialiased`}
     >
       {/* No className here — deliberately. `min-h-full flex flex-col` was
           generic scaffolding from Phase 0 with nothing in the site relying
