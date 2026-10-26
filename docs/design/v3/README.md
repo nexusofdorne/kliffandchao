@@ -10,6 +10,7 @@ production assets. `scripts/design/prepare_assets.py` cuts them into animatable 
 | File | Screen | Original filename |
 |---|---|---|
 | `01-password.jpg` | 01: gate, a hill with a monitor and the "You are invited!" password pill | `01 - password.png` |
+| `01-plate-clean.jpg` | 01: Chao's text-free plate of the same hill and monitor (1858×1045, registered 1:1 with `01-password.jpg`). The pipeline cuts screen 01 from this, so nothing has to be painted out of the grass. | `public/img/intro.jpg` at commit `d365d0a` |
 | `02-splash-login-1.jpg` | 02: monitor close-up, empty black screen (start of the terminal) | `02 - splash login 1.png` |
 | `02-splash-login-2.jpg` | 02: terminal with text, progress bar and greeting (wider crop) | `02 - splash login 2.png` |
 | `03-intro-vid.jpg` | 03: intro inside the monitor bezel, grass frame, blue blob for the video, nav, verse, mute | `03 - intro vid.png` |

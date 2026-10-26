@@ -3,15 +3,21 @@ Slices the v3 mockups into animatable layers (docs/REDESIGN_PLAN.md, step 1).
 
     python scripts/design/prepare_assets.py [--out DIR]
 
-Reads the flat mockups in docs/design/v3/ and writes the layered assets plus
-manifest.js (each layer's position as a % of the 16:9 stage). The default
-output is prototype-v3/assets/. Offline design tooling: not part of the Next.js
-build, and needs Python 3 with numpy, scipy and Pillow. Takes about three
-minutes.
+Reads the flat mockups in docs/design/v3/ and writes the layered assets the site
+uses: images under public/img/scenes/<scene>/, the fly-through at
+public/video/to-wedding.mp4 and config/scene-layers.generated.ts (each layer's
+position as a % of the 16:9 stage, plus its pixel size). With --out DIR it writes
+everything flat into DIR instead, with manifest.json, for experiments.
+(prototype-v3/assets/ holds the output of the first version of this script and is
+frozen.) Offline design tooling: not part of the Next.js build, and needs Python 3
+with numpy, scipy and Pillow. Takes about three minutes.
 
 The layers are cut automatically: colour segmentation for sky, ground, the
 video blob and the bezel edge, harmonic inpainting under bubbles and UI, and
-alpha-matting for the translucent bubbles. Expect small seams up close.
+alpha-matting for the translucent bubbles. Screen 01 is cut from Chao's text-free
+plate (01-plate-clean.jpg, registered 1:1 with the mockup); on 04/05 the baked-in
+logo, nav pill, RSVP and folder are painted out, because the site renders those as
+real elements. Expect small seams up close.
 
 Coordinates below were measured on the mockups:
   01-03 -> 3288 x 1850 space, 04/05 -> 1920 x 1080 space.
@@ -28,12 +34,30 @@ from scipy import ndimage as ndi
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT = os.path.join(REPO, "docs", "design", "v3")
 _args = argparse.ArgumentParser(description=__doc__.splitlines()[1])
-_args.add_argument("--out", default=os.path.join(REPO, "prototype-v3", "assets"))
-OUT = os.path.abspath(_args.parse_args().out)
+_args.add_argument("--out", help="write flat into DIR instead of the site's public/ tree")
+_out_arg = _args.parse_args().out
+SITE = _out_arg is None
+OUT = os.path.abspath(_out_arg) if _out_arg else os.path.join(REPO, "public", "img", "scenes")
+VIDEO_OUT = os.path.join(REPO, "public", "video") if SITE else OUT
 os.makedirs(OUT, exist_ok=True)
+os.makedirs(VIDEO_OUT, exist_ok=True)
 
-# The fly-through clip is used as-is; it only needs to sit next to the layers.
+# The fly-through clip is used as-is (it is already faststart, video-only H.264).
 FLY_SOURCE = "transition-04-05-flythrough.mp4"
+
+# Which scene folder a file lands in, by name prefix (site layout only).
+SCENE_DIRS = (("s01_", "gate"), ("s02_", "terminal"), ("s03_", "intro"), ("j05_", "wedding"))
+
+
+def target(name):
+    """(absolute path, public URL) for an output file; creates the folder."""
+    if not SITE:
+        return os.path.join(OUT, name), name
+    sub = next((d for p, d in SCENE_DIRS if name.startswith(p)), "journey")
+    if name.startswith("ch"):
+        sub = "journey/standin"
+    os.makedirs(os.path.join(OUT, *sub.split("/")), exist_ok=True)
+    return os.path.join(OUT, *sub.split("/"), name), f"/img/scenes/{sub}/{name}"
 
 W_HI = 2560          # working width for screens 01-03
 K = W_HI / 3288.0    # 3288-space -> working space
@@ -117,7 +141,12 @@ def feather(mask, sigma):
 
 
 def save_rgb(arr, name, q=86):
-    Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)).save(os.path.join(OUT, name), quality=q)
+    Image.fromarray(np.clip(arr, 0, 255).astype(np.uint8)).save(target(name)[0], quality=q)
+
+
+def full(key, name, arr, **extra):
+    """Register a full-stage image (no placement box)."""
+    manifest[key] = dict(src=target(name)[1], px=[arr.shape[1], arr.shape[0]], **extra)
 
 
 def save_rgba(rgb, alpha, name, crop=None, q=88):
@@ -128,14 +157,15 @@ def save_rgba(rgb, alpha, name, crop=None, q=88):
         crop = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
     x0, y0, x1, y1 = [int(v) for v in crop]
     im = Image.fromarray(np.dstack([rgb, a])[y0:y1, x0:x1], "RGBA")
-    im.save(os.path.join(OUT, name), "WEBP", quality=q, method=6)
+    im.save(target(name)[0], "WEBP", quality=q, method=6)
     return x0, y0, x1, y1
 
 
 def place(key, src, box, W, H, **extra):
     x0, y0, x1, y1 = box
-    manifest[key] = dict(src="assets/" + src, x=100 * x0 / W, y=100 * y0 / H,
-                         w=100 * (x1 - x0) / W, h=100 * (y1 - y0) / H, **extra)
+    manifest[key] = dict(src=target(src)[1], x=100 * x0 / W, y=100 * y0 / H,
+                         w=100 * (x1 - x0) / W, h=100 * (y1 - y0) / H,
+                         px=[int(x1 - x0), int(y1 - y0)], **extra)
 
 
 def lum(a):
@@ -162,7 +192,9 @@ def bubble_sprite(img, bg, cx, cy, r, name, key, W, H, exclude=None):
 
 # ---------------------------------------------------------------- screen 01
 print("screen 01 ...")
-img = load("01-password.jpg", W_HI)
+mock = load("01-password.jpg", W_HI)            # has the heading, pill, logo and the couple on the screen
+img = load("01-plate-clean.jpg", W_HI)          # Chao's plate: same frame, no text, no pill, no logo
+assert img.shape == mock.shape, "plate and mockup must share one frame"
 H, W = img.shape[:2]
 sh = (H, W)
 s = lambda *v: [x * K for x in v]
@@ -171,18 +203,20 @@ bub01 = [s(705, 720, 142), s(896, 902, 52), s(1089, 986, 16), s(308, 1225, 40)]
 holes = np.zeros(sh, bool)
 for cx, cy, r in bub01:
     holes |= disk(sh, cx, cy, r * 1.12)
-logo_box = s(1520, 125, 1777, 350)
-holes_logo = rect(sh, *logo_box)
-bg = inpaint(img, holes | holes_logo)
+bg = inpaint(img, holes)
 
 for i, (cx, cy, r) in enumerate(bub01):
     bubble_sprite(img, bg, cx, cy, r, f"s01_bubble{i}.webp", f"s01_bubble{i}", W, H)
 
-la = np.clip((lum(img) - lum(bg)) / np.maximum(255 - lum(bg), 1) * 1.35, 0, 1) * holes_logo
+# the wordmark exists only in the mockup; its alpha is how much brighter it is than the plate's sky
+logo_box = s(1520, 125, 1777, 350)
+holes_logo = rect(sh, *logo_box)
+la = np.clip((lum(mock) - lum(img)) / np.maximum(255 - lum(img), 1) * 1.35, 0, 1) * holes_logo
+la[la < 0.06] = 0
 box = save_rgba(np.full_like(img, 255), la, "s01_logo.webp", crop=logo_box)
 place("s01_logo", "s01_logo.webp", box, W, H)
 
-clean = bg  # bubbles + logo removed
+clean = bg  # bubbles removed; the heading, subtitle and pill were never in the plate
 
 # ground (everything that must stay still while the sky drifts)
 cap_pts = [(0, 1080), (420, 1110), (930, 1170), (1250, 1200), (2050, 1060), (2370, 1100),
@@ -202,9 +236,10 @@ keep = np.unique(lab[-1][lab[-1] > 0])
 ground = np.isin(lab, keep)
 fg_alpha = feather(ground, 1.2)
 
-# the monitor on its own, so it can stay in focus while the meadow blurs during the zoom
+# the monitor on its own, so it can stay in focus while the meadow blurs during the zoom.
+# It is cut from the mockup so it matches the couple-on-screen crop laid over it.
 mon_mask = ndi.binary_dilation(polygon(sh, [(x * K, y * K) for x, y in mon]), iterations=2)
-box = save_rgba(clean, feather(mon_mask, 1.0), "s01_monitor.webp")
+box = save_rgba(mock, feather(mon_mask, 1.0), "s01_monitor.webp")
 place("s01_monitor", "s01_monitor.webp", box, W, H)
 box = save_rgba(clean, fg_alpha, "s01_fg.webp", crop=(0, 0, W, H))
 place("s01_fg", "s01_fg.webp", box, W, H)
@@ -213,18 +248,24 @@ sky = inpaint(clean, ndi.binary_dilation(ground, iterations=8), iters=30)
 pad = round(W * 0.06)  # mirrored margin so the clouds can drift sideways
 sky = np.pad(sky, ((0, 0), (pad, pad), (0, 0)), mode="reflect")
 save_rgb(sky, "s01_sky.jpg", 84)
-manifest["s01_sky"] = dict(src="assets/s01_sky.jpg", x=-100 * pad / W, y=0, w=100 + 200 * pad / W, h=100)
+manifest["s01_sky"] = dict(src=target("s01_sky.jpg")[1], px=[sky.shape[1], sky.shape[0]],
+                           x=-100 * pad / W, y=0, w=100 + 200 * pad / W, h=100)
 
 orig = Image.open(os.path.join(ROOT, "01-password.jpg")).convert("RGB")
 scr = (1514, 616, 1684, 752)
-orig.crop(scr).save(os.path.join(OUT, "s01_screen.jpg"), quality=90)
+orig.crop(scr).save(target("s01_screen.jpg")[0], quality=90)
 place("s01_screen", "s01_screen.jpg", scr, 3288, 1850)
+manifest["s01_screen"]["px"] = [scr[2] - scr[0], scr[3] - scr[1]]
+# where the live password pill and the heading sit (% of the stage), measured on the mockup
 manifest["s01_input"] = dict(x=100 * 646 / 1600, y=100 * 533 / 900, w=100 * 294 / 1600, h=100 * 75 / 900)
+manifest["s01_heading"] = dict(cx=100 * 986 / 1998, cy=100 * 590 / 1125, size=100 * 45 / 1998)
+manifest["s01_subtitle"] = dict(cx=100 * 986 / 1998, cy=100 * 639 / 1125, size=100 * 14.5 / 1998)
 
 # ---------------------------------------------------------------- screen 02
 print("screen 02 ...")
-save_rgb(load("02-splash-login-1.jpg", W_HI), "s02_bg.jpg", 86)
-manifest["s02_bg"] = dict(src="assets/s02_bg.jpg")
+_s02 = load("02-splash-login-1.jpg", W_HI)
+save_rgb(_s02, "s02_bg.jpg", 86)
+full("s02_bg", "s02_bg.jpg", _s02)
 manifest["s02_screen"] = dict(x=100 * 152 / 3288, y=100 * 73 / 1850, w=100 * 2977 / 3288, h=100 * 1723 / 1850)
 
 # ---------------------------------------------------------------- screen 03
@@ -367,40 +408,137 @@ manifest["s03_mute"] = dict(cx=100 * 187 / 3288, cy=100 * 1705 / 1850, d=100 * 1
 print("screens 04 / 05 ...")
 W, H = 1920, 1080
 sh = (H, W)
-for src, out, cur_box, fold_box, key in [
-    ("04-journey-00.jpg", "j00", (1004, 536, 1064, 616), (916, 486, 1012, 560), "j00"),
-    ("05-new-chapter.jpg", "j05", (1014, 519, 1072, 599), (916, 486, 1012, 560), "j05"),
+
+# What the mockups bake in but the site renders for real: the wordmark, the nav pill, RSVP.
+CHROME = [(45, 30, 160, 130), (580, 36, 1326, 120), (1722, 36, 1882, 120)]
+chrome = np.zeros(sh, bool)
+for b in CHROME:
+    chrome |= rect(sh, *b)
+
+
+def matte(im, bg, region):
+    """Alpha for a pixel-art sprite sitting on `bg`: solid inside, soft at the edge."""
+    d = np.abs(im - bg).max(2)
+    solid = ndi.binary_fill_holes((d > 45) & region)
+    a = np.maximum(np.clip((d - 14) / 36.0, 0, 1) * region, feather(solid, 0.6))
+    F = np.where(a[..., None] > 0.9, im, bg + (im - bg) / np.maximum(a, 0.08)[..., None])
+    return F, a
+
+
+# (mockup, name, folder icon + label box, cursor box, area to paint out)
+for src, out, fold_box, cur_box, hole_box in [
+    ("04-journey-00.jpg", "j00", (905, 480, 1010, 598), (1004, 536, 1064, 616), (895, 474, 1075, 625)),
+    ("05-new-chapter.jpg", "j05", (900, 480, 1012, 598), (1014, 519, 1072, 599), (895, 474, 1080, 625)),
 ]:
     im = load(src, W)
-    m = rect(sh, *cur_box)
-    bg = inpaint(im, m)
+    bg = inpaint(im, chrome | rect(sh, *hole_box))
     save_rgb(bg, out + "_bg.jpg", 88)
-    manifest[key + "_bg"] = dict(src="assets/" + out + "_bg.jpg")
-    if key == "j00":
-        d = np.abs(im - bg).max(2)
-        a = np.clip(d / 60.0, 0, 1) * m
-        F = bg + (im - bg) / np.maximum(a, 0.08)[..., None]
+    full(out + "_bg", out + "_bg.jpg", bg)
+    cur = rect(sh, *cur_box)
+    F, a = matte(im, bg, rect(sh, *fold_box) & ~cur)
+    box = save_rgba(F, a, out + "_folder.webp")
+    place(out + "_folder", out + "_folder.webp", box, W, H)
+    if out == "j00":
+        F, a = matte(im, bg, cur)
         box = save_rgba(F, a, "cursor.webp", crop=cur_box)
         place("cursor", "cursor.webp", box, W, H)
-    fb = save_rgba(bg, np.ones(sh, np.float32), out + "_folder.webp", crop=fold_box)
-    place(key + "_folder", out + "_folder.webp", fb, W, H)
 
 manifest["j05_cursor"] = dict(x=100 * 1016 / W, y=100 * 524 / H)
-save_rgb(load("04-journey-0.jpg", W), "j0_bg.jpg", 88)
-manifest["j0_bg"] = dict(src="assets/j0_bg.jpg")
 
+# --- the glass window: one frame per active tab, with the tab labels, the body and the photos
+# taken out so the site can put real text, photos and video in it.
 win_box = (194, 244, 1716, 962)
 win_mask = rounded_rect(sh, win_box[0], win_box[1], win_box[2] - 1, win_box[3] - 1, 26)
 win_alpha = feather(win_mask, 1.0)
-for i, src in enumerate([f"04-journey-{n}.jpg" for n in range(6)]):
-    im = load(src, W)
-    box = save_rgba(im, win_alpha, f"win{i}.webp", crop=win_box, q=90)
-    place(f"win{i}", f"win{i}.webp", box, W, H)
+TABS = [(325, 515), (520, 725), (730, 935), (940, 1145), (1150, 1345)]
+body = feather(rounded_rect(sh, 222, 352, 1686, 934, 14), 3)[..., None]
+wins = [load(f"04-journey-{n}.jpg", W) for n in range(6)]
+for i, w_im in enumerate(wins):
+    f = w_im * (1 - body) + wins[0] * body if i else w_im.copy()
+    holes = np.zeros(sh, bool)
+    green = (f[..., 1] > f[..., 0] + 14) & (f[..., 1] > f[..., 2] + 14)
+    L = lum(f)
+    for x0, x1 in TABS:
+        reg = rect(sh, x0 + 18, 276, x1 - 12, 324)
+        local = ndi.median_filter(L[270:330, x0:x1], size=(1, 41), mode="nearest")
+        dark = np.zeros(sh, bool)
+        dark[270:330, x0:x1] = L[270:330, x0:x1] < local - 14
+        holes |= (dark | green) & reg
+    holes = ndi.binary_dilation(holes, iterations=3)
+    f = inpaint(f, holes, iters=30)
+    box = save_rgba(f, win_alpha, f"frame{i}.webp", crop=win_box, q=90)
+    place(f"frame{i}", f"frame{i}.webp", box, W, H)
 
-shutil.copyfile(os.path.join(ROOT, FLY_SOURCE), os.path.join(OUT, "fly.mp4"))
 
-with open(os.path.join(OUT, "manifest.js"), "w") as f:
-    f.write("// generated by scripts/design/prepare_assets.py\nwindow.MANIFEST = ")
-    json.dump(manifest, f, indent=1)
-    f.write(";\n")
+# --- stand-in chapter photos, cropped from the mockups until the originals arrive.
+# Boxes were read off the mockups (+-5 px), then snapped to the strongest edge nearby.
+def sheet(c, tx=0, ty=0):
+    return tuple(round(v) for v in (210 + (c[0] - tx) / 0.6, 340 + (c[1] - ty) / 0.6,
+                                    210 + (c[2] - tx) / 0.6, 340 + (c[3] - ty) / 0.6))
+
+
+APPROX = {
+    1: [(885, 412, 1181, 628), (1226, 412, 1598, 628), (1398, 656, 1633, 871)],
+    2: [sheet(c) for c in [(317, 49, 429, 201), (461, 49, 538, 201), (570, 49, 827, 192), (655, 203, 842, 328)]],
+    3: [sheet(c, 894, 0) for c in [(1430, 29, 1575, 221), (1610, 31, 1724, 173), (1486, 237, 1557, 331), (1588, 198, 1761, 339)]],
+    4: [sheet(c, 0, 363) for c in [(281, 400, 461, 496), (471, 402, 561, 496), (570, 402, 755, 497), (765, 415, 877, 496),
+                                   (281, 516, 371, 611), (384, 519, 608, 611), (621, 517, 732, 609), (743, 517, 868, 607),
+                                   (739, 624, 872, 692)]],
+    5: [sheet(c, 894, 363) for c in [(1442, 427, 1612, 659), (1628, 427, 1708, 511), (1628, 522, 1748, 659)]],
+}
+VIDEO_BOX = (260, 388, 840, 871)  # the dark placeholder, the same on every tab (measured on tab 1)
+
+
+def snap(L, box, reach=10):
+    """Move each side of `box` to the strongest brightness edge within `reach` px."""
+    x0, y0, x1, y1 = box
+    mx, my = (x1 - x0) // 5, (y1 - y0) // 5
+    gx = np.abs(np.diff(L, axis=1))
+    gy = np.abs(np.diff(L, axis=0))
+
+    def best(prof, c):
+        lo = max(0, c - reach)
+        return lo + int(np.argmax(prof[lo : c + reach + 1]))
+
+    px_ = gx[y0 + my : y1 - my, :].mean(0)
+    py_ = gy[:, x0 + mx : x1 - mx].mean(1)
+    return best(px_, x0), best(py_, y0), best(px_, x1) + 1, best(py_, y1) + 1
+
+
+manifest["chapters"] = {}
+INSET = 3
+ww, wh = win_box[2] - win_box[0], win_box[3] - win_box[1]
+for ch, boxes in APPROX.items():
+    L = lum(wins[ch])
+    items = []
+    for k, bx in enumerate(boxes, 1):
+        x0, y0, x1, y1 = snap(L, bx)
+        x0, y0, x1, y1 = x0 + INSET, y0 + INSET, x1 - INSET, y1 - INSET
+        name = f"ch{ch}_{k}.jpg"
+        Image.fromarray(np.clip(wins[ch][y0:y1, x0:x1], 0, 255).astype(np.uint8)).save(target(name)[0], quality=90)
+        items.append(dict(src=target(name)[1], px=[x1 - x0, y1 - y0],
+                          x=100 * (x0 - win_box[0]) / ww, y=100 * (y0 - win_box[1]) / wh,
+                          w=100 * (x1 - x0) / ww, h=100 * (y1 - y0) / wh))
+    manifest["chapters"][str(ch)] = items
+manifest["window_video_slot"] = dict(
+    x=100 * (VIDEO_BOX[0] - win_box[0]) / ww, y=100 * (VIDEO_BOX[1] - win_box[1]) / wh,
+    w=100 * (VIDEO_BOX[2] - VIDEO_BOX[0]) / ww, h=100 * (VIDEO_BOX[3] - VIDEO_BOX[1]) / wh)
+
+# --- the 04 -> 05 fly-through
+shutil.copyfile(os.path.join(ROOT, FLY_SOURCE), os.path.join(VIDEO_OUT, "to-wedding.mp4"))
+manifest["video_fly"] = dict(src="/video/to-wedding.mp4" if SITE else "to-wedding.mp4")
+
+# --- manifest
+if SITE:
+    out_ts = os.path.join(REPO, "config", "scene-layers.generated.ts")
+    with open(out_ts, "w", encoding="utf-8", newline="\n") as f:
+        f.write("// Generated by scripts/design/prepare_assets.py; do not edit by hand.\n"
+                "// Positions are % of the 16:9 stage; px is the image's pixel size.\n"
+                "import type { SceneAssets } from '@/lib/scene/layers';\n\n"
+                "export const sceneAssets = ")
+        json.dump(manifest, f, indent=2)
+        f.write(" as const satisfies SceneAssets;\n")
+else:
+    with open(os.path.join(OUT, "manifest.json"), "w") as f:
+        json.dump(manifest, f, indent=1)
 print("done ->", OUT)
