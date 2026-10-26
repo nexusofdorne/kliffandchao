@@ -5,7 +5,7 @@ import { env } from '../env';
 import { mirrorRsvpToSheet, readRsvpLogNextRow } from '../sheets/mirror';
 import { notificationSchema } from '../validation';
 import { DELIVERY_LEASE_MS, getDeliveryAction } from './delivery-policy';
-import { notifyCouple } from './notify';
+import { EmailDeliveryError, notifyCouple } from './notify';
 
 type DeliveryServices = {
   notify: typeof notifyCouple;
@@ -140,11 +140,13 @@ export async function deliverRsvpDelivery(
       },
     });
     return completed.count === 1 ? 'delivered' : 'busy';
-  } catch {
-    // Provider bodies may contain private data. Keep logs scoped to ids.
+  } catch (error) {
+    // Provider bodies may contain private data. Keep logs scoped to ids, plus the
+    // email provider's error code when there is one.
     console.error('RSVP delivery failed', {
       deliveryId: record.id,
       channel: record.channel,
+      ...(error instanceof EmailDeliveryError ? { reason: error.reason } : {}),
     });
     await prisma.rsvpDelivery.updateMany({
       where: { id: record.id, claimToken },

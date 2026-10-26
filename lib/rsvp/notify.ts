@@ -19,6 +19,14 @@ export function buildRsvpNotification(
   };
 }
 
+/** A failed send, carrying only Resend's error code and HTTP status (never its message,
+ *  which can quote the recipient), so the logs can say why without private data. */
+export class EmailDeliveryError extends Error {
+  constructor(readonly reason: string) {
+    super(`Email delivery failed (${reason})`);
+  }
+}
+
 // The SDK returns API errors instead of throwing; the delivery worker must
 // see those failures so it can keep the task available for retry.
 export async function notifyCouple(
@@ -31,5 +39,6 @@ export async function notifyCouple(
     signal: AbortSignal.timeout(10_000),
   };
   const { data, error } = await resend.emails.send(payload, options);
-  if (error || !data) throw new Error('Email delivery failed');
+  if (error) throw new EmailDeliveryError(`${error.name} ${error.statusCode ?? ''}`.trim());
+  if (!data) throw new EmailDeliveryError('no_data');
 }
