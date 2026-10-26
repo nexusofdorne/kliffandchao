@@ -15,8 +15,9 @@ import { isAbort } from './timing';
 
 // The redesigned desktop story. `arrival` is true when the guest has just come
 // through the gate's dive (docs/REDESIGN_PLAN.md decision 11): the terminal
-// plays, then the intro surfaces from its screen. Any other way in (a returning
-// cookie, a reload, "back to home" from RSVP) gets a short intro entrance.
+// plays, tears apart, and the intro film tunes in on the same monitor. Any other
+// way in (a returning cookie, a reload, "back to home" from RSVP) gets a short
+// tune-in.
 export function DesktopStory({ arrival }: { arrival: boolean }) {
   return (
     <SceneProvider>
@@ -68,7 +69,6 @@ function Story({ arrival }: { arrival: boolean }) {
     const introEl = intro.current;
     const term = terminal.current;
     if (!introEl || !term || !introRoot.current || !arrivalRoot.current) return;
-    const parts = introEl.parts();
 
     setInputLocked(true);
     setChromeVisible(false);
@@ -76,28 +76,21 @@ function Story({ arrival }: { arrival: boolean }) {
     const play = async () => {
       if (arrival) {
         await term.run(introEl.videoReady(), signal);
-        // hand over: the bezel of 03 takes the place of 02's, scaled to sit on it,
-        // so the grass slides in underneath it while the terminal tears apart
+        await term.breakUp(signal);
+        // the intro's monitor is the terminal's own picture and its screen starts in
+        // the colour the break-up ends on, so swapping them shows no seam
         gsap.set(introRoot.current, { autoAlpha: 1, zIndex: 6 });
-        gsap.set(parts.black, { opacity: 0 });
-        const settle = { duration: 1.7, ease: 'power2.inOut' } as const;
-        gsap.fromTo(parts.stage, { scale: 0.948 }, { scale: 1, ...settle });
-        gsap.fromTo(term.stage(), { scale: 1 }, { scale: 1.055, ...settle });
-        beginMusic(); // the song comes in with the intro, not before
-        const chrome = setTimeout(() => setChromeVisible(true), 3200);
-        signal.addEventListener('abort', () => clearTimeout(chrome));
-        await Promise.all([
-          term.breakUp(signal),
-          introEl.surface({ order: ['bottom', 'right', 'left', 'top'] }),
-        ]);
-        gsap.set(parts.black, { clearProps: 'opacity' });
         gsap.set(arrivalRoot.current, { display: 'none' });
+        beginMusic(); // the song comes in with the intro, not before
+        const chrome = setTimeout(() => setChromeVisible(true), 1500);
+        signal.addEventListener('abort', () => clearTimeout(chrome));
+        await introEl.powerOn();
       } else {
         gsap.set(arrivalRoot.current, { display: 'none' });
         gsap.set(introRoot.current, { autoAlpha: 1 });
         beginMusic();
         setTimeout(() => setChromeVisible(true), 1600);
-        await introEl.surface({ fast: true });
+        await introEl.powerOn({ fast: true });
       }
     };
 

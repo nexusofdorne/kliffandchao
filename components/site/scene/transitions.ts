@@ -26,9 +26,6 @@ async function until(test: () => boolean, maxMs: number) {
   while (!test() && performance.now() - t0 < maxMs) await sleep(30);
 }
 
-// How far the intro's layers rush past the camera as we go "through the screen".
-const THROUGH = { world: 2.9, bubbles: 4, bezel: 1.3, behind: 1.12 };
-
 /** A plain crossfade between two scene roots: reduced motion, and the fallback. */
 async function crossfade(from: HTMLElement, to: HTMLElement) {
   const tl = gsap.timeline();
@@ -43,9 +40,8 @@ export function createTransitions(refs: Refs): Partial<Record<
   MovePlayer
 >> {
   return {
-    // 03 -> 04: the next scene appears inside the blob, then the grass border
-    // rushes past the camera: we go through the screen instead of cutting.
-    // 03 stays on top with its interior emptied; 04 waits underneath.
+    // 03 -> 04 (until the camera move of review step 5): the camera pushes into
+    // the monitor and the meadow settles in behind it.
     'intro->journey': async () => {
       const intro = refs.intro.current;
       const journey = refs.journey.current;
@@ -60,32 +56,11 @@ export function createTransitions(refs: Refs): Partial<Record<
         intro.setPlaying(false);
         return;
       }
-      gsap.set(p.black, { opacity: 0 });
       const D = 1.8;
       const tl = gsap.timeline();
       tl.to(p.ui, { opacity: 0, duration: 0.35 }, 0)
-        .to(p.video, { opacity: 0, duration: 0.65, ease: 'power1.inOut' }, 0)
-        .to(p.bezel, { scale: THROUGH.bezel, opacity: 0, duration: 0.7, ease: 'power1.in' }, 0)
-        .to(p.bubbles, { scale: THROUGH.bubbles, opacity: 0, duration: D, ease: easings.dive }, 0.25)
-        .to(
-          p.world,
-          {
-            keyframes: {
-              '30%': { scale: 1.12 },
-              '85%': { scale: THROUGH.world, filter: 'blur(4px)' },
-              '100%': { scale: THROUGH.world * 1.08, filter: 'blur(5px)', opacity: 0 },
-            },
-            easeEach: easings.dive,
-            duration: D,
-          },
-          0.25,
-        )
-        .fromTo(
-          journey.parts().stage,
-          { scale: THROUGH.behind },
-          { scale: 1, duration: D + 0.5, ease: 'power2.out' },
-          0,
-        );
+        .to(p.stage, { scale: 1.9, opacity: 0, duration: D, ease: easings.dive }, 0.1)
+        .fromTo(journey.parts().stage, { scale: 1.12 }, { scale: 1, duration: D + 0.5, ease: 'power2.out' }, 0);
       await playToEnd(tl);
       gsap.set(introRoot, { autoAlpha: 0 });
       intro.rest();
@@ -108,28 +83,11 @@ export function createTransitions(refs: Refs): Partial<Record<
         return;
       }
       gsap.set(introRoot, { autoAlpha: 1 });
-      gsap.set(p.black, { opacity: 0 });
       const D = 1.6;
-      const ease = easings.surfaceOut;
       const tl = gsap.timeline();
-      tl.to(journey.parts().stage, { scale: THROUGH.behind, duration: D, ease }, 0)
-        .fromTo(
-          p.world,
-          { scale: THROUGH.world * 1.08, filter: 'blur(5px)', opacity: 0 },
-          {
-            keyframes: {
-              '15%': { scale: THROUGH.world, filter: 'blur(4px)', opacity: 1 },
-              '100%': { scale: 1, filter: 'blur(0px)', opacity: 1 },
-            },
-            easeEach: ease,
-            duration: D,
-          },
-          0,
-        )
-        .fromTo(p.bubbles, { scale: THROUGH.bubbles, opacity: 0 }, { scale: 1, opacity: 1, duration: D, ease }, 0)
-        .fromTo(p.bezel, { scale: THROUGH.bezel, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.7, ease: 'power1.out' }, 0.9)
-        .fromTo(p.ui, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 1.2)
-        .fromTo(p.video, { opacity: 0 }, { opacity: 1, duration: 0.7, ease: 'power1.inOut' }, 1.0);
+      tl.to(journey.parts().stage, { scale: 1.12, duration: D, ease: easings.surfaceOut }, 0)
+        .fromTo(p.stage, { scale: 1.9, opacity: 0 }, { scale: 1, opacity: 1, duration: D, ease: easings.surfaceOut }, 0)
+        .fromTo(p.ui, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 1.0);
       await playToEnd(tl);
       gsap.set(journeyRoot, { autoAlpha: 0 });
       gsap.set(journey.parts().stage, { clearProps: 'transform' });

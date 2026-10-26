@@ -25,7 +25,7 @@ export function AudioToggle() {
         opacity: chromeVisible ? 1 : 0,
         visibility: chromeVisible ? 'visible' : 'hidden',
       }}
-      className={`fixed bottom-[4.4vh] left-[3.2vw] z-[60] grid size-[clamp(40px,5.4vh,52px)] place-items-center rounded-full transition-transform duration-300 ease-[cubic-bezier(.16,1,.3,1)] hover:scale-[1.06] ${
+      className={`audio-toggle fixed bottom-[4.4vh] left-[3.2vw] z-[60] grid size-[clamp(40px,5.4vh,52px)] place-items-center rounded-full transition-transform duration-300 ease-[cubic-bezier(.16,1,.3,1)] hover:scale-[1.06] ${
         isLight ? 'glass-light' : 'glass'
       }`}
     >

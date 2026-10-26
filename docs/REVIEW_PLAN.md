@@ -262,3 +262,16 @@ The full run, Password → Login → Intro → Journey → Wedding and back:
 - **Not checked:** a real Safari or phone (the desktop windows only), and the pixel-level
   match against the mockups beyond looking at both (the preview pane shows only crops).
 
+## 6. Step 3 as built (26 Oct)
+
+- The intro is the login monitor itself: `IntroScene` draws the same `s02_bg` picture as the
+  terminal and puts the film on its screen (the terminal's screen box and rounded corners, a faint
+  scan line, vignette and bezel shade on top). The grass, flowers, bubbles and the 03 bezel are no
+  longer drawn (their files stay for now; step 5 decides what to reuse).
+- Login to intro: the terminal's break-up ends on a blue-grey screen; the intro scene (same
+  monitor, screen in that colour) takes over with no seam, and the film tunes in (bright and soft,
+  then settling). The song comes in at the same moment (step 1).
+- The music button now sits inside the monitor's screen on desktop (`html[data-scenes]
+  .audio-toggle`), and the verse moved in from the edge.
+- The intro to journey move is a stand-in (push into the monitor) until step 5.
+
