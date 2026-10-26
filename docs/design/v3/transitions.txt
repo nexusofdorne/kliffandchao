@@ -1,0 +1,12 @@
+
+MOTIONS/TRANSITIONS
+
+
+1. 01 : Grass and bubbles are slightly swaying, clouds are slowly moving, and the computer monitor should be glitching (if not attainable, then we will provide the video, and a placeholder should be there) (this should not be scrollable)
+2. 01 - 02 : when clicked enter, it should zoom in into the computer monitor, and show 02 
+2. 02 : starts with blank screen then typing the text on the first paragraph, progress bar should load from 0 to 100, then typing the bottom text then show the dinosaur with slight movement
+3. 02 - 03 : there should be a glitch on the screen that mimics what an analog tv or old computer monitor does then erases the text, then the elements on the borders like the grass and the flowers and bubbles should start to surface, but not at the same time, it should be layered like a parallax effect, then the video should show (intro.vid) inside the blob, fixed in the blue area. (this is the start when the website can be scrollable)
+4. 03 : video will loop infinitely and the verses on the bottom right will change every click, also there should be a mute and music button on the bottom left for the music. by default the music should play, then there's just a button available should they wish to mute it.
+5. 03 - 04 : when scrolled, or when the journey is clicked on the top (2 actions, either of which) should cause an immersive zoom that feels like we're going inside the computer monitor (which is the current border), then a folder is clicked and a window with tabs is open
+6. 04 : journey page should be scrollable but the close option on the tab should work also
+7. 04 - 05 : should be a cinematic immersive scroll towards this new area and opens this new folder that shows 05
