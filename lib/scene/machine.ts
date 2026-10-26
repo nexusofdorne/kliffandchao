@@ -84,7 +84,7 @@ export function stepPlan(state: SceneState, dir: 1 | -1): Move[] {
   }
   // wedding: nothing lies beyond it
   return dir < 0
-    ? [{ kind: 'wedding->journey', to: { ...state, scene: 'journey' } }]
+    ? [{ kind: 'wedding->journey', to: leaveWedding(state) }]
     : [];
 }
 
@@ -132,6 +132,11 @@ export function jumpPlan(state: SceneState, target: SceneId): Move[] {
   return moves;
 }
 
+// Flying back to the meadow closes the wedding window; the journey keeps its own.
+function leaveWedding(state: SceneState): SceneState {
+  return { ...state, scene: 'journey', weddingOpen: false };
+}
+
 function hopFrom(state: SceneState, dir: 1 | -1): Move {
   const kinds: Record<string, MoveKind> = {
     'intro:1': 'intro->journey',
@@ -143,7 +148,12 @@ function hopFrom(state: SceneState, dir: 1 | -1): Move {
   const next = SCENES[SCENES.indexOf(state.scene) + dir];
   return {
     kind,
-    to: kind === 'journey->intro' ? leaveJourney(state) : { ...state, scene: next },
+    to:
+      kind === 'journey->intro'
+        ? leaveJourney(state)
+        : kind === 'wedding->journey'
+          ? leaveWedding(state)
+          : { ...state, scene: next },
   };
 }
 

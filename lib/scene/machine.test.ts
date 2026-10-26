@@ -125,6 +125,15 @@ describe('jumpPlan', () => {
     expect(viaJump).toMatchObject({ journeyOpen: false, journeyTab: 1 });
   });
 
+  it('closes the wedding window when flying back to the journey', () => {
+    const state: SceneState = { ...initialState, scene: 'wedding', weddingOpen: true };
+    expect(settle(state, stepPlan(state, -1))).toMatchObject({
+      scene: 'journey',
+      weddingOpen: false,
+    });
+    expect(settle(state, jumpPlan(state, 'journey')).weddingOpen).toBe(false);
+  });
+
   it('marks the window opening that follows an arrival as automatic', () => {
     const [, open] = stepPlan(initialState, 1);
     expect(open.auto).toBe(true);

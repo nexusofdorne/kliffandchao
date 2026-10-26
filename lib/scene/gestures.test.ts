@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  atScrollEdge,
   createWheelGate,
   keyDirection,
   swipeDirection,
@@ -73,5 +74,31 @@ describe('keyDirection', () => {
     expect(keyDirection('a')).toBeNull();
     expect(keyDirection('ArrowDown', { meta: true })).toBeNull();
     expect(keyDirection(' ', { ctrl: true })).toBeNull();
+  });
+});
+
+describe('atScrollEdge', () => {
+  const pane = (scrollTop: number) => ({
+    scrollTop,
+    clientHeight: 400,
+    scrollHeight: 1000,
+  });
+
+  it('is at the top edge only for upward gestures at scrollTop 0', () => {
+    expect(atScrollEdge(pane(0), -1)).toBe(true);
+    expect(atScrollEdge(pane(0), 1)).toBe(false);
+    expect(atScrollEdge(pane(120), -1)).toBe(false);
+  });
+
+  it('is at the bottom edge only once everything has been scrolled through', () => {
+    expect(atScrollEdge(pane(600), 1)).toBe(true);
+    expect(atScrollEdge(pane(599.5), 1)).toBe(true);
+    expect(atScrollEdge(pane(300), 1)).toBe(false);
+  });
+
+  it('treats a pane that does not scroll as at both edges', () => {
+    const short = { scrollTop: 0, clientHeight: 400, scrollHeight: 380 };
+    expect(atScrollEdge(short, 1)).toBe(true);
+    expect(atScrollEdge(short, -1)).toBe(true);
   });
 });

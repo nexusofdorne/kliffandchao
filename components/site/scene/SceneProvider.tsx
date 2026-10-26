@@ -14,6 +14,7 @@ import {
 } from 'react';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import {
+  atScrollEdge,
   createWheelGate,
   keyDirection,
   swipeDirection,
@@ -248,6 +249,21 @@ export function SceneProvider({ children }: { children: ReactNode }) {
       },
     });
 
+    // A scrolling pane (data-scene-scroll) keeps the wheel until it hits an
+    // edge; Observer skips it, so this listener catches the edge case.
+    const onPaneWheel = (e: WheelEvent) => {
+      const pane =
+        e.target instanceof Element
+          ? e.target.closest<HTMLElement>('[data-scene-scroll]')
+          : null;
+      if (!pane || busyRef.current || e.deltaY === 0) return;
+      const dir: Direction = e.deltaY > 0 ? 1 : -1;
+      if (!atScrollEdge(pane, dir)) return;
+      const step_ = wheelGate.current.push(e.deltaY, performance.now());
+      if (step_) step(step_);
+    };
+    window.addEventListener('wheel', onPaneWheel, { passive: true });
+
     // Touch and keys are plain listeners: the swipe threshold and key map are
     // the same pure helpers the tests cover.
     let touchY: number | null = null;
@@ -272,6 +288,15 @@ export function SceneProvider({ children }: { children: ReactNode }) {
         alt: e.altKey,
       });
       if (!dir) return;
+      // a scrolling pane that can still move in this direction keeps the key
+      const pane = Array.from(
+        document.querySelectorAll<HTMLElement>('[data-scene-scroll]'),
+      ).find(
+        (el) =>
+          el.getClientRects().length > 0 &&
+          getComputedStyle(el).visibility === 'visible',
+      );
+      if (pane && !atScrollEdge(pane, dir)) return;
       e.preventDefault();
       if (!busyRef.current) step(dir);
     };
@@ -281,6 +306,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
 
     return () => {
       wheel.kill();
+      window.removeEventListener('wheel', onPaneWheel);
       window.removeEventListener('touchstart', onTouchStart);
       window.removeEventListener('touchend', onTouchEnd);
       window.removeEventListener('keydown', onKeyDown);

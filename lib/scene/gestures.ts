@@ -56,6 +56,21 @@ export function swipeDirection(
   return dy > 0 ? 1 : -1;
 }
 
+/**
+ * A scrolling pane inside a scene (the wedding window's body) keeps wheel and
+ * arrow keys for itself until it reaches an edge; only then does the gesture
+ * count as a step. True when it cannot move any further in `dir`.
+ */
+export function atScrollEdge(
+  el: { scrollTop: number; clientHeight: number; scrollHeight: number },
+  dir: Direction,
+): boolean {
+  if (el.scrollHeight <= el.clientHeight + 1) return true;
+  return dir > 0
+    ? el.scrollTop + el.clientHeight >= el.scrollHeight - 1
+    : el.scrollTop <= 0;
+}
+
 const FORWARD = new Set(['ArrowDown', 'PageDown', ' ']);
 const BACK = new Set(['ArrowUp', 'PageUp']);
 

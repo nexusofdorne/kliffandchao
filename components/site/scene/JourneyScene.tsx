@@ -26,6 +26,7 @@ export type JourneyHandle = {
     stage: HTMLElement | null;
     window: HTMLElement | null;
     folder: HTMLElement | null;
+    fly: HTMLVideoElement | null;
   };
   /** Back to the folder on the meadow, window closed, nothing selected. */
   reset: () => void;
@@ -60,6 +61,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
   const windowRef = useRef<HTMLDivElement>(null);
   const folderRef = useRef<HTMLButtonElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
+  const flyRef = useRef<HTMLVideoElement>(null);
   const shown = useRef(0); // 0 = the empty frame, 1..5 = a chapter
 
   const q = (sel: string) =>
@@ -219,6 +221,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
       stage: stageRef.current,
       window: windowRef.current,
       folder: folderRef.current,
+      fly: flyRef.current,
     }),
     reset,
   }));
@@ -229,6 +232,17 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     <Stage>
       <div ref={stageRef} className="absolute inset-0">
         <StageFill asset={a.j00_bg} />
+        {/* the flight to the river (04 -> 05); its first frame is this meadow */}
+        <video
+          ref={flyRef}
+          src={a.video_fly.src}
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          tabIndex={-1}
+          className="stage-fill pointer-events-none object-cover opacity-0"
+        />
         <button
           ref={folderRef}
           type="button"

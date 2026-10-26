@@ -5,7 +5,8 @@ import { useEffect, useRef } from 'react';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { IntroScene, type IntroHandle } from './IntroScene';
 import { JourneyScene, type JourneyHandle } from './JourneyScene';
-import { SceneRoot, WeddingScaffold } from './ScenePlayground';
+import { SceneRoot } from './ScenePlayground';
+import { WeddingScene, type WeddingHandle } from './WeddingScene';
 import { SceneProvider, useScene } from './SceneProvider';
 import { Terminal, type TerminalHandle } from './Terminal';
 import { createTransitions } from './transitions';
@@ -29,6 +30,9 @@ function Story({ arrival }: { arrival: boolean }) {
   const intro = useRef<IntroHandle>(null);
   const journey = useRef<JourneyHandle>(null);
   const journeyRoot = useRef<HTMLElement>(null);
+  const wedding = useRef<WeddingHandle>(null);
+  const weddingRoot = useRef<HTMLElement>(null);
+  const haze = useRef<HTMLDivElement>(null);
   const terminal = useRef<TerminalHandle>(null);
   const introRoot = useRef<HTMLElement>(null);
   const arrivalRoot = useRef<HTMLElement>(null);
@@ -45,12 +49,16 @@ function Story({ arrival }: { arrival: boolean }) {
       journey,
       introRoot,
       journeyRoot,
+      wedding,
+      weddingRoot,
+      haze,
+      setChromeVisible,
     });
     const offs = Object.entries(players).map(([kind, player]) =>
       registerPlayer(kind as keyof typeof players, player),
     );
     return () => offs.forEach((off) => off());
-  }, [registerPlayer]);
+  }, [registerPlayer, setChromeVisible]);
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -109,8 +117,8 @@ function Story({ arrival }: { arrival: boolean }) {
       <SceneRoot id="journey" rootRef={journeyRoot} z={2}>
         <JourneyScene ref={journey} />
       </SceneRoot>
-      <SceneRoot id="wedding" z={1}>
-        <WeddingScaffold />
+      <SceneRoot id="wedding" rootRef={weddingRoot} z={1}>
+        <WeddingScene ref={wedding} />
       </SceneRoot>
       <SceneRoot id="intro" rootRef={introRoot} z={3}>
         <IntroScene ref={intro} startHidden />
@@ -118,6 +126,16 @@ function Story({ arrival }: { arrival: boolean }) {
       <SceneRoot id="arrival" rootRef={arrivalRoot} visible z={5}>
         <Terminal ref={terminal} />
       </SceneRoot>
+      {/* the soft white-blue wash the fallback flight and the way back pass through */}
+      <div
+        ref={haze}
+        aria-hidden="true"
+        className="pointer-events-none fixed inset-0 z-[8] opacity-0"
+        style={{
+          background:
+            'radial-gradient(ellipse at 50% 55%, #f4f8fb 0%, #dfeaf2 55%, #c9dbe8 100%)',
+        }}
+      />
     </>
   );
 }

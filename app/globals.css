@@ -1285,3 +1285,126 @@ html[data-scenes] .topbar {
   outline: 0.12cqw solid rgba(255, 255, 255, 0.8);
   outline-offset: 0.3cqw;
 }
+
+/* ============================================================
+   Wedding window (screen 05) — prototype-v3/styles.css window5.
+   The tab bodies are the existing wedding tab components.
+   ============================================================ */
+.w5 {
+  position: absolute;
+  left: 15%;
+  top: 24.4%;
+  width: 68.8%;
+  height: 55.6%;
+  display: flex;
+  flex-direction: column;
+  visibility: hidden;
+}
+.w5-bar {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  gap: 0.35cqw;
+  height: 9.5%;
+  padding-left: 4.2%;
+}
+.w5-dot {
+  position: absolute;
+  top: 46%;
+  width: 0.62cqw;
+  height: 0.62cqw;
+  border-radius: 50%;
+  background: #f1c75c;
+}
+.w5-dot--close {
+  left: 1.1%;
+  background: #e86a5f;
+  cursor: pointer;
+}
+.w5-dot--mid {
+  left: 2.25%;
+}
+.w5-dot--end {
+  left: 3.4%;
+  background: #8fc26b;
+}
+.w5-tab {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4cqw;
+  width: 11%;
+  height: 82%;
+  border-radius: 0.7cqw 0.7cqw 0 0;
+  background: rgba(255, 255, 255, 0.32);
+  border: 0.05cqw solid rgba(255, 255, 255, 0.55);
+  border-bottom: 0;
+  backdrop-filter: blur(1cqw);
+  color: rgba(40, 50, 40, 0.75);
+  font-size: 0.56cqw;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    height 0.2s;
+}
+.w5-tab svg {
+  width: 1.05cqw;
+  height: 1.05cqw;
+  flex: none;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.w5-tab[aria-selected='true'],
+.w5-tab:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+.w5-tab[aria-selected='true'] {
+  height: 96%;
+}
+.w5-rest {
+  flex: 1;
+}
+.w5-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0 1cqw 1cqw 1cqw;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.72),
+    rgba(238, 238, 228, 0.68) 60%,
+    rgba(218, 214, 186, 0.64)
+  );
+  border: 0.05cqw solid rgba(255, 255, 255, 0.7);
+  box-shadow:
+    0 1.5cqw 3cqw rgba(0, 0, 0, 0.12),
+    inset 0 0 0 0.5cqw rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(1.6cqw) saturate(1.05);
+  color: #14180d;
+  overflow: hidden;
+}
+/* the tab panels were built for a full page; inside the window they scroll on their own */
+.w5-body .wedding-tab-panel {
+  padding: 2.2cqw 3cqw 2.6cqw;
+}
+.w5-hint {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  margin-top: 0.8cqw;
+  font-size: 0.6cqw;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.85);
+}
+@media (prefers-reduced-motion: reduce) {
+  .w5-tab {
+    transition: none;
+  }
+}
