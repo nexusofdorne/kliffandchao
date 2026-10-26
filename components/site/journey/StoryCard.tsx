@@ -37,7 +37,7 @@ export const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function Sto
       ref={ref}
       role="button"
       tabIndex={0}
-      aria-label={`${chapter.title} — ${story.caption}`}
+      aria-label={story.caption ? `${chapter.title} — ${story.caption}` : chapter.title}
       onClick={onSelect}
       onKeyDown={handleKeyDown}
       style={
@@ -69,9 +69,11 @@ export const StoryCard = forwardRef<HTMLDivElement, StoryCardProps>(function Sto
         <div className="mb-[1vh] text-[8.5px] tracking-[.14em] opacity-[.72]">
           {chapter.number} &middot; {chapter.title}
         </div>
-        <div className="text-[clamp(13px,2.05vh,22px)] font-semibold leading-[1.2] tracking-[-.01em]">
-          {story.caption}
-        </div>
+        {story.caption ? (
+          <div className="text-[clamp(13px,2.05vh,22px)] font-semibold leading-[1.2] tracking-[-.01em]">
+            {story.caption}
+          </div>
+        ) : null}
       </div>
       <div className="absolute inset-x-0 bottom-0 p-[clamp(14px,2vh,24px)_clamp(14px,1.5vw,24px)]">
         <span className="text-[9.5px] tracking-[.14em] opacity-85 [font-variant-numeric:tabular-nums]">

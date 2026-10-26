@@ -34,6 +34,8 @@ export interface Move {
   readonly to: SceneState;
   /** Part of a longer hop (a nav jump across a scene): skip the flourish. */
   readonly quick?: boolean;
+  /** Opening the window as part of arriving (the cursor does it), not a click. */
+  readonly auto?: boolean;
 }
 
 export const initialState: SceneState = {
@@ -78,7 +80,7 @@ export function stepPlan(state: SceneState, dir: 1 | -1): Move[] {
     }
     return dir > 0
       ? [{ kind: 'journey->wedding', to: { ...state, scene: 'wedding' } }]
-      : [{ kind: 'journey->intro', to: { ...state, scene: 'intro' } }];
+      : [{ kind: 'journey->intro', to: leaveJourney(state) }];
   }
   // wedding: nothing lies beyond it
   return dir < 0
@@ -90,9 +92,19 @@ function enterJourney(state: SceneState): Move[] {
   const arrived: SceneState = { ...state, scene: 'journey' };
   const moves: Move[] = [{ kind: 'intro->journey', to: arrived }];
   if (!state.journeyOpen) {
-    moves.push({ kind: 'journey-open', to: { ...arrived, journeyOpen: true } });
+    moves.push({
+      kind: 'journey-open',
+      to: { ...arrived, journeyOpen: true },
+      auto: true,
+    });
   }
   return moves;
+}
+
+// Going back out through the screen closes the window and forgets the tab; the
+// next arrival opens it again from chapter 1 (prototype reset04).
+function leaveJourney(state: SceneState): SceneState {
+  return { ...state, scene: 'intro', journeyOpen: false, journeyTab: 1 };
 }
 
 /** A nav click: hop scene by scene, skipping the flourish on the way past. */
@@ -111,7 +123,11 @@ export function jumpPlan(state: SceneState, target: SceneId): Move[] {
   }
   // arriving at the journey from the intro opens its window, as a scroll would
   if (state.scene === 'intro' && target === 'journey' && !cur.journeyOpen) {
-    moves.push({ kind: 'journey-open', to: { ...cur, journeyOpen: true } });
+    moves.push({
+      kind: 'journey-open',
+      to: { ...cur, journeyOpen: true },
+      auto: true,
+    });
   }
   return moves;
 }
@@ -125,7 +141,10 @@ function hopFrom(state: SceneState, dir: 1 | -1): Move {
   };
   const kind = kinds[`${state.scene}:${dir}`];
   const next = SCENES[SCENES.indexOf(state.scene) + dir];
-  return { kind, to: { ...state, scene: next } };
+  return {
+    kind,
+    to: kind === 'journey->intro' ? leaveJourney(state) : { ...state, scene: next },
+  };
 }
 
 /** The folder or the window's red dot. Null when it would change nothing. */

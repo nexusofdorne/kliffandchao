@@ -110,6 +110,27 @@ describe('jumpPlan', () => {
     expect(plan[0].quick).toBe(true);
   });
 
+  it('closes the journey window and forgets the tab when leaving for the intro', () => {
+    const state = inJourney({ journeyOpen: true, journeyTab: 4 });
+    const after = settle(state, stepPlan({ ...state, journeyTab: 1 }, -1));
+    expect(after).toMatchObject({
+      scene: 'intro',
+      journeyOpen: false,
+      journeyTab: 1,
+    });
+    const viaJump = settle(
+      { ...state, scene: 'wedding' },
+      jumpPlan({ ...state, scene: 'wedding' }, 'intro'),
+    );
+    expect(viaJump).toMatchObject({ journeyOpen: false, journeyTab: 1 });
+  });
+
+  it('marks the window opening that follows an arrival as automatic', () => {
+    const [, open] = stepPlan(initialState, 1);
+    expect(open.auto).toBe(true);
+    expect(windowMove(inJourney(), true)?.auto).toBeUndefined();
+  });
+
   it('does not touch the journey window when jumping back to it', () => {
     const state: SceneState = {
       ...initialState,

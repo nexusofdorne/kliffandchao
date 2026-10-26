@@ -76,13 +76,14 @@ export function StageFill({
   className = '',
   style,
   priority = false,
+  ...data
 }: {
   asset: SceneImage;
   alt?: string;
   className?: string;
   style?: CSSProperties;
   priority?: boolean;
-}) {
+} & { [K in `data-${string}`]?: string }) {
   return (
     <Image
       src={asset.src}
@@ -94,6 +95,7 @@ export function StageFill({
       draggable={false}
       className={`stage-fill ${className}`}
       style={style}
+      {...data}
     />
   );
 }

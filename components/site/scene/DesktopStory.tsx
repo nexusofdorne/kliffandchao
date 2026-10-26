@@ -4,13 +4,11 @@ import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { IntroScene, type IntroHandle } from './IntroScene';
-import {
-  JourneyScaffold,
-  SceneRoot,
-  WeddingScaffold,
-} from './ScenePlayground';
+import { JourneyScene, type JourneyHandle } from './JourneyScene';
+import { SceneRoot, WeddingScaffold } from './ScenePlayground';
 import { SceneProvider, useScene } from './SceneProvider';
 import { Terminal, type TerminalHandle } from './Terminal';
+import { createTransitions } from './transitions';
 import { isAbort } from './timing';
 
 // The redesigned desktop story. `arrival` is true when the guest has just come
@@ -26,12 +24,33 @@ export function DesktopStory({ arrival }: { arrival: boolean }) {
 }
 
 function Story({ arrival }: { arrival: boolean }) {
-  const { setInputLocked } = useScene();
-  const { setChromeVisible } = useTrackProgress();
+  const { setInputLocked, registerPlayer } = useScene();
+  const { setChromeVisible, setChromeLight } = useTrackProgress();
   const intro = useRef<IntroHandle>(null);
+  const journey = useRef<JourneyHandle>(null);
+  const journeyRoot = useRef<HTMLElement>(null);
   const terminal = useRef<TerminalHandle>(null);
   const introRoot = useRef<HTMLElement>(null);
   const arrivalRoot = useRef<HTMLElement>(null);
+
+  // the redesigned scenes keep the white chrome on every scene
+  useEffect(() => {
+    setChromeLight(false);
+    return () => setChromeLight(null);
+  }, [setChromeLight]);
+
+  useEffect(() => {
+    const players = createTransitions({
+      intro,
+      journey,
+      introRoot,
+      journeyRoot,
+    });
+    const offs = Object.entries(players).map(([kind, player]) =>
+      registerPlayer(kind as keyof typeof players, player),
+    );
+    return () => offs.forEach((off) => off());
+  }, [registerPlayer]);
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -87,8 +106,8 @@ function Story({ arrival }: { arrival: boolean }) {
 
   return (
     <>
-      <SceneRoot id="journey" z={2}>
-        <JourneyScaffold />
+      <SceneRoot id="journey" rootRef={journeyRoot} z={2}>
+        <JourneyScene ref={journey} />
       </SceneRoot>
       <SceneRoot id="wedding" z={1}>
         <WeddingScaffold />

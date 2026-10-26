@@ -1273,3 +1273,15 @@ html[data-scenes] .topbar {
     width: min(95vw, 1240px);
   }
 }
+
+/* The journey's pixel-art folder inverts while it is "clicked" */
+.stage-folder img {
+  transition: filter 0.12s;
+}
+.stage-folder.is-selected img {
+  filter: invert(1) hue-rotate(180deg) brightness(0.9);
+}
+.stage-folder:focus-visible {
+  outline: 0.12cqw solid rgba(255, 255, 255, 0.8);
+  outline-offset: 0.3cqw;
+}

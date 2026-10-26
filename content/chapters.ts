@@ -1,3 +1,69 @@
+import { sceneAssets } from '../config/scene-layers.generated';
+
+// The five chapters of the journey. Titles and paragraphs are the client's
+// final copy (the v3 mockups); the photos are stand-ins cropped from those
+// mockups (public/img/scenes/journey/standin) until the originals arrive.
+//
+// To add a real video to a chapter, drop the file in public/video/ and set
+// `video` to its path; until then the window shows an empty slot.
+export type JourneyChapter = {
+  /** Tab label, shown in the journey window and (uppercased) on phones. */
+  title: string;
+  paragraphs: readonly string[];
+  video?: string;
+};
+
+export const journeyChapters: readonly JourneyChapter[] = [
+  {
+    title: 'It started with a wedding',
+    paragraphs: [
+      'They met at a wedding.',
+      "There to celebrate someone else's love story, with no idea that their own would begin that day.",
+      'Neither of them saw it coming.',
+      "But looking back, it's quite a fitting place for their story to start.",
+    ],
+  },
+  {
+    title: "It shouldn't have happened",
+    paragraphs: [
+      "There were more reasons why it wouldn't work than reasons why it would.",
+      'They came from different places, held different beliefs, and saw certain things in completely different ways.',
+      'There were questions, doubts, and things neither of them knew how to navigate.',
+      "By all accounts, this wasn't supposed to go anywhere.",
+    ],
+  },
+  {
+    title: 'But it did',
+    paragraphs: [
+      'Then came Favor Conference.',
+      'Not every question was answered, and not everything suddenly made sense. But something began to change.',
+      'What they once thought was impossible started to look a little different.',
+      'And slowly, they began to understand that this was never just their story.',
+    ],
+  },
+  {
+    title: 'Meet family & friends',
+    paragraphs: [
+      'What started between two people slowly became part of the lives of those closest to them.',
+      'There were families to meet, friends to get to know, and two different worlds beginning to come together.',
+      'And somewhere along the way, their story became one that more people got to be part of.',
+    ],
+  },
+  {
+    title: "We're engaged!",
+    paragraphs: [
+      'Little did Chao know, Kliff had been planning this for quite some time.',
+      "He'd had the ring for months and had already asked her parents for permission a month before the proposal.",
+      "And a little detail that makes it even more special is the ring was a gift from Kliff's mom.",
+      'So when the moment finally came, he asked. And she said yes!!',
+    ],
+  },
+];
+
+// --- the phone layout's shape -------------------------------------------
+// Phones still show one photocard per story, so they are derived from the
+// chapters above (one story per paragraph) rather than kept as a second copy.
+
 export type Story = { image: string; caption: string; paragraph: string };
 
 export type Chapter = {
@@ -7,142 +73,21 @@ export type Chapter = {
   stories: Story[];
 };
 
-// Chapter titles are real, client-approved content; story captions and
-// paragraphs are the placeholder set carried over from prototype/index.html
-// (docs/PLAN.md "Chapters contain stories") until the couple supplies real
-// photos and copy.
-export const chapters: Chapter[] = [
-  {
-    number: 'CHAPTER 1',
-    title: 'WHERE WE MET',
-    label: 'How we met',
-    stories: [
-      {
-        image: '/img/p3_Im0.jpg',
-        caption: 'The night we met',
-        paragraph: 'It started somewhere completely ordinary. Placeholder copy for the moment our paths first crossed.',
-      },
-      {
-        image: '/img/p4_Im0.jpg',
-        caption: 'Still just friends',
-        paragraph: 'Neither of us thought much of it at the time. Placeholder copy for the weeks that followed.',
-      },
-      {
-        image: '/img/intro.jpg',
-        caption: 'One long conversation',
-        paragraph: 'And then one conversation went on far too long. Placeholder copy.',
-      },
-    ],
-  },
-  {
-    number: 'CHAPTER 2',
-    title: 'LDR VIBES',
-    label: 'LDR Vibes',
-    stories: [
-      {
-        image: '/img/p4_Im0.jpg',
-        caption: 'Different time zones',
-        paragraph: 'Different time zones, terrible connections. Placeholder copy for the long-distance yearsss.',
-      },
-      {
-        image: '/img/p1_Im0.jpg',
-        caption: 'Midnight good-mornings',
-        paragraph: 'Good-morning texts that arrived at midnight. Placeholder copy.',
-      },
-      {
-        image: '/img/p3_Im0.jpg',
-        caption: 'Airport arrivals',
-        paragraph: 'Counting down to the next airport arrival. Placeholder copy.',
-      },
-      {
-        image: '/img/intro.jpg',
-        caption: 'Closing the distance',
-        paragraph: 'Learning that distance is mostly a logistics problem. Placeholder copy.',
-      },
-    ],
-  },
-  {
-    number: 'CHAPTER 3',
-    title: 'FAVOR CONFERENCE',
-    label: 'Favor Conference',
-    stories: [
-      {
-        image: '/img/p2_Im0.jpg',
-        caption: 'That weekend',
-        paragraph: 'The weekend that changed the shape of things. Placeholder copy.',
-      },
-      {
-        image: '/img/p3_Im0.jpg',
-        caption: 'Only one conversation',
-        paragraph: 'A room full of people and somehow only one conversation. Placeholder copy.',
-      },
-      {
-        image: '/img/p4_Im0.jpg',
-        caption: 'The long way home',
-        paragraph: 'We drove home the long way on purpose. Placeholder copy.',
-      },
-    ],
-  },
-  {
-    number: 'CHAPTER 4',
-    title: 'DATES',
-    label: 'Dates',
-    stories: [
-      {
-        image: '/img/p1_Im0.jpg',
-        caption: 'Coffee, again',
-        paragraph: 'Coffee runs that turned into whole afternoons. Placeholder copy.',
-      },
-      {
-        image: '/img/intro.jpg',
-        caption: 'No destination',
-        paragraph: 'Long drives with no particular destination. Placeholder copy.',
-      },
-      {
-        image: '/img/p3_Im0.jpg',
-        caption: 'All the way in',
-        paragraph: 'The slow ordinary business of falling all the way in. Placeholder copy.',
-      },
-      {
-        image: '/img/p4_Im0.jpg',
-        caption: 'Meeting everyone',
-        paragraph: 'Meeting the families, surviving the questions. Placeholder copy.',
-      },
-      {
-        image: '/img/p2_Im0.jpg',
-        caption: 'Not a question anymore',
-        paragraph: 'Somewhere in here it stopped being a question. Placeholder copy.',
-      },
-    ],
-  },
-  {
-    number: 'CHAPTER 5',
-    title: "WE'RE ENGAGED!",
-    label: "WE'RE ENGAGED!",
-    stories: [
-      {
-        image: '/img/intro.jpg',
-        caption: 'Three weeks of nerves',
-        paragraph: 'He had been carrying it around for three weeks. Placeholder copy.',
-      },
-      {
-        image: '/img/p3_Im0.jpg',
-        caption: 'Right after yes',
-        paragraph: 'And then a yes, before he had finished asking. Placeholder copy.',
-      },
-      {
-        image: '/img/p4_Im0.jpg',
-        caption: 'Telling everyone',
-        paragraph: 'Phone calls to everyone, in no sensible order. Placeholder copy.',
-      },
-      {
-        image: '/img/p1_Im0.jpg',
-        caption: 'March 5, 2027',
-        paragraph: 'March 5, 2027. Placeholder copy for what comes next.',
-      },
-    ],
-  },
-];
+const standIns = sceneAssets.chapters;
+
+export const chapters: Chapter[] = journeyChapters.map((chapter, index) => {
+  const photos = standIns[String(index + 1) as keyof typeof standIns];
+  return {
+    number: `CHAPTER ${index + 1}`,
+    title: chapter.title.toUpperCase(),
+    label: chapter.title,
+    stories: chapter.paragraphs.map((paragraph, i) => ({
+      image: photos[i % photos.length].src,
+      caption: '',
+      paragraph,
+    })),
+  };
+});
 
 export type FlatStory = Story & {
   chapterIndex: number;

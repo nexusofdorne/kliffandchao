@@ -24,6 +24,8 @@ export type IntroHandle = {
   videoReady: () => Promise<void>;
   /** Everything visible and at rest (returning from another scene). */
   rest: () => void;
+  /** The film plays only while the scene is on screen. */
+  setPlaying: (playing: boolean) => void;
   parts: () => {
     stage: HTMLElement | null;
     black: HTMLElement | null;
@@ -157,7 +159,8 @@ export function IntroScene({
   function rest() {
     gsap.set(
       [...q('[data-grass]'), ...q('[data-flowers]'), ...q('[data-bubble]'), videoBoxRef.current, uiRef.current, worldRef.current, bubblesRef.current, bezelRef.current],
-      { clearProps: 'all' },
+      // only what the animations set: the inline left/top/size are the layout
+      { clearProps: 'transform,opacity,filter,visibility' },
     );
     gsap.set(blackRef.current, { clearProps: 'opacity' });
     void videoRef.current?.play().catch(() => {});
@@ -167,6 +170,12 @@ export function IntroScene({
     surface,
     videoReady,
     rest,
+    setPlaying: (playing) => {
+      const video = videoRef.current;
+      if (!video) return;
+      if (playing) void video.play().catch(() => {});
+      else video.pause();
+    },
     parts: () => ({
       stage: stageRef.current,
       black: blackRef.current,

@@ -73,26 +73,23 @@ All page background paths live in **`config/site.ts` → `backgrounds`**:
 
 The actual image files live in **[public/img/](public/img/)** — anything under `public/` is served from the site root, so `/img/foo.jpg` in code = `public/img/foo.jpg` on disk. Currently only 6 placeholder files exist there (`intro.jpg`, `intro-poster.jpg`, `p1_Im0.jpg`–`p4_Im0.jpg`); drop new photos in alongside them and point the relevant file at the new filename.
 
-### 3. Journey — chapters and stories
+### 3. Journey — chapters
 
-**[content/chapters.ts](content/chapters.ts)** is the single source of truth for the whole journey/coverflow section (`/story` page). Journey "content" is not separate from chapters/stories — it's all this one file.
+**[content/chapters.ts](content/chapters.ts)** is the single source of truth for the journey (the `/story` page). The five chapters are the five tabs of the glass window on desktop.
 
 ```ts
-export type Story = { image: string; caption: string; paragraph: string };
-export type Chapter = { number: string; title: string; label: string; stories: Story[] };
-
-export const chapters: Chapter[] = [
-  { number: 'CHAPTER 1', title: 'WHERE WE MET', label: 'How we met', stories: [ /* ... */ ] },
+export const journeyChapters: readonly JourneyChapter[] = [
+  { title: 'It started with a wedding', paragraphs: ['They met at a wedding.', /* ... */] },
   // ...
 ];
 ```
 
-- **Number of chapters**: determined entirely by how many objects are in the `chapters` array (currently 5). Add or remove an object to add/remove a chapter — no other file needs to change.
-- **Stories per chapter**: each chapter has its own `stories: Story[]` array (currently 3–5 per chapter, 19 total). Add/remove/edit objects inside a chapter's `stories` array to change its content.
-- **Editing a story**: each `Story` is `{ image, caption, paragraph }` — change `image` to a new `/img/...` path (file must exist in `public/img/`), and edit `caption`/`paragraph` freely.
-- **Do not hand-edit** the `FlatStory` type or `export const stories` block near the bottom of the file (~line 147 onward) — it's derived automatically from `chapters` via `.flatMap(...)` and recomputes itself whenever you change the `chapters` array.
-- **Navigation updates automatically**: `ChapterStepper`, `ChapterArrows`, and `Coverflow` (all in `components/site/journey/`) all read from `chapters`/`stories` directly — a new chapter gets its own clickable dot/label with zero extra wiring. After adding/removing a chapter, do a manual scroll-through to sanity-check the scroll pacing in `lib/track/progress.ts`, which budgets scroll distance per chapter/story count.
-- Per the code comment at the top of the file, only Chapter 1's title is real client-approved copy — the rest (titles, captions, paragraphs) are placeholders carried over from `prototype/index.html`.
+- **Words**: edit a chapter's `title` (the tab label) and `paragraphs` (one string per paragraph). These are the client's final copy.
+- **Film**: each chapter has an empty film slot. To fill it, put the file in `public/video/` and add `video: '/video/your-file.mp4'` to the chapter. Until then the slot shows "Film coming soon".
+- **Photos**: for now they are crops of the design mockups, in `public/img/scenes/journey/standin/` (`ch<chapter>_<n>.jpg`), laid out as in the mockups. They are listed in `config/scene-layers.generated.ts`, which is written by `scripts/design/prepare_assets.py`; don't edit that file by hand. When the real photos arrive, ask for the collage layout to be updated.
+- **Where things sit in the window** (text block, film slot per chapter): `config/journey-layout.ts`.
+- **Number of chapters**: the window has exactly five tabs, so adding or removing a chapter also needs a new glass frame from the design mockups.
+- **Phones** don't show the window. Their photocards (`chapters`, `stories`, at the bottom of the file) are derived from the same chapters, one card per paragraph, so there is only one copy of the words to edit. Don't hand-edit that derived part.
 
 ### 4. Wedding page tabs
 
@@ -126,9 +123,8 @@ This entry has no `answer` field — just a flag. Its content is split across tw
 | I want to... | Edit this file |
 |---|---|
 | A page/section background image | `config/site.ts` → `backgrounds`, plus the image file in `public/img/` |
-| The journey/story photos or captions | `content/chapters.ts` |
-| How many chapters there are | `content/chapters.ts` — add/remove entries in the `chapters` array |
-| How many stories a chapter has, or a story's photo/text | `content/chapters.ts` — edit the chapter's `stories` array |
+| The journey words, or a chapter's film | `content/chapters.ts` |
+| The journey photos and layout | `public/img/scenes/journey/standin/`, `config/journey-layout.ts` |
 | Wedding schedule, venue address | `content/wedding.ts` |
 | Attire / motif colours | `content/motif.ts` |
 | Entourage names/roles | `content/entourage.ts` |
