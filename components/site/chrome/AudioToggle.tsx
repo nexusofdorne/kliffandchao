@@ -10,8 +10,7 @@ import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 // .audio-btn / setSec's `audioBtn.classList.toggle('g'|'g-l', ...)`.
 export function AudioToggle() {
   const { isMuted, isPlaying, toggleMute } = useAudio();
-  const { activeSection } = useTrackProgress();
-  const isLight = activeSection === 2;
+  const { isLight, chromeVisible } = useTrackProgress();
   const showEqualizer = isPlaying && !isMuted;
 
   return (
@@ -21,7 +20,11 @@ export function AudioToggle() {
       aria-pressed={isMuted}
       aria-label="Toggle music"
       title="Toggle music"
-      style={{ color: isLight ? 'var(--olive)' : '#fff' }}
+      style={{
+        color: isLight ? 'var(--olive)' : '#fff',
+        opacity: chromeVisible ? 1 : 0,
+        visibility: chromeVisible ? 'visible' : 'hidden',
+      }}
       className={`fixed bottom-[4.4vh] left-[3.2vw] z-[60] grid size-[clamp(40px,5.4vh,52px)] place-items-center rounded-full transition-transform duration-300 ease-[cubic-bezier(.16,1,.3,1)] hover:scale-[1.06] ${
         isLight ? 'glass-light' : 'glass'
       }`}

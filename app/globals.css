@@ -1030,3 +1030,246 @@
     display: none;
   }
 }
+
+/* ============================================================
+   Terminal (screen 02) — prototype-v3/styles.css 02 · terminal.
+   Sized in cqh of the CRT box so it scales with the stage.
+   ============================================================ */
+.crt {
+  --term: #93f59c;
+  --term-glow: rgba(110, 255, 140, 0.55);
+  position: absolute;
+  container-type: size;
+  overflow: hidden;
+  border-radius: 5% / 8%;
+}
+.crt-term {
+  position: absolute;
+  inset: 0;
+  color: var(--term);
+  font-family: 'Courier Prime', 'Courier New', monospace;
+  text-shadow:
+    0 0 0.35cqh var(--term-glow),
+    0 0 1.4cqh rgba(80, 255, 120, 0.2);
+}
+.crt-term p {
+  margin: 0;
+  white-space: pre;
+  min-height: 1em;
+}
+.crt-boot,
+.crt-hello {
+  position: absolute;
+  left: 25.2cqh;
+  font-size: 2.72cqh;
+  line-height: 3.48cqh;
+}
+.crt-boot {
+  top: 28.3cqh;
+}
+.crt-hello {
+  top: 67.1cqh;
+}
+.crt-caret {
+  display: inline-block;
+  width: 0.6em;
+  height: 1em;
+  margin-left: 0.05em;
+  vertical-align: -0.15em;
+  background: var(--term);
+  box-shadow: 0 0 0.6cqh var(--term-glow);
+  animation: crt-blink 1s steps(1) infinite;
+}
+@keyframes crt-blink {
+  50% {
+    opacity: 0;
+  }
+}
+.crt-login {
+  position: absolute;
+  left: 25.2cqh;
+  top: 44.9cqh;
+  margin: 0;
+  font:
+    500 4.55cqh/1 Orbitron,
+    'Courier New',
+    monospace;
+  letter-spacing: 0.03em;
+  opacity: 0;
+}
+.crt-progress {
+  position: absolute;
+  left: 23.1cqh;
+  top: 54cqh;
+  width: 55.7cqh;
+  height: 7.4cqh;
+  background: #1d201e;
+  opacity: 0;
+}
+.crt-bar {
+  position: absolute;
+  left: 2.3cqh;
+  top: 1.85cqh;
+  width: 43.4cqh;
+  height: 4.1cqh;
+  border: 0.26cqh solid var(--term);
+  box-shadow: 0 0 0.8cqh var(--term-glow);
+}
+.crt-bar i {
+  position: absolute;
+  left: 0.35cqh;
+  top: 0.35cqh;
+  bottom: 0.35cqh;
+  width: 0;
+  max-width: calc(100% - 0.7cqh);
+  background: var(--term);
+  box-shadow: 0 0 1cqh var(--term-glow);
+}
+.crt-pct {
+  position: absolute;
+  left: 47.1cqh;
+  top: 2.75cqh;
+  font:
+    500 1.6cqh/1 Orbitron,
+    monospace;
+}
+.crt-hourglass {
+  position: absolute;
+  left: 52.9cqh;
+  top: 1.85cqh;
+  width: 3cqh;
+  height: 4cqh;
+  fill: var(--term);
+  filter: drop-shadow(0 0 0.4cqh var(--term-glow));
+}
+.crt-progress.is-loading .crt-hourglass {
+  animation: crt-flip 1.1s steps(1) infinite;
+}
+@keyframes crt-flip {
+  50% {
+    transform: rotate(180deg);
+  }
+}
+.crt-dino {
+  position: absolute;
+  left: 25.2cqh;
+  top: 79cqh;
+  width: 9cqh;
+  height: 9cqh;
+  opacity: 0;
+}
+.crt-dino svg {
+  width: 100%;
+  height: 100%;
+  fill: var(--term);
+  filter: drop-shadow(0 0 0.5cqh var(--term-glow));
+  shape-rendering: crispEdges;
+  overflow: visible;
+}
+.crt-ground {
+  position: absolute;
+  left: -3cqh;
+  right: -12cqh;
+  bottom: -0.4cqh;
+  height: 0.3cqh;
+  background: repeating-linear-gradient(
+    to right,
+    var(--term) 0 2.2cqh,
+    transparent 2.2cqh 2.8cqh,
+    var(--term) 2.8cqh 3.2cqh,
+    transparent 3.2cqh 4.6cqh
+  );
+  box-shadow: 0 0 0.6cqh var(--term-glow);
+  mask-image: linear-gradient(to right, transparent, #000 15%, #000 70%, transparent);
+  animation: crt-ground 0.9s linear infinite;
+}
+@keyframes crt-ground {
+  to {
+    background-position: -4.6cqh 0;
+  }
+}
+.crt-wash {
+  position: absolute;
+  inset: 0;
+  background: rgb(28, 52, 34);
+  opacity: 0;
+  pointer-events: none;
+}
+.crt-noise {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  mix-blend-mode: screen;
+  pointer-events: none;
+}
+.crt-roll {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -30%;
+  height: 30%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(160, 255, 170, 0.07) 45%,
+    rgba(255, 255, 255, 0.12) 50%,
+    transparent
+  );
+  opacity: 0;
+  pointer-events: none;
+}
+.crt.is-glitching .crt-roll {
+  opacity: 1;
+  animation: crt-roll 0.45s linear infinite;
+}
+@keyframes crt-roll {
+  to {
+    transform: translateY(433%);
+  }
+}
+.crt-scan {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.32) 0 0.14cqh,
+      transparent 0.14cqh 0.42cqh
+    ),
+    radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.55) 100%);
+  animation: scene-flicker 0.12s steps(2) infinite;
+}
+.crt.is-glitching .crt-term {
+  text-shadow:
+    0.5cqh 0 rgba(255, 40, 80, 0.75),
+    -0.5cqh 0 rgba(40, 140, 255, 0.75),
+    0 0 1cqh var(--term-glow);
+}
+.crt-tear {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .crt-caret,
+  .crt-ground,
+  .crt-scan,
+  .crt-progress.is-loading .crt-hourglass {
+    animation: none;
+  }
+}
+
+/* The real top bar sits inside the monitor's bezel on desktop scenes */
+html[data-scenes] .topbar {
+  top: 6vh;
+  width: min(86vw, 1180px);
+}
+@media (max-width: 768px) {
+  html[data-scenes] .topbar {
+    top: 2.4vh;
+    width: min(95vw, 1240px);
+  }
+}

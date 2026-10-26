@@ -45,13 +45,14 @@ export function StageLayer({
   className = '',
   style,
   priority = false,
+  ...data
 }: {
   asset: SceneLayer;
   alt?: string;
   className?: string;
   style?: CSSProperties;
   priority?: boolean;
-}) {
+} & { [K in `data-${string}`]?: string }) {
   return (
     <Image
       src={asset.src}
@@ -63,6 +64,7 @@ export function StageLayer({
       draggable={false}
       className={`stage-layer ${className}`}
       style={{ ...boxStyle(asset), ...style }}
+      {...data}
     />
   );
 }

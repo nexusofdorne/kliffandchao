@@ -44,6 +44,8 @@ type SceneContextValue = {
   state: SceneState;
   /** A transition is playing; input is ignored until it ends. */
   busy: boolean;
+  /** Blocks input while something outside the machine (the arrival) plays. */
+  setInputLocked: (locked: boolean) => void;
   step: (dir: Direction) => void;
   jumpTo: (scene: SceneId) => void;
   setWindowOpen: (open: boolean) => void;
@@ -94,6 +96,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
   const scenesRef = useRef<Partial<Record<SceneId, HTMLElement>>>({});
   const playersRef = useRef(new Map<MoveKind, MovePlayer>());
   const wheelGate = useRef(createWheelGate());
+  const lockedRef = useRef(false);
 
   const registerScene = useCallback(
     (id: SceneId, element: HTMLElement | null) => {
@@ -162,6 +165,12 @@ export function SceneProvider({ children }: { children: ReactNode }) {
     [crossfade, glidePanel],
   );
 
+  const setInputLocked = useCallback((locked: boolean) => {
+    lockedRef.current = locked;
+    busyRef.current = locked;
+    setBusy(locked);
+  }, []);
+
   const run = useCallback(
     async (plan: readonly Move[]) => {
       if (busyRef.current || plan.length === 0) return;
@@ -176,8 +185,8 @@ export function SceneProvider({ children }: { children: ReactNode }) {
           await playMove(move, from);
         }
       } finally {
-        busyRef.current = false;
-        setBusy(false);
+        busyRef.current = lockedRef.current;
+        setBusy(lockedRef.current);
       }
     },
     [playMove],
@@ -205,6 +214,14 @@ export function SceneProvider({ children }: { children: ReactNode }) {
     },
     [run],
   );
+
+  // lets the stylesheet inset the top bar to sit inside the monitor's bezel
+  useEffect(() => {
+    document.documentElement.dataset.scenes = '';
+    return () => {
+      delete document.documentElement.dataset.scenes;
+    };
+  }, []);
 
   // the top bar's nav buttons command the engine through the same bridge the
   // pinned track used
@@ -274,6 +291,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
     () => ({
       state,
       busy,
+      setInputLocked,
       step,
       jumpTo,
       setWindowOpen,
@@ -284,6 +302,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
     [
       state,
       busy,
+      setInputLocked,
       step,
       jumpTo,
       setWindowOpen,

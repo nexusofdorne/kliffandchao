@@ -10,8 +10,7 @@ import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 // `--glass-fill-hi` tint, not `.glass`'s own fill, so it isn't composed from
 // that class — prototype/index.html's .rsvp-pill.
 export function RsvpPill() {
-  const { activeSection } = useTrackProgress();
-  const isLight = activeSection === 2;
+  const { isLight } = useTrackProgress();
 
   // Desktop's /story has a pinned ScrollTrigger (HorizontalTrack) that
   // wraps its pinned element in a pin-spacer div outside React's fiber

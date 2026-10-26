@@ -12,13 +12,16 @@ import { Wordmark } from './Wordmark';
 // its own glass (or none), so only `color` is set here for the logo and nav
 // labels to inherit via currentColor.
 export function TopBar() {
-  const { activeSection, jump } = useTrackProgress();
-  const isLight = activeSection === 2;
+  const { isLight, chromeVisible, jump } = useTrackProgress();
 
   return (
     <header
-      className="pointer-events-none fixed left-1/2 top-[2.4vh] z-[60] flex w-[min(95vw,1240px)] -translate-x-1/2 items-center gap-[clamp(10px,1.6vw,24px)]"
-      style={{ color: isLight ? '#14180d' : '#fff' }}
+      className="topbar pointer-events-none fixed left-1/2 top-[2.4vh] z-[60] flex w-[min(95vw,1240px)] -translate-x-1/2 items-center gap-[clamp(10px,1.6vw,24px)] transition-opacity duration-500"
+      style={{
+        color: isLight ? '#14180d' : '#fff',
+        opacity: chromeVisible ? 1 : 0,
+        visibility: chromeVisible ? 'visible' : 'hidden',
+      }}
     >
       <button
         type="button"

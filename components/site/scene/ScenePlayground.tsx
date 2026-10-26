@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, ReactNode } from 'react';
+import type { CSSProperties, ReactNode, RefObject } from 'react';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { JOURNEY_TABS, type SceneId } from '@/lib/scene/machine';
 import { SceneProvider, useScene } from './SceneProvider';
@@ -13,23 +13,30 @@ import { Stage, StageFill, StageLayer, boxStyle } from './Stage';
 
 const HIDDEN: CSSProperties = { visibility: 'hidden', opacity: 0 };
 
-function SceneRoot({
+export function SceneRoot({
   id,
   visible = false,
+  z,
+  rootRef,
   children,
 }: {
-  id: SceneId;
+  id: SceneId | 'arrival';
   visible?: boolean;
+  z?: number;
+  rootRef?: RefObject<HTMLElement | null>;
   children: ReactNode;
 }) {
   const { registerScene } = useScene();
   return (
     <section
-      ref={(el) => registerScene(id, el)}
+      ref={(el) => {
+        if (rootRef) rootRef.current = el;
+        if (id !== 'arrival') registerScene(id, el);
+      }}
       data-scene={id}
       aria-label={id}
       className="scene-root"
-      style={visible ? undefined : HIDDEN}
+      style={{ ...(visible ? undefined : HIDDEN), zIndex: z }}
     >
       {children}
     </section>
@@ -48,7 +55,7 @@ const px = (v: number) => `${(100 * v) / 1920}%`;
 
 const frames = [a.frame0, a.frame1, a.frame2, a.frame3, a.frame4, a.frame5];
 
-function JourneyScaffold() {
+export function JourneyScaffold() {
   const { state, setWindowOpen, goToTab } = useScene();
   const frame = frames[state.journeyOpen ? state.journeyTab : 0];
   const frameBox = a.frame0;
@@ -116,7 +123,7 @@ function JourneyScaffold() {
   );
 }
 
-function WeddingScaffold() {
+export function WeddingScaffold() {
   const { state, setWindowOpen } = useScene();
   return (
     <Stage>

@@ -16,10 +16,9 @@ const SECTIONS = [
 // intro-journey-wedding scroll" website2.0.pdf asks for.
 // prototype/index.html's .secnav-items / paintNavInd.
 export function SectionNav() {
-  const { panel, activeSection, jump } = useTrackProgress();
+  const { panel, activeSection, isLight, jump } = useTrackProgress();
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(0);
-  const isLight = activeSection === 2;
 
   useLayoutEffect(() => {
     const container = containerRef.current;

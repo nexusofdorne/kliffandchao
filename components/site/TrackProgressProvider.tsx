@@ -10,6 +10,14 @@ type TrackProgressContextValue = {
   progress: number;
   panel: number;
   activeSection: Section;
+  // The top bar and audio button tint for the wedding panel's cream
+  // background by default; the desktop scenes override it (the river is
+  // dark enough for white controls) and hide the chrome while a transition
+  // needs the whole screen.
+  isLight: boolean;
+  setChromeLight: (light: boolean | null) => void;
+  chromeVisible: boolean;
+  setChromeVisible: (visible: boolean) => void;
   setUpdate: (update: HorizontalTrackUpdate) => void;
   registerJump: (jump: (section: Section) => void) => void;
   jump: (section: Section) => void;
@@ -29,6 +37,8 @@ const TrackProgressContext = createContext<TrackProgressContextValue | null>(nul
 export function TrackProgressProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState(0);
   const [panel, setPanel] = useState(0);
+  const [chromeLight, setChromeLight] = useState<boolean | null>(null);
+  const [chromeVisible, setChromeVisible] = useState(true);
   const jumpRef = useRef<(section: Section) => void>(() => {});
   const jumpToStoryRef = useRef<(storyIndex: number) => void>(() => {});
 
@@ -58,13 +68,17 @@ export function TrackProgressProvider({ children }: { children: ReactNode }) {
       progress,
       panel,
       activeSection: computeActiveSection(panel),
+      isLight: chromeLight ?? computeActiveSection(panel) === 2,
+      setChromeLight,
+      chromeVisible,
+      setChromeVisible,
       setUpdate,
       registerJump,
       jump,
       registerJumpToStory,
       jumpToStory,
     }),
-    [progress, panel, setUpdate, registerJump, jump, registerJumpToStory, jumpToStory],
+    [progress, panel, chromeLight, chromeVisible, setUpdate, registerJump, jump, registerJumpToStory, jumpToStory],
   );
 
   return <TrackProgressContext.Provider value={value}>{children}</TrackProgressContext.Provider>;
