@@ -7,18 +7,44 @@ afterEach(() => {
 });
 
 describe('RSVP email delivery', () => {
-  const payload = buildRsvpNotification(
-    'couple@example.com',
-    'Test family',
-    'See you!',
-  );
+  const payload = buildRsvpNotification('couple@example.com', {
+    partyLabel: 'Test family',
+    submitterName: 'Ana Test',
+    answers: [
+      { name: 'Ana Test', status: 'ATTENDING' },
+      { name: 'Ben Test', status: 'NOT_ATTENDING' },
+    ],
+    message: 'See you!',
+  });
   it('snapshots the complete email so configuration changes cannot change a retry', () => {
     expect(payload).toEqual({
       from: 'RSVP <onboarding@resend.dev>',
       to: 'couple@example.com',
-      subject: 'New RSVP from Test family',
-      text: 'Test family responded.\n\nMessage: See you!',
+      subject: 'New RSVP from Ana Test (Test family)',
+      text: [
+        'Ana Test answered for Test family.',
+        '',
+        'Attending:',
+        '- Ana Test',
+        '',
+        "Can't make it:",
+        '- Ben Test',
+        '',
+        'Message from Ana Test:',
+        'See you!',
+      ].join('\n'),
     });
+  });
+  it('lists only the answers sent, and says when there is no message', () => {
+    const solo = buildRsvpNotification('couple@example.com', {
+      partyLabel: 'Test family',
+      submitterName: 'Ana Test',
+      answers: [{ name: 'Ana Test', status: 'ATTENDING' }],
+      message: null,
+    });
+    expect(solo.text).toBe(
+      ['Ana Test answered for Test family.', '', 'Attending:', '- Ana Test', '', 'No message.'].join('\n'),
+    );
   });
   it('sends the stable idempotency key and a bounded request', async () => {
     const fetch = vi.fn().mockResolvedValue(Response.json({ id: 'email-1' }));

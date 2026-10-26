@@ -347,7 +347,8 @@ def map04(key):
 
 for key, out in [("j00_folder", "p04_folder"), ("j05_folder", "p05_folder"), ("cursor", "p04_cursor")]:
     x, y = map04(key)
-    sprite(out, load(key), x, y, k4, resample=Image.Resampling.NEAREST)
+    name = out + "-v2.webp" if out.endswith("_folder") else None  # renamed when the labels became text
+    sprite(out, load(key), x, y, k4, name=name, resample=Image.Resampling.NEAREST)
 x, y = (M["j05_cursor"]["x"] * 1920 / 100 - VX0) * k4, M["j05_cursor"]["y"] * 1080 / 100 * k4
 box("p05_cursor", x, y, manifest["p04_cursor"]["w"] * PW / 100, manifest["p04_cursor"]["h"] * PH / 100)
 

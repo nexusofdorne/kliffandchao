@@ -49,9 +49,12 @@ describe('stepPlan', () => {
     }
   });
 
-  it('leaves the journey for the wedding after the last tab', () => {
+  it('leaves the journey for the wedding after the last tab, and opens its window', () => {
     const state = inJourney({ journeyOpen: true, journeyTab: 5 });
-    expect(kinds(stepPlan(state, 1))).toEqual(['journey->wedding']);
+    const plan = stepPlan(state, 1);
+    expect(kinds(plan)).toEqual(['journey->wedding', 'wedding-open']);
+    expect(plan[1].auto).toBe(true);
+    expect(settle(state, plan).weddingOpen).toBe(true);
   });
 
   it('leaves the journey for the intro before the first tab', () => {
@@ -61,7 +64,7 @@ describe('stepPlan', () => {
 
   it('skips the tabs when the window is closed', () => {
     const state = inJourney({ journeyOpen: false, journeyTab: 3 });
-    expect(kinds(stepPlan(state, 1))).toEqual(['journey->wedding']);
+    expect(kinds(stepPlan(state, 1))).toEqual(['journey->wedding', 'wedding-open']);
     expect(kinds(stepPlan(state, -1))).toEqual(['journey->intro']);
   });
 
@@ -95,9 +98,9 @@ describe('jumpPlan', () => {
     ]);
   });
 
-  it('hops intro -> journey -> wedding, flagging the first hop as quick', () => {
+  it('hops intro -> journey -> wedding, flagging the first hop as quick, then opens the wedding', () => {
     const plan = jumpPlan(initialState, 'wedding');
-    expect(kinds(plan)).toEqual(['intro->journey', 'journey->wedding']);
+    expect(kinds(plan)).toEqual(['intro->journey', 'journey->wedding', 'wedding-open']);
     expect(plan[0].quick).toBe(true);
     expect(plan[1].quick).toBeUndefined();
     expect(settle(initialState, plan).scene).toBe('wedding');

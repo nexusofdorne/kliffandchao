@@ -41,7 +41,14 @@ export async function POST(request: Request) {
     where: { id: parsed.data.submittedByGuestId, archivedAt: null },
     select: {
       partyId: true,
-      party: { select: { label: true, members: { select: { id: true } } } },
+      firstName: true,
+      lastName: true,
+      party: {
+        select: {
+          label: true,
+          members: { select: { id: true, firstName: true, lastName: true } },
+        },
+      },
     },
   });
   if (!submitter) {
@@ -78,6 +85,14 @@ export async function POST(request: Request) {
     notification: {
       recipient: env.COUPLE_NOTIFY_EMAIL,
       partyLabel: submitter.party.label,
+      submitterName: `${submitter.firstName} ${submitter.lastName}`.trim(),
+      answers: parsed.data.responses.map((response) => {
+        const member = submitter.party.members.find((m) => m.id === response.guestId);
+        return {
+          name: member ? `${member.firstName} ${member.lastName}`.trim() : 'A guest',
+          status: response.status,
+        };
+      }),
     },
   });
 

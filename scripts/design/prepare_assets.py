@@ -299,8 +299,9 @@ for src, out, fold_box, cur_box, hole_box in [
     cur = rect(sh, *cur_box)
     F, a = matte(im, bg, rect(sh, *fold_box) & ~cur)
     a[560:, :] = 0  # below the icon is the painted label; the scenes draw it as text now
-    box = save_rgba(F, a, out + "_folder.webp")
-    place(out + "_folder", out + "_folder.webp", box, W, H)
+    # -v2: images are cached for a week as immutable (vercel.json), so a changed picture needs a new name
+    box = save_rgba(F, a, out + "_folder-v2.webp")
+    place(out + "_folder", out + "_folder-v2.webp", box, W, H)
     if out == "j00":
         F, a = matte(im, bg, cur)
         box = save_rgba(F, a, "cursor.webp", crop=cur_box)

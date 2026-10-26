@@ -55,6 +55,8 @@ describe('submitRsvp idempotency', () => {
       notification: {
         recipient: 'test@example.com',
         partyLabel: 'Test household',
+        submitterName: 'Test Guest',
+        answers: [],
       },
     };
 

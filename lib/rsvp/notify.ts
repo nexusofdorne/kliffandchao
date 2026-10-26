@@ -3,19 +3,36 @@ import { Resend } from 'resend';
 import { env } from '../env';
 import type { RsvpNotification } from '../validation';
 
+export type RsvpEmailDetails = {
+  partyLabel: string;
+  /** Who filled in the form. */
+  submitterName: string;
+  /** The answers in this submission (a guest may answer only for themselves). */
+  answers: { name: string; status: 'ATTENDING' | 'NOT_ATTENDING' }[];
+  message: string | null;
+};
+
 export function buildRsvpNotification(
   recipient: string,
-  partyLabel: string,
-  message: string | null,
+  { partyLabel, submitterName, answers, message }: RsvpEmailDetails,
 ): RsvpNotification {
+  const names = (status: 'ATTENDING' | 'NOT_ATTENDING') =>
+    answers.filter((answer) => answer.status === status).map((answer) => `- ${answer.name}`);
+  const attending = names('ATTENDING');
+  const notAttending = names('NOT_ATTENDING');
+  const lines = [
+    `${submitterName} answered for ${partyLabel}.`,
+    '',
+    ...(attending.length ? ['Attending:', ...attending, ''] : []),
+    ...(notAttending.length ? ["Can't make it:", ...notAttending, ''] : []),
+    message ? `Message from ${submitterName}:\n${message}` : 'No message.',
+  ];
   return {
     // Replace the sandbox sender with a verified domain during launch.
     from: 'RSVP <onboarding@resend.dev>',
     to: recipient,
-    subject: `New RSVP from ${partyLabel}`,
-    text: message
-      ? `${partyLabel} responded.\n\nMessage: ${message}`
-      : `${partyLabel} responded.`,
+    subject: `New RSVP from ${submitterName} (${partyLabel})`,
+    text: lines.join('\n'),
   };
 }
 

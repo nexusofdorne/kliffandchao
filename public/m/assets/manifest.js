@@ -233,14 +233,14 @@ window.MANIFEST = {
   "y": 45.69045412418905,
   "w": 17.314814814814813,
   "h": 8.803418803418804,
-  "src": "assets/p04_folder.webp"
+  "src": "assets/p04_folder-v2.webp"
  },
  "p05_folder": {
   "x": 38.75502008032129,
   "y": 45.69045412418905,
   "w": 21.296296296296298,
   "h": 8.632478632478632,
-  "src": "assets/p05_folder.webp"
+  "src": "assets/p05_folder-v2.webp"
  },
  "p04_cursor": {
   "x": 58.835341365461844,

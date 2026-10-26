@@ -790,6 +790,13 @@
       { opacity: 1, transform: 'none' },
     ], { duration: 1300, easing: 'cubic-bezier(.45,0,.2,1)' });
   }
+  // the cursor finds the folder and opens it, as on the journey
+  async function autoOpen5() {
+    await cursorTo5();
+    await wait(reduced ? 0 : 350);
+    busy = false;
+    if (current === 5 && !win5Open) folder5.click();
+  }
 
   // 04 -> 05: the camera travels on through the meadow. Its plants rush past the lens, its ground
   // slides away underneath, and the river's valley, water and banks come up behind them; the
@@ -820,8 +827,7 @@
     restWorld('wedding');
     current = 5;
     await wait(reduced ? 0 : 900);
-    await cursorTo5();
-    busy = false;
+    await autoOpen5();
   }
 
   // 05 -> 04: back the way we came
@@ -1070,6 +1076,6 @@
     if (jump === 2) { reset02(); show(2); current = 2; run02(); }
     if (jump === 3) { busy = true; show(3); surface03(200); }
     if (jump === 4) { chrome(true); slideNav(1); restWorld('journey'); show(4); current = 4; busy = true; autoOpenFolder().then(() => { busy = false; }); }
-    if (jump === 5) { chrome(true); slideNav(2); restWorld('wedding'); show(5); current = 5; cursorTo5(); }
+    if (jump === 5) { chrome(true); slideNav(2); restWorld('wedding'); show(5); current = 5; busy = true; autoOpen5(); }
   }
 })();

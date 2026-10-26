@@ -139,7 +139,7 @@ export const sceneAssets = {
     ]
   },
   "j00_folder": {
-    "src": "/img/scenes/journey/j00_folder.webp",
+    "src": "/img/scenes/journey/j00_folder-v2.webp",
     "x": 47.760416666666664,
     "y": 45.648148148148145,
     "w": 4.479166666666667,
@@ -168,7 +168,7 @@ export const sceneAssets = {
     ]
   },
   "j05_folder": {
-    "src": "/img/scenes/wedding/j05_folder.webp",
+    "src": "/img/scenes/wedding/j05_folder-v2.webp",
     "x": 47.083333333333336,
     "y": 45.648148148148145,
     "w": 5.520833333333333,

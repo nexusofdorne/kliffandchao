@@ -93,7 +93,8 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     const w = windowRef.current;
     if (!w) return;
     setTab(0, true);
-    gsap.set(w, { visibility: 'visible', transformOrigin: folderOrigin(a.j00_folder) });
+    // inherit, not visible: a hidden scene must hide (and stop the clicks of) its window too
+    gsap.set(w, { visibility: 'inherit', transformOrigin: folderOrigin(a.j00_folder) });
     if (prefersReducedMotion()) {
       gsap.set(w, { '--win-o': 1 });
     } else {

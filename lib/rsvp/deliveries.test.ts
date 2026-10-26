@@ -15,11 +15,12 @@ function databaseFixture(overrides: Partial<RsvpDelivery> = {}) {
     submissionId: 'submission-1',
     channel: 'EMAIL',
     status: 'PENDING',
-    payload: buildRsvpNotification(
-      'couple@example.com',
-      'Original family label',
-      null,
-    ),
+    payload: buildRsvpNotification('couple@example.com', {
+      partyLabel: 'Original family label',
+      submitterName: 'A Guest',
+      answers: [],
+      message: null,
+    }),
     attempts: 0,
     firstAttemptAt: null,
     claimToken: null,

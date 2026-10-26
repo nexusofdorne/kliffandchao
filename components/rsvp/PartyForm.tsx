@@ -16,19 +16,25 @@ type PartyFormProps = {
 
 const DATE_FORMAT = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long' });
 
-// Prefills every control with the previous answer — a blank form for
-// someone who already responded reads as "it got lost," and they
-// re-submit in a panic (docs/PLAN.md "Already-RSVP'd behaviour"). The
-// deadline check is enforced server-side (409); `party.editable` here only
-// disables the controls so a guest can't be misled into thinking a
-// doomed submit will go through.
+// Prefills each member's previous answer — a blank form for someone who
+// already responded reads as "it got lost," and they re-submit in a panic
+// (docs/PLAN.md "Already-RSVP'd behaviour"). A guest may answer only for
+// themselves: only the answers they pick or change are sent, so the rest of
+// the household keeps whatever it had. The message box always starts empty
+// (each message is its own note to the couple). The deadline check is
+// enforced server-side (409); `party.editable` here only disables the
+// controls so a guest can't be misled into thinking a doomed submit will go
+// through.
 export function PartyForm({ party, onSubmit, submitting }: PartyFormProps) {
   const [picks, setPicks] = useState<Record<string, AttendanceChoice | null>>(() =>
     Object.fromEntries(party.members.map((member) => [member.id, member.status])),
   );
-  const [message, setMessage] = useState(party.message ?? '');
+  const [message, setMessage] = useState('');
 
-  const allPicked = party.members.every((member) => picks[member.id] != null);
+  // what this submission would send: new answers and changed ones
+  const changed = party.members.filter(
+    (member) => picks[member.id] != null && picks[member.id] !== member.status,
+  );
   const ctaLabel = submitting ? 'SENDING…' : party.hasSubmission ? 'UPDATE OUR RSVP' : 'SEND OUR RSVP';
 
   function handlePick(guestId: string, status: AttendanceChoice) {
@@ -36,9 +42,9 @@ export function PartyForm({ party, onSubmit, submitting }: PartyFormProps) {
   }
 
   function handleSubmit() {
-    // allPicked already guards the button, so every pick is non-null here —
-    // the cast just reflects that to the type checker.
-    const responses = party.members.map((member) => ({
+    // the filter in `changed` already drops unanswered members — the cast
+    // just reflects that to the type checker
+    const responses = changed.map((member) => ({
       guestId: member.id,
       status: picks[member.id] as AttendanceChoice,
     }));
@@ -116,7 +122,7 @@ export function PartyForm({ party, onSubmit, submitting }: PartyFormProps) {
 
       <button
         type="button"
-        disabled={!allPicked || !party.editable || submitting}
+        disabled={changed.length === 0 || !party.editable || submitting}
         onClick={handleSubmit}
         className="mt-[4.4vh] h-[58px] w-full rounded-full bg-[var(--lime)] font-semibold tracking-[.14em] text-[#1c2610] shadow-[0_8px_26px_rgba(157,203,90,.22)] transition-[background,transform] duration-200 enabled:hover:-translate-y-px enabled:hover:bg-[#aedc68] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
       >

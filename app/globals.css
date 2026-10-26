@@ -1519,6 +1519,8 @@ html[data-scenes] .topbar {
 .gw-tabs {
   position: absolute;
   inset: 0;
+  /* above .gw-content, which covers the whole window and would take the clicks */
+  z-index: 3;
   pointer-events: none;
 }
 .gw-tab {
@@ -1576,6 +1578,7 @@ html[data-scenes] .topbar {
   white-space: pre-line;
 }
 .gw-seg--lights {
+  z-index: 3;
   display: flex;
   align-items: center;
   gap: calc(var(--px) * 6);

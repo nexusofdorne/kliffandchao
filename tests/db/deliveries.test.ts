@@ -49,6 +49,8 @@ async function submissionFixture() {
     notification: {
       recipient: 'test@example.com',
       partyLabel: 'Delivery test',
+      submitterName: 'Test Guest',
+      answers: [],
     },
   });
   return testPrisma.rsvpDelivery.findMany({ where: { submissionId: id } });

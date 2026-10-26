@@ -103,7 +103,8 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
     gsap.to(cursorRef.current, { opacity: 0, duration: 0.3 });
     folderRef.current?.classList.add('is-selected');
     await sleep(160);
-    gsap.set(w, { visibility: 'visible', transformOrigin: folderOrigin() });
+    // inherit, not visible: a hidden scene must hide (and stop the clicks of) its window too
+    gsap.set(w, { visibility: 'inherit', transformOrigin: folderOrigin() });
     if (!prefersReducedMotion()) {
       const tl = gsap.timeline();
       tl.fromTo(

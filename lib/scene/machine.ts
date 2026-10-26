@@ -59,8 +59,8 @@ const clampTab = (tab: number) =>
 
 /**
  * What one scroll / swipe / arrow key does. `dir` is +1 for "further into the
- * story". Entering the journey also opens its window (the cursor flourish),
- * so that comes back as a second move.
+ * story". Entering the journey or the wedding also opens its window (the
+ * cursor finds the folder), so that comes back as a second move.
  */
 export function stepPlan(state: SceneState, dir: 1 | -1): Move[] {
   if (state.scene === 'intro') {
@@ -79,7 +79,7 @@ export function stepPlan(state: SceneState, dir: 1 | -1): Move[] {
       }
     }
     return dir > 0
-      ? [{ kind: 'journey->wedding', to: { ...state, scene: 'wedding' } }]
+      ? enterWedding(state)
       : [{ kind: 'journey->intro', to: leaveJourney(state) }];
   }
   // wedding: nothing lies beyond it
@@ -99,6 +99,14 @@ function enterJourney(state: SceneState): Move[] {
     });
   }
   return moves;
+}
+
+function enterWedding(state: SceneState): Move[] {
+  const arrived: SceneState = { ...state, scene: 'wedding' };
+  return [
+    { kind: 'journey->wedding', to: arrived },
+    { kind: 'wedding-open', to: { ...arrived, weddingOpen: true }, auto: true },
+  ];
 }
 
 // Going back out through the screen closes the window and forgets the tab; the
@@ -126,6 +134,14 @@ export function jumpPlan(state: SceneState, target: SceneId): Move[] {
     moves.push({
       kind: 'journey-open',
       to: { ...cur, journeyOpen: true },
+      auto: true,
+    });
+  }
+  // and so does arriving at the wedding
+  if (target === 'wedding' && !cur.weddingOpen) {
+    moves.push({
+      kind: 'wedding-open',
+      to: { ...cur, weddingOpen: true },
       auto: true,
     });
   }

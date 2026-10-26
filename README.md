@@ -128,6 +128,7 @@ This entry has no `answer` field — just a flag. Its content is split across tw
 | The journey photos and layout | `public/img/scenes/journey/standin/`, `config/journey-layout.ts` |
 | The meadow and river pictures (the layers the camera moves through) | `python scripts/design/build_world.py` rebuilds `public/img/world/`, `config/world-layers.generated.ts` and the phone prototype's set; the source paintings and the depth rules are in `scripts/design/` |
 | The phone design (what phones see) | edit `prototype-mobile/`, then `npx tsx scripts/design/publish-phone.ts` copies it to `public/m/` (commit both). The words come from `content/` through `/api/phone-content` |
+| **Any changed picture, film or song** | give the file a **new name** (e.g. `-v2`) and update its reference: `vercel.json` tells browsers to keep `jpg`, `webp`, `mp4`, `mp3`, `svg` and `woff2` files for a week without checking, so an edited file under the same name stays stale for returning guests |
 | Wedding schedule, venue address | `content/wedding.ts` |
 | Attire / motif colours | `content/motif.ts` |
 | Entourage names/roles | `content/entourage.ts` |
