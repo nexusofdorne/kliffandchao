@@ -13,4 +13,16 @@ describe('story layout preferences', () => {
       expect(resolveStoryLayout(mobile, reduced)).toBe(expected);
     },
   );
+
+  it.each([
+    [false, false, 'scenes'],
+    [false, true, 'scenes'],
+    [true, false, 'mobile'],
+    [true, true, 'reduced'],
+  ] as const)(
+    'with scenes on, uses %s/%s -> %s (phones never get the scene engine)',
+    (mobile, reduced, expected) => {
+      expect(resolveStoryLayout(mobile, reduced, true)).toBe(expected);
+    },
+  );
 });

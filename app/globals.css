@@ -594,3 +594,234 @@
     transform: scale(1.13) translate3d(-1.4%, -1%, 0);
   }
 }
+
+/* ============================================================
+   Desktop scenes (docs/REDESIGN_PLAN.md) — prototype-v3/styles.css.
+   Every scene is a 16:9 "stage" that covers the viewport; layers are
+   placed in % of it (config/scene-layers.generated.ts), so they stay
+   locked together at any window size. Text on a stage is sized in cqw.
+   ============================================================ */
+:root {
+  --stage-w: max(100vw, 177.7778vh);
+  --stage-h: max(56.25vw, 100vh);
+}
+
+.scene-root {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.stage {
+  position: absolute;
+  width: var(--stage-w);
+  height: var(--stage-h);
+  left: calc((100vw - var(--stage-w)) / 2);
+  top: calc((100vh - var(--stage-h)) / 2);
+  container-type: size;
+  transform-origin: 50% 50%;
+}
+
+.stage-layer {
+  position: absolute;
+  display: block;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.stage-fill {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Ambient motion, ported from the prototype. Slow and small on purpose; all of
+   it stops under prefers-reduced-motion (see the end of this block). */
+@keyframes scene-cloud-drift {
+  from {
+    transform: translateX(-4.4%);
+  }
+  to {
+    transform: translateX(4.4%);
+  }
+}
+@keyframes scene-sway-a {
+  from {
+    transform: skewX(-0.9deg);
+  }
+  to {
+    transform: skewX(0.9deg);
+  }
+}
+@keyframes scene-sway-b {
+  from {
+    transform: skewX(-1.6deg);
+  }
+  to {
+    transform: skewX(1.4deg);
+  }
+}
+@keyframes scene-bob {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  30% {
+    transform: translate(1.5%, -5%) scale(1.01);
+  }
+  65% {
+    transform: translate(-2%, -2%) scale(0.995);
+  }
+}
+@keyframes scene-flicker {
+  50% {
+    opacity: 0.82;
+  }
+}
+/* the monitor's screen glitches in short bursts, with two colour ghosts */
+@keyframes scene-crt-jitter {
+  0%,
+  61%,
+  66%,
+  88%,
+  93%,
+  100% {
+    filter: none;
+  }
+  62% {
+    filter: brightness(1.5) contrast(1.3);
+  }
+  64% {
+    filter: brightness(0.7) saturate(0.4);
+  }
+  89% {
+    filter: brightness(1.35) hue-rotate(20deg);
+  }
+  91% {
+    filter: contrast(1.6) brightness(0.8);
+  }
+}
+@keyframes scene-ghost-r {
+  0%,
+  60%,
+  67%,
+  87%,
+  94%,
+  100% {
+    opacity: 0;
+    transform: none;
+    clip-path: inset(0);
+  }
+  61% {
+    opacity: 0.9;
+    transform: translateX(6%);
+    clip-path: inset(12% 0 55% 0);
+  }
+  63% {
+    opacity: 0.9;
+    transform: translateX(-9%);
+    clip-path: inset(48% 0 20% 0);
+  }
+  65% {
+    opacity: 0.7;
+    transform: translateX(4%);
+    clip-path: inset(70% 0 6% 0);
+  }
+  88% {
+    opacity: 0.9;
+    transform: translateX(-5%);
+    clip-path: inset(30% 0 40% 0);
+  }
+  90% {
+    opacity: 0.8;
+    transform: translateX(11%);
+    clip-path: inset(5% 0 78% 0);
+  }
+  92% {
+    opacity: 0.9;
+    transform: translateX(-3%);
+    clip-path: inset(58% 0 12% 0);
+  }
+}
+@keyframes scene-ghost-b {
+  0%,
+  60%,
+  67%,
+  87%,
+  94%,
+  100% {
+    opacity: 0;
+    transform: none;
+    clip-path: inset(0);
+  }
+  61% {
+    opacity: 0.8;
+    transform: translateX(-7%);
+    clip-path: inset(40% 0 30% 0);
+  }
+  64% {
+    opacity: 0.9;
+    transform: translateX(8%);
+    clip-path: inset(8% 0 70% 0);
+  }
+  89% {
+    opacity: 0.9;
+    transform: translateX(6%);
+    clip-path: inset(62% 0 10% 0);
+  }
+  91% {
+    opacity: 0.7;
+    transform: translateX(-10%);
+    clip-path: inset(20% 0 52% 0);
+  }
+}
+
+.amb-cloud {
+  animation: scene-cloud-drift 90s ease-in-out infinite alternate;
+  will-change: transform;
+}
+.amb-sway-far {
+  transform-origin: 50% 100%;
+  animation: scene-sway-a 5.2s ease-in-out infinite alternate;
+}
+.amb-sway-near {
+  transform-origin: 50% 100%;
+  animation: scene-sway-b 3.6s ease-in-out infinite alternate;
+}
+.amb-bob {
+  animation: scene-bob 7s ease-in-out infinite;
+}
+.amb-bob:nth-child(3n) {
+  animation-duration: 9s;
+  animation-delay: -3s;
+}
+.amb-bob:nth-child(3n + 1) {
+  animation-duration: 6.2s;
+  animation-delay: -1.2s;
+}
+.amb-jitter {
+  animation: scene-crt-jitter 7s steps(1) infinite;
+}
+.amb-ghost-r {
+  animation: scene-ghost-r 7s steps(1) infinite;
+}
+.amb-ghost-b {
+  animation: scene-ghost-b 7s steps(1) infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amb-cloud,
+  .amb-sway-far,
+  .amb-sway-near,
+  .amb-bob,
+  .amb-jitter,
+  .amb-ghost-r,
+  .amb-ghost-b {
+    animation: none;
+  }
+}
