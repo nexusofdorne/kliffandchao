@@ -916,7 +916,7 @@
     else if (current === 4) {
       if (dir > 0) winOpen && tab < 5 ? stepTab(tab + 1) : go45();
       else winOpen && tab > 1 ? stepTab(tab - 1) : go43();
-    } else if (current === 5 && dir < 0) go54();
+    } else if (current === 5 && dir < 0 && !win5Open) go54();  // with the sheet open, back is the nav or the close dot
   }
   async function goTo(n) {
     if (busy || n === current || current < 3) return;
@@ -943,7 +943,7 @@
     return null;
   };
   const canScroll = (el, dir) => !!el && el.scrollHeight > el.clientHeight + 1 &&
-    (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 1 : el.scrollTop > 0);
+    (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 4 : el.scrollTop > 0);  // 4px: phones round fractional heights
 
   // touch: one swipe = one step
   let touch = null;
@@ -952,17 +952,22 @@
     touch = { y: e.touches[0].clientY, x: e.touches[0].clientX, pane,
       up: canScroll(pane, 1), down: canScroll(pane, -1), chips: !!(e.target.closest && e.target.closest('.chips, .icontabs')) };
   }, { passive: true });
-  addEventListener('touchend', e => {
-    if (!touch) return;
-    const dy = touch.y - e.changedTouches[0].clientY;
-    const dx = touch.x - e.changedTouches[0].clientX;
+  // Decided on the move, not on the lift: on a phone the browser takes over a swipe that starts on a
+  // scrolling card (it may cancel the touch, and then there is no touchend at all).
+  function swipeDone(y, x) {
     const t = touch;
-    touch = null;
+    if (!t || t.done) return;
+    const dy = t.y - y;
+    const dx = t.x - x;
     if (t.chips || Math.abs(dy) < 45 || Math.abs(dx) > Math.abs(dy)) return;
+    t.done = true;
     const dir = Math.sign(dy);
     if (t.pane && (dir > 0 ? t.up : t.down)) return;  // the card scrolled instead
     onStep(dir);
-  }, { passive: true });
+  }
+  addEventListener('touchmove', e => swipeDone(e.touches[0].clientY, e.touches[0].clientX), { passive: true });
+  addEventListener('touchend', e => { swipeDone(e.changedTouches[0].clientY, e.changedTouches[0].clientX); touch = null; }, { passive: true });
+  addEventListener('touchcancel', () => { touch = null; }, { passive: true });
 
   // wheel (testing on a PC): one step per gesture, trackpad inertia swallowed
   let acc = 0;
