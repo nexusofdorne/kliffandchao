@@ -13,7 +13,9 @@ import {
 
 describe('perspectiveScale', () => {
   it('leaves every layer as painted at c = 0 and never moves the sky', () => {
-    for (const kind of WORLD_KINDS) expect(perspectiveScale(NEARNESS[kind], 0)).toBe(1);
+    for (const kind of [...WORLD_KINDS, 'glint' as const]) {
+      expect(perspectiveScale(NEARNESS[kind], 0)).toBe(1);
+    }
     expect(perspectiveScale(NEARNESS.sky, 1)).toBe(1);
     expect(perspectiveScale(NEARNESS.sky, -1)).toBe(1);
   });

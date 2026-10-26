@@ -18,7 +18,7 @@ import os
 import sys
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -30,7 +30,16 @@ W, H = 1920, 1080
 
 SCENES = {
     "j": dict(name="journey", src="public/img/scenes/journey/j00_bg.jpg", hy=745, vp=(965, 745)),
-    "w": dict(name="wedding", src="public/img/scenes/wedding/j05_bg.jpg", hy=650, vp=(955, 665)),
+    "w": dict(
+        name="wedding",
+        src="public/img/scenes/wedding/j05_bg.jpg",
+        hy=650,
+        vp=(955, 665),
+        # the river's outline, read off the painting (the colour test below trims it to the water)
+        water=[(575, 715), (780, 700), (1070, 700), (1180, 740), (1200, 800), (1390, 830), (1480, 900),
+               (1460, 1000), (1420, 1080), (480, 1080), (520, 1010), (640, 950), (740, 935), (780, 900),
+               (650, 860), (580, 790)],
+    ),
 }
 # where each layer starts in the depth map, and how far past the frame it is extended
 KINDS = [
@@ -118,7 +127,38 @@ def build_scene(key, cfg):
         meta.append(dict(kind=kind, src=f"/img/world/{name}", pad=list(pad), px=[w, h],
                          x=-100 * pad[0] / W, y=-100 * pad[1] / H, w=100 * w / W, h=100 * h / H))
         print(f"  wrote {name} {w}x{h} {os.path.getsize(path) // 1024} KB")
+    if cfg.get("water"):
+        meta.append(build_glint(key, a, d, sky, cfg["water"]))
     return dict(vp=dict(x=100 * cfg["vp"][0] / W, y=100 * cfg["vp"][1] / H), layers=meta), layers
+
+
+def build_glint(key, a, d, sky, outline):
+    """The ripple highlights on the river as a white layer that the page drifts and
+    breathes (a still picture of moving water). The painting's own ripples, picked
+    out along the water, cropped to the river."""
+    pm = Image.new("L", (W, H), 0)
+    ImageDraw.Draw(pm).polygon(outline, fill=255)
+    inside = np.asarray(pm) > 0
+    r, g, b = a[..., 0], a[..., 1], a[..., 2]
+    greenish = (g > b + 0.03) & (g > r + 0.02)
+    water = inside & ~greenish
+    water = ndi.binary_closing(ndi.binary_opening(water, iterations=2), iterations=6)
+    soft = ndi.gaussian_filter(water.astype(np.float32), 5)
+    lum = a.mean(2)
+    hp = np.clip(lum - ndi.gaussian_filter(lum, (2, 14)), 0, None)
+    hp = ndi.gaussian_filter(hp / max(np.percentile(hp[water], 99), 1e-6), (0.8, 1.6))
+    alpha = np.clip(hp, 0, 1) ** 0.9 * soft * 0.8
+    ys, xs = np.where(alpha > 0.01)
+    x0, x1, y0, y1 = (int(v) for v in (max(xs.min() - 8, 0), min(xs.max() + 8, W), max(ys.min() - 8, 0), min(ys.max() + 8, H)))
+    rgba = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
+    rgba[..., :3] = 255
+    rgba[..., 3] = (alpha[y0:y1, x0:x1] * 255 + 0.5).astype(np.uint8)
+    name = f"{key}_glint.webp"
+    path = os.path.join(OUT, name)
+    Image.fromarray(rgba, "RGBA").save(path, quality=80, alpha_quality=90, method=6)
+    print(f"  wrote {name} {x1 - x0}x{y1 - y0} {os.path.getsize(path) // 1024} KB")
+    return dict(kind="glint", src=f"/img/world/{name}", pad=[0, 0], px=[x1 - x0, y1 - y0],
+                x=100 * x0 / W, y=100 * y0 / H, w=100 * (x1 - x0) / W, h=100 * (y1 - y0) / H)
 
 
 def composite(layers, scales, vp, order):

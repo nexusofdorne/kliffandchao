@@ -53,9 +53,12 @@ describe('scene layer manifest', () => {
 });
 
 describe('world layers', () => {
-  it('has the five depth layers for the meadow and the river, all on disk', () => {
+  it('has the depth layers for the meadow and the river, all on disk', () => {
+    const depth = ['sky', 'far', 'mid', 'near', 'fore'];
+    expect(worldLayers.journey.layers.map((l) => l.kind)).toEqual(depth);
+    // the river also has its ripple highlights
+    expect(worldLayers.wedding.layers.map((l) => l.kind)).toEqual([...depth, 'glint']);
     for (const scene of [worldLayers.journey, worldLayers.wedding]) {
-      expect(scene.layers.map((l) => l.kind)).toEqual(['sky', 'far', 'mid', 'near', 'fore']);
       for (const layer of scene.layers) {
         const file = join(publicDir, layer.src);
         expect(existsSync(file), layer.src).toBe(true);

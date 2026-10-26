@@ -1,6 +1,6 @@
 'use client';
 
-import { useImperativeHandle, useRef, type Ref } from 'react';
+import { useImperativeHandle, useRef, type CSSProperties, type Ref } from 'react';
 import { worldLayers } from '@/config/world-layers.generated';
 import {
   NEARNESS,
@@ -43,10 +43,30 @@ const ORDER: readonly (readonly [WorldSceneId, WorldKind])[] = [
   ['wedding', 'mid'],
   ['wedding', 'near'],
   ['wedding', 'fore'],
+  ['wedding', 'glint'],
   ['journey', 'mid'],
   ['journey', 'near'],
   ['journey', 'fore'],
 ];
+
+// How far each layer's plants sway (a slow, small tilt about the bottom of the frame),
+// and how long a sway takes. The nearer, the more; the delays keep the layers out of step.
+const SWAY: Partial<Record<WorldKind, { deg: number; x: number; secs: number }>> = {
+  mid: { deg: 0.12, x: 1, secs: 12 },
+  near: { deg: 0.22, x: 2, secs: 9 },
+  fore: { deg: 0.34, x: 3, secs: 7.5 },
+};
+const swayStyle = (scene: WorldSceneId, kind: WorldKind): CSSProperties | undefined => {
+  const s = SWAY[kind];
+  if (!s) return undefined;
+  const delay = scene === 'journey' ? -2.5 : -6;
+  return {
+    '--sway': `${s.deg}deg`,
+    '--sway-x': `${s.x}px`,
+    '--sway-t': `${s.secs}s`,
+    '--sway-d': `${delay - s.secs / 3}s`,
+  } as CSSProperties;
+};
 
 const key = (scene: WorldSceneId, kind: WorldKind) => `${scene}-${kind}`;
 // a layer this big has long since passed the lens
@@ -95,7 +115,22 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
               visibility: 'hidden',
             }}
           >
-            <StageLayer asset={layer} priority={kind === 'sky'} />
+            {kind === 'glint' ? (
+              <>
+                <div className="world-glint world-glint--a">
+                  <StageLayer asset={layer} />
+                </div>
+                <div className="world-glint world-glint--b">
+                  <StageLayer asset={layer} />
+                </div>
+              </>
+            ) : SWAY[kind] ? (
+              <div className="world-sway" style={swayStyle(scene, kind)}>
+                <StageLayer asset={layer} />
+              </div>
+            ) : (
+              <StageLayer asset={layer} priority={kind === 'sky'} />
+            )}
           </div>
         );
       })}

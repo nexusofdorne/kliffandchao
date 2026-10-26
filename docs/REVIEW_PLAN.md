@@ -275,3 +275,28 @@ The full run, Password → Login → Intro → Journey → Wedding and back:
   .audio-toggle`), and the verse moved in from the edge.
 - The intro to journey move is a stand-in (push into the monitor) until step 5.
 
+## 7. Steps 5 and 6 as built (26 Oct)
+
+- **The world:** `scripts/design/build_world.py` (with `world_maps.py`) cuts the clean meadow
+  (`j00_bg.jpg`) and river (`j05_bg.jpg`) paintings into sky, far, mid, near and fore layers by an
+  estimated depth: the ground and water get nearer toward the bottom, hills are far, and sharp plants
+  toward the left and right edges are near. Every layer is cumulative (it covers its own depth and
+  everything nearer, with the nearer parts filled in smoothly and a little of their texture put
+  back), so a nearer layer can move aside and the picture behind it is already there; where a plant
+  stands against the sky the layers behind get a hole so the sky shows. Layers stacked at rest
+  reproduce the paintings (about 2/255 mean difference, from compression). Output:
+  `public/img/world/*.webp` (about 1.5 MB for both) and `config/world-layers.generated.ts`.
+- **The camera:** `lib/scene/world.ts` (tested). A layer's scale is 1 / (1 - nearness x camera), about
+  the scene's vanishing point. Intro to journey: the monitor grows until the screen fills the view, a
+  burst of static (`GlitchBurst`) covers the cut, and the meadow's layers come up from a little way
+  back. Journey to wedding: the camera travels on; the meadow's plants rush past, its sky and hills
+  give way to the river's, and the river's water and banks come up behind them; the way back reverses
+  it. The nav no longer hides during moves. Reduced motion gets a short crossfade.
+- **Life:** plants sway (a tilt of 0.1 to 0.35 degrees about the bottom of the frame, 7 to 12 s a
+  sway, nearer layers more) in both scenes, and the river has two copies of its ripple highlights
+  (`w_glint.webp`) that drift and breathe at different speeds. Transform and opacity only.
+- **Removed:** the grass-ring intro art (`public/img/scenes/intro`), `to-wedding.mp4`, the haze
+  fallback and their pipeline steps.
+- **Known limits:** the layers are cut from single pictures, so up close the cut-outs and fills show
+  a painted softness; the pad around each layer is a softened mirror of its edge.
+

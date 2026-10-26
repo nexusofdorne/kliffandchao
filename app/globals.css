@@ -909,6 +909,62 @@
   will-change: transform, opacity;
 }
 
+/* The meadow and the river are alive, slowly. Plants sway as a tilt about the bottom of
+   the frame (the nearer, the more), and the river's ripple highlights drift and breathe.
+   Transform and opacity only, so it stays on the compositor. */
+.world-sway,
+.world-glint {
+  position: absolute;
+  inset: 0;
+}
+.world-sway {
+  transform-origin: 50% 100%;
+  animation: world-sway var(--sway-t, 9s) ease-in-out var(--sway-d, 0s) infinite;
+}
+@keyframes world-sway {
+  0%,
+  100% {
+    transform: rotate(calc(var(--sway) * -1)) translateX(calc(var(--sway-x) * -1));
+  }
+  50% {
+    transform: rotate(var(--sway)) translateX(var(--sway-x));
+  }
+}
+.world-glint--a {
+  animation: world-glint-a 9s ease-in-out infinite;
+}
+.world-glint--b {
+  animation: world-glint-b 13s ease-in-out -4s infinite;
+}
+@keyframes world-glint-a {
+  0%,
+  100% {
+    transform: translateX(-0.3%);
+    opacity: 0.45;
+  }
+  50% {
+    transform: translateX(0.3%);
+    opacity: 0.85;
+  }
+}
+@keyframes world-glint-b {
+  0%,
+  100% {
+    transform: translateX(0.45%) scale(1.004);
+    opacity: 0.8;
+  }
+  50% {
+    transform: translateX(-0.45%) scale(1);
+    opacity: 0.35;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .world-sway,
+  .world-glint {
+    animation: none;
+  }
+}
+
 /* The intro film on the login monitor's screen: same box and rounded corners as the
    terminal's (.crt), the wash colour behind it so the hand-over has no seam. */
 .intro-screen {

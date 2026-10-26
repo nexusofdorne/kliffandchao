@@ -3,10 +3,12 @@
 // each layer about the vanishing point, the nearer ones faster. Pure, so the
 // numbers can be unit tested; WorldScene applies them as transforms.
 
-export type WorldKind = 'sky' | 'far' | 'mid' | 'near' | 'fore';
+/** `glint` is the river's moving ripple highlights; the other five are depth layers. */
+export type WorldKind = 'sky' | 'far' | 'mid' | 'near' | 'fore' | 'glint';
 export type WorldSceneId = 'journey' | 'wedding';
 
-export const WORLD_KINDS: readonly WorldKind[] = ['sky', 'far', 'mid', 'near', 'fore'];
+/** The depth layers both paintings are cut into, far to near. */
+export const WORLD_KINDS = ['sky', 'far', 'mid', 'near', 'fore'] as const satisfies readonly WorldKind[];
 
 /** How close each layer is to the lens: 0 is the sky, 1 would be on the lens. */
 export const NEARNESS: Record<WorldKind, number> = {
@@ -15,6 +17,7 @@ export const NEARNESS: Record<WorldKind, number> = {
   mid: 0.66,
   near: 0.8,
   fore: 0.9,
+  glint: 0.5,
 };
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
