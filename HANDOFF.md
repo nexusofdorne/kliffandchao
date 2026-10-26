@@ -1,6 +1,33 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 26 October 2026: redesign step 0 done (not pushed)
+## Latest update — 26 October 2026 (later): redesign steps 1–3 done (not pushed)
+
+On `redesign/monitor`, after step 0: **1 assets, 2 scene foundations, 3 desktop gate and
+dive**. Details and results are in the step table of `docs/REDESIGN_PLAN.md`. Next is
+step 4 (terminal arrival + intro). Nothing is pushed; the production migration is still
+unapplied, so don't push or deploy yet.
+
+- **Assets:** `python scripts/design/prepare_assets.py` writes `public/img/scenes/<scene>/`,
+  `public/video/to-wedding.mp4` and `config/scene-layers.generated.ts` (about 90 s). Screen 01
+  is cut from `docs/design/v3/01-plate-clean.jpg` (Chao's plate). Don't hand-edit the
+  generated file; it's Prettier-ignored. `prototype-v3/assets` is frozen.
+- **Scene engine:** `lib/scene/` (pure, tested) and `components/site/scene/`. It reports into
+  `TrackProgressProvider`, so the top bar is untouched. The scaffold is at `/story?scenes=1`;
+  plain `/story` and phones still get the old pinned track until steps 4-6 replace it.
+- **Gate:** `GateScreen` holds the password check and audio handshake and renders both
+  `MobileGate` and `DesktopGate` (CSS shows one). Desktop dives into the monitor and pushes
+  `/story?arrival=gate`; step 4 must read that flag (`lib/scene/arrival.ts`) and strip it.
+- **Testing locally without real secrets:** run `next dev` with `SESSION_SECRET`,
+  `SESSION_EPOCH` and a throwaway `SITE_PASSWORD_HASH` in the process environment. In
+  that env value, escape each `$` as `\$` (Next expands `$` like dotenv does), or the hash
+  silently stops verifying.
+- **Seen, not changed:** `AudioProvider.playMutedSync` doesn't catch the `play()` promise, so a
+  wrong password logs an unhandled `AbortError` (harmless, older than the redesign). The
+  preview pane's screenshots are cropped at scale 1 here; use scale 0.5.
+- **Not yet checked:** a real Vercel preview (and the Preview database isolation), a real
+  iPhone for the audio handshake, reduced-motion on the gate.
+
+## Earlier update — 26 October 2026: redesign step 0 done (not pushed)
 
 **Read `docs/REDESIGN_PLAN.md` first.** It holds every decision (section 1), the
 prototype → component mapping (4), the approach (6), the step table (7) and the open
