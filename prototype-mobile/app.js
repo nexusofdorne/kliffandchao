@@ -116,6 +116,7 @@
         el.play().then(() => { playing = true; if (!muted) fadeIn(); ui(); }, () => { playing = false; ui(); });
       },
       stop() { el.pause(); playing = false; ui(); },
+      isMuted: () => muted,
       toggle() {
         if (!playing) {
           muted = false;
@@ -133,6 +134,38 @@
   })();
   $('#mute').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); });
 
+  // ---------------------------------------------------------------- the terminal's key clicks
+  // A few milliseconds of filtered noise per character (no sound file). The audio context is made
+  // inside the Enter tap; the music button's mute silences it too.
+  const Typing = (() => {
+    let ctx = null;
+    let noise = null;
+    return {
+      unlock() { try { ctx = ctx || new AudioContext(); ctx.resume(); } catch (e) { ctx = null; } },
+      tick(ch) {
+        if (!ctx || ctx.state !== 'running' || Music.isMuted() || ch === ' ') return;
+        if (!noise) {
+          noise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.03), ctx.sampleRate);
+          const d = noise.getChannelData(0);
+          for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+        }
+        const t = ctx.currentTime;
+        const src = ctx.createBufferSource();
+        src.buffer = noise;
+        const f = ctx.createBiquadFilter();
+        f.type = 'bandpass';
+        f.frequency.value = 1800 + Math.random() * 1600;
+        f.Q.value = 1.2;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.05 * (0.7 + Math.random() * 0.6), t);
+        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.028);
+        src.connect(f).connect(g).connect(ctx.destination);
+        src.start(t);
+        src.stop(t + 0.03);
+      },
+    };
+  })();
+
   // ================================================================ 01 · gate
   const pw = $('#pw');
   const go = $('#go');
@@ -144,6 +177,7 @@
   function enter() {
     if (busy || current !== 1) return;
     Music.playMutedSync();  // inside the gesture, before anything async
+    Typing.unlock();
     if (!pw.value.trim()) {
       Music.stop();
       pill.classList.remove('is-wrong');
@@ -238,6 +272,7 @@
     p.append(tn, caret);
     for (const ch of text) {
       tn.data += ch;
+      if (!reduced) Typing.tick(ch);
       await wait(reduced ? 0 : speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0));
     }
   }
@@ -538,42 +573,10 @@
       setTimeout(finish, ms + 400);
     });
   }
-  // a short burst of analog-TV static over the cut between the film and the meadow
-  const burstEl = $('#burst');
-  const burstCv = $('canvas', burstEl);
-  const bars = Array.from({ length: 5 }, () => { const i = document.createElement('i'); burstEl.append(i); return i; });
-  async function burst(ms = 560) {
-    if (reduced) { await wait(150); return; }
-    const ctx = burstCv.getContext('2d');
-    const t0 = performance.now();
-    burstEl.style.opacity = 1;
-    const tick = () => {
-      const k = Math.sin(Math.min(1, (performance.now() - t0) / ms) * Math.PI);
-      const img = ctx.createImageData(burstCv.width, burstCv.height);
-      const hot = 0.04 + 0.2 * k;
-      for (let i = 0; i < img.data.length; i += 4) {
-        const v = Math.random() < hot ? 255 : Math.random() * 120;
-        img.data[i] = img.data[i + 1] = img.data[i + 2] = v;
-        img.data[i + 3] = 255;
-      }
-      ctx.putImageData(img, 0, 0);
-      burstCv.style.opacity = (0.15 + 0.7 * k * rand(0.5, 1)).toFixed(2);
-      bars.forEach(b => {
-        b.style.top = rand(0, 95) + '%';
-        b.style.height = rand(1.5, 9) * (0.4 + k) + '%';
-        b.style.transform = `translateX(${rand(-6, 6) * k}%)`;
-        b.style.opacity = Math.random() < 0.8 ? (0.35 + 0.5 * k).toFixed(2) : 0;
-      });
-    };
-    const iv = setInterval(tick, 33);
-    await wait(ms);
-    clearInterval(iv);
-    burstEl.style.opacity = 0;
-  }
 
-  // 03 -> 04: the camera pushes into the screen until the film fills the view, a burst of static
-  // covers the cut, and the camera travels on into the meadow (its layers come up from a little
-  // way back, the nearer ones moving faster)
+  // 03 -> 04: the camera pushes into the screen until the film fills the view, the film dissolves
+  // (no static: there is no monitor on the phone), and the camera travels on into the meadow (its
+  // layers come up from a little way back, the nearer ones moving faster)
   async function go34(target = 4) {
     busy = true;
     const st3 = stageOf(3);
@@ -583,14 +586,15 @@
     folder4.style.opacity = 0;
     play($('.s03-ui', st3), [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
     await play(st3, [{ transform: 'none' }, { transform: 'scale(1.6)' }], { duration: 1300, easing: 'cubic-bezier(.45,0,.9,.6)' });
-    const cover = burst(560);
-    await wait(230);
-    hide(3);
-    resetStyles(st3, $('.s03-ui', st3));
-    video3.pause();
     show(4);
+    const dissolve = play(scenes[3], [{ opacity: 1 }, { opacity: 0 }], { duration: 700, easing: 'ease-in-out' }).then(() => {
+      hide(3);
+      scenes[3].style.removeProperty('opacity');
+      resetStyles(st3, $('.s03-ui', st3));
+      video3.pause();
+    });
     await Promise.all([
-      cover,
+      dissolve,
       tween(reduced ? 200 : 2100, easeOut3, poseArrival),
       play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1500 }),
     ]);
@@ -600,7 +604,7 @@
     busy = false;
   }
 
-  // 04 -> 03: the camera backs out of the meadow, static covers the cut, the film pulls back
+  // 04 -> 03: the camera backs out of the meadow, the film dissolves in and pulls back (no static)
   async function go43() {
     busy = true;
     const st3 = stageOf(3);
@@ -608,18 +612,19 @@
     if (winOpen) play(win4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
     play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
     await tween(reduced ? 200 : 1200, easeIn2, q => poseArrival(1 - q));
-    const cover = burst(560);
-    await wait(230);
     st3.style.transform = 'scale(1.6)';
     $('.s03-ui', st3).style.opacity = 0;
+    scenes[3].style.opacity = 0;
     show(3);
     video3.style.opacity = 1;  // the film may never have tuned in (a ?scene= jump)
     video3.play().catch(() => {});
-    hide(4);
-    reset04();
-    restWorld(null);
     await Promise.all([
-      cover,
+      play(scenes[3], [{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: 'ease-in-out' }).then(() => {
+        scenes[3].style.removeProperty('opacity');
+        hide(4);
+        reset04();
+        restWorld(null);
+      }),
       play(st3, [{ transform: 'scale(1.6)' }, { transform: 'none' }], { duration: 1600, easing: 'cubic-bezier(.2,.75,.2,1)' }),
       play($('.s03-ui', st3), [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1000 }),
     ]);

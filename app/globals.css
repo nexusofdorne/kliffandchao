@@ -1177,7 +1177,7 @@
   top: 36.5cqh;
   margin: 0;
   font:
-    500 4.55cqh/1 Orbitron,
+    500 3.7cqh/1 Orbitron,
     'Courier New',
     monospace;
   letter-spacing: 0.03em;
@@ -1367,6 +1367,21 @@ html[data-scenes] .topbar {
 /* The journey's pixel-art folder inverts while it is "clicked" */
 .stage-folder img {
   transition: filter 0.12s;
+}
+.stage-folder__label {
+  position: absolute;
+  left: 50%;
+  top: 66%;
+  width: max-content;
+  max-width: 9.5cqw;
+  transform: translateX(-50%);
+  text-align: center;
+  font-size: 1cqw;
+  font-weight: 500;
+  line-height: 1.25;
+  color: #1d1f18;
+  text-shadow: 0 0 0.6cqw rgba(255, 255, 255, 0.75);
+  pointer-events: none;
 }
 .stage-folder.is-selected img {
   filter: invert(1) hue-rotate(180deg) brightness(0.9);

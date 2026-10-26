@@ -30,6 +30,8 @@ without being copied. Any password works.
   never moves. The **music button** is fixed bottom-left, one instance, with a speaker (off)
   or moving bars (on).
 - The journey card and the wedding sheet are CSS glass (blur, tint, bright rim), no images.
+- The terminal clicks as it types (Web Audio, no file). 03 to 04 dissolves (no static on the phone).
+- The folder names ("our story", "and now, our new chapter begins") are text over the folder icons.
 
 ## How it was made
 

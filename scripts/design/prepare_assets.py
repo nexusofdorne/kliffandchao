@@ -298,6 +298,7 @@ for src, out, fold_box, cur_box, hole_box in [
     full(out + "_bg", out + "_bg.jpg", bg)
     cur = rect(sh, *cur_box)
     F, a = matte(im, bg, rect(sh, *fold_box) & ~cur)
+    a[560:, :] = 0  # below the icon is the painted label; the scenes draw it as text now
     box = save_rgba(F, a, out + "_folder.webp")
     place(out + "_folder", out + "_folder.webp", box, W, H)
     if out == "j00":

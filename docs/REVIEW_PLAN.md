@@ -340,3 +340,22 @@ The full run, Password → Login → Intro → Journey → Wedding and back:
 - **Not verified, and what that means:** a real iPhone or Android phone, Messenger's in-app browser,
   Safari on a Mac, a laptop at 125% zoom, 1366 x 768, real-time smoothness of the camera moves (judged
   from frames), and performance on a mid-range phone. These are the things to watch after a deploy.
+
+## 9. Follow-ups after the owner's phone test (26 Oct)
+
+- **Typing clicks:** the terminal plays a short key click per character (`lib/audio/typing.ts`,
+  synthesized with Web Audio, no file; the same in `prototype-mobile/app.js`). The audio context is
+  created inside the Enter tap (`unlockTyping()` in `GateScreen`); the music button's mute silences it.
+- **LOGIN SUCCESSFUL** is smaller (`.crt-login` 3.7cqh, was 4.55cqh; phone `.t-login` 6cqw, was
+  7.2cqw), still larger than the boot lines.
+- **Phone prototype 03 to 04 and back:** the film dissolves into the meadow, no static burst (there
+  is no monitor frame on the phone). The desktop keeps the burst. The unused burst code is gone from
+  the prototype.
+- **Folder names are text now:** "our story" (journey) and "and now, our new chapter begins"
+  (wedding). The painted labels were erased from `j00_folder.webp`, `j05_folder.webp` and the
+  prototype's `p04_folder.webp` / `p05_folder.webp` (same size, label rows transparent); the text is
+  `.stage-folder__label` (site) and `.folder__label` (prototype). `prepare_assets.py` blanks the label
+  rows too if the pictures are regenerated; `prepare_portrait.py` resamples those, so it follows.
+- **Phone fit and swipes (prototype):** the password logo and the windows sit on the visible part of
+  the stage on phones shorter than 9:19.5; swipes register on move, and swiping down from an open
+  wedding sheet no longer goes back to the journey.

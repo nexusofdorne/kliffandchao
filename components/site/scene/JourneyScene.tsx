@@ -223,6 +223,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
             draggable={false}
             className="block h-full w-full max-w-none"
           />
+          <span className="stage-folder__label">our story</span>
         </button>
 
         <GlassWindow

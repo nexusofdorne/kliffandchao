@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { terminalCopy } from '@/content/terminal';
+import { typingTick } from '@/lib/audio/typing';
 import { finishPercent, rampPercent } from '@/lib/scene/terminal';
 import { Stage, StageFill, boxStyle } from './Stage';
 import { prefersReducedMotion, rand, sleep } from './timing';
@@ -132,6 +133,7 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
     if (caret.current) p.append(caret.current);
     for (const ch of text) {
       node.data += ch;
+      if (!prefersReducedMotion()) typingTick(ch);
       await sleep(speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0), signal);
     }
   }

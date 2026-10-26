@@ -192,6 +192,7 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
             draggable={false}
             className="block h-full w-full max-w-none"
           />
+          <span className="stage-folder__label">and now, our new chapter begins</span>
         </button>
 
         <GlassWindow

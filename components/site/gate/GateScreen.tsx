@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useAudio } from '@/components/site/AudioProvider';
+import { unlockTyping } from '@/lib/audio/typing';
 import { gateDestination } from '@/lib/scene/arrival';
 import { STORY_MOBILE_QUERY } from '@/lib/track/layout';
 import { DesktopGate } from './DesktopGate';
@@ -48,6 +49,7 @@ export function GateScreen({ next }: { next: string }) {
     // here, not after the fetch resolves. docs/PLAN.md "The autoplay
     // problem".
     audio.playMutedSync();
+    unlockTyping(); // the terminal's key clicks need their audio context made inside this tap
     void submit();
   }
 
