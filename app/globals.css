@@ -1271,124 +1271,192 @@ html[data-scenes] .topbar {
 }
 
 /* ============================================================
-   Wedding window (screen 05) — prototype-v3/styles.css window5.
-   The tab bodies are the existing wedding tab components.
+   Glass windows (journey and wedding), drawn by GlassWindow.tsx.
+   Milky, mostly opaque frosted glass: a bright rim on the top and left edges,
+   a set-in plate for the content, tabs that are the same material. Sizes are
+   in mockup pixels (--px = one pixel of the 1920-wide mockup). The layers fade
+   with --win-o, not opacity, so their backdrop blur never switches off.
    ============================================================ */
-.w5 {
+.gw {
+  --px: calc(100cqw / 1920);
+  --win-o: 1;
   position: absolute;
-  left: 15%;
-  top: 24.4%;
-  width: 68.8%;
-  height: 55.6%;
-  display: flex;
-  flex-direction: column;
-  visibility: hidden;
+  color: #14160f;
 }
-.w5-bar {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  gap: 0.35cqw;
-  height: 9.5%;
-  padding-left: 4.2%;
-}
-.w5-dot {
+.gw-shell,
+.gw-plate,
+.gw-seg,
+.gw-content {
   position: absolute;
-  top: 46%;
-  width: 0.62cqw;
-  height: 0.62cqw;
-  border-radius: 50%;
-  background: #f1c75c;
+  opacity: var(--win-o);
 }
-.w5-dot--close {
-  left: 1.1%;
-  background: #e86a5f;
-  cursor: pointer;
+.gw-content {
+  inset: 0;
 }
-.w5-dot--mid {
-  left: 2.25%;
+.gw-shell {
+  border-radius: calc(var(--px) * 8) calc(var(--px) * 8) calc(var(--px) * 34)
+    calc(var(--px) * 34);
+  background:
+    radial-gradient(
+      60% 38% at 7% 0%,
+      rgba(255, 255, 255, 0.5),
+      rgba(255, 255, 255, 0) 72%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(241, 243, 242, 0.84),
+      rgba(226, 229, 222, 0.83) 70%,
+      rgba(214, 218, 205, 0.84)
+    );
+  backdrop-filter: blur(calc(var(--px) * 26)) saturate(1.1);
+  box-shadow:
+    inset 0 calc(var(--px) * 2) 0 rgba(255, 255, 255, 0.95),
+    inset calc(var(--px) * 2) 0 0 rgba(255, 255, 255, 0.5),
+    inset 0 calc(var(--px) * -3) calc(var(--px) * 6) rgba(255, 255, 255, 0.35),
+    inset 0 calc(var(--px) * -1) 0 rgba(120, 130, 100, 0.28),
+    0 calc(var(--px) * 30) calc(var(--px) * 70) rgba(20, 40, 16, 0.22),
+    0 calc(var(--px) * 4) calc(var(--px) * 14) rgba(20, 40, 16, 0.12);
 }
-.w5-dot--end {
-  left: 3.4%;
-  background: #8fc26b;
-}
-.w5-tab {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4cqw;
-  width: 11%;
-  height: 82%;
-  border-radius: 0.7cqw 0.7cqw 0 0;
-  background: rgba(255, 255, 255, 0.32);
-  border: 0.05cqw solid rgba(255, 255, 255, 0.55);
-  border-bottom: 0;
-  backdrop-filter: blur(1cqw);
-  color: rgba(40, 50, 40, 0.75);
-  font-size: 0.56cqw;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  transition:
-    background 0.2s,
-    height 0.2s;
-}
-.w5-tab svg {
-  width: 1.05cqw;
-  height: 1.05cqw;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.w5-tab[aria-selected='true'],
-.w5-tab:hover {
-  background: rgba(255, 255, 255, 0.55);
-}
-.w5-tab[aria-selected='true'] {
-  height: 96%;
-}
-.w5-rest {
-  flex: 1;
-}
-.w5-body {
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  border-radius: 0 1cqw 1cqw 1cqw;
+/* the set-in plate the content sits on (soft neumorphic depth) */
+.gw-plate {
+  border-radius: calc(var(--px) * 24);
   background: linear-gradient(
     180deg,
-    rgba(255, 255, 255, 0.72),
-    rgba(238, 238, 228, 0.68) 60%,
-    rgba(218, 214, 186, 0.64)
+    rgba(235, 237, 232, 0.68),
+    rgba(212, 214, 201, 0.64)
   );
-  border: 0.05cqw solid rgba(255, 255, 255, 0.7);
   box-shadow:
-    0 1.5cqw 3cqw rgba(0, 0, 0, 0.12),
-    inset 0 0 0 0.5cqw rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(1.6cqw) saturate(1.05);
-  color: #14180d;
-  overflow: hidden;
+    inset 0 calc(var(--px) * 3) calc(var(--px) * 9) rgba(70, 82, 58, 0.17),
+    inset 0 0 0 calc(var(--px) * 1.5) rgba(255, 255, 255, 0.55),
+    0 calc(var(--px) * 2) 0 rgba(255, 255, 255, 0.85);
 }
-/* the tab panels were built for a full page; inside the window they scroll on their own */
-.w5-body .wedding-tab-panel {
+
+/* tab-shaped segments: the lights, the tabs and the empty one after them */
+.gw-seg {
+  top: var(--t-idle);
+  height: calc(var(--t-bottom) - var(--t-idle));
+  border-radius: calc(var(--px) * 22) calc(var(--px) * 36) 0 0;
+  background: linear-gradient(
+    180deg,
+    rgba(231, 235, 237, 0.77),
+    rgba(218, 223, 226, 0.79)
+  );
+  backdrop-filter: blur(calc(var(--px) * 26)) saturate(1.1);
+  box-shadow:
+    inset 0 calc(var(--px) * 2) 0 rgba(255, 255, 255, 0.85),
+    inset calc(var(--px) * 2) 0 0 rgba(255, 255, 255, 0.35),
+    inset calc(var(--px) * -2) 0 calc(var(--px) * 3) rgba(120, 135, 140, 0.12),
+    0 calc(var(--px) * 8) calc(var(--px) * 18) rgba(30, 50, 30, 0.12);
+}
+.gw-seg--trail {
+  background: linear-gradient(
+    180deg,
+    rgba(240, 241, 240, 0.8),
+    rgba(229, 231, 228, 0.8)
+  );
+}
+.gw-tabs {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.gw-tab {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 14);
+  padding: 0 0 0 calc(var(--px) * 29);
+  border: 0;
+  text-align: left;
+  font: inherit;
+  font-size: calc(var(--px) * 12);
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: #1d1f18;
+  cursor: pointer;
+  pointer-events: auto;
+  transition:
+    top 0.4s cubic-bezier(0.22, 0.8, 0.24, 1),
+    height 0.4s cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+.gw-tab:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)),
+    linear-gradient(180deg, rgba(231, 235, 237, 0.77), rgba(218, 223, 226, 0.79));
+}
+/* the raised tab is the body's material and runs down into it */
+.gw-tab[aria-selected='true'] {
+  top: var(--t-on);
+  height: calc(var(--t-bottom) - var(--t-on));
+  z-index: 2;
+  background: linear-gradient(
+    180deg,
+    rgba(242, 245, 245, 0.88),
+    rgba(240, 243, 242, 0.86)
+  );
+}
+.gw-tab:focus-visible,
+.gw-light:focus-visible {
+  outline: calc(var(--px) * 2) solid rgba(40, 70, 30, 0.7);
+  outline-offset: calc(var(--px) * -4);
+}
+.gw-dot {
+  flex: none;
+  width: calc(var(--px) * 13);
+  height: calc(var(--px) * 13);
+  border-radius: 50%;
+  background: #8a9a4b;
+  box-shadow: inset 0 calc(var(--px) * 1.5) 0 rgba(255, 255, 255, 0.3);
+}
+.gw-label {
+  display: block;
+  max-width: calc(var(--px) * 154);
+  white-space: pre-line;
+}
+.gw-seg--lights {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--px) * 6);
+  padding-left: calc(var(--px) * 22);
+}
+.gw-light {
+  display: block;
+  flex: none;
+  width: calc(var(--px) * 24);
+  height: calc(var(--px) * 24);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  box-shadow:
+    inset 0 calc(var(--px) * 2) calc(var(--px) * 3) rgba(255, 255, 255, 0.45),
+    0 calc(var(--px) * 1) calc(var(--px) * 3) rgba(0, 0, 0, 0.12);
+}
+button.gw-light {
+  cursor: pointer;
+}
+.gw-light--r {
+  background: #dc7f72;
+}
+.gw-light--y {
+  background: #eedc8e;
+}
+.gw-light--g {
+  background: #b6cb87;
+}
+/* the wedding tabs' content sits on the plate and scrolls inside it */
+.gw-pane {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: calc(var(--px) * 24);
+}
+.gw-pane .wedding-tab-panel {
   padding: 2.2cqw 3cqw 2.6cqw;
 }
-.w5-hint {
-  position: absolute;
-  left: 50%;
-  top: 100%;
-  transform: translateX(-50%);
-  margin-top: 0.8cqw;
-  font-size: 0.6cqw;
-  letter-spacing: 0.2em;
-  color: rgba(255, 255, 255, 0.85);
-}
 @media (prefers-reduced-motion: reduce) {
-  .w5-tab {
+  .gw-tab {
     transition: none;
   }
 }

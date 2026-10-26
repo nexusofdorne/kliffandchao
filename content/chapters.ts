@@ -18,6 +18,7 @@ export type JourneyChapter = {
 export const journeyChapters: readonly JourneyChapter[] = [
   {
     title: 'It started with a wedding',
+    tabLabel: 'It started\nwith a wedding',
     paragraphs: [
       'They met at a wedding.',
       "There to celebrate someone else's love story, with no idea that their own would begin that day.",
@@ -27,6 +28,7 @@ export const journeyChapters: readonly JourneyChapter[] = [
   },
   {
     title: "It shouldn't have happened",
+    tabLabel: "It shouldn't\nhave happened",
     paragraphs: [
       "There were more reasons why it wouldn't work than reasons why it would.",
       'They came from different places, held different beliefs, and saw certain things in completely different ways.',

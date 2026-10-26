@@ -444,29 +444,10 @@ for src, out, fold_box, cur_box, hole_box in [
 
 manifest["j05_cursor"] = dict(x=100 * 1016 / W, y=100 * 524 / H)
 
-# --- the glass window: one frame per active tab, with the tab labels, the body and the photos
-# taken out so the site can put real text, photos and video in it.
+# --- the journey mockups, used below for the stand-in photos. (The glass window itself is
+# CSS now: components/site/scene/GlassWindow.tsx, measured in config/glass-windows.ts.)
 win_box = (194, 244, 1716, 962)
-win_mask = rounded_rect(sh, win_box[0], win_box[1], win_box[2] - 1, win_box[3] - 1, 26)
-win_alpha = feather(win_mask, 1.0)
-TABS = [(325, 515), (520, 725), (730, 935), (940, 1145), (1150, 1345)]
-body = feather(rounded_rect(sh, 222, 352, 1686, 934, 14), 3)[..., None]
 wins = [load(f"04-journey-{n}.jpg", W) for n in range(6)]
-for i, w_im in enumerate(wins):
-    f = w_im * (1 - body) + wins[0] * body if i else w_im.copy()
-    holes = np.zeros(sh, bool)
-    green = (f[..., 1] > f[..., 0] + 14) & (f[..., 1] > f[..., 2] + 14)
-    L = lum(f)
-    for x0, x1 in TABS:
-        reg = rect(sh, x0 + 18, 276, x1 - 12, 324)
-        local = ndi.median_filter(L[270:330, x0:x1], size=(1, 41), mode="nearest")
-        dark = np.zeros(sh, bool)
-        dark[270:330, x0:x1] = L[270:330, x0:x1] < local - 14
-        holes |= (dark | green) & reg
-    holes = ndi.binary_dilation(holes, iterations=3)
-    f = inpaint(f, holes, iters=30)
-    box = save_rgba(f, win_alpha, f"frame{i}.webp", crop=win_box, q=90)
-    place(f"frame{i}", f"frame{i}.webp", box, W, H)
 
 
 # --- stand-in chapter photos, cropped from the mockups until the originals arrive.

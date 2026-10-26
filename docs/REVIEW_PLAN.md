@@ -1,6 +1,6 @@
 # Review plan: the 26 October 2026 feedback
 
-Status: **step 1 built, not committed or deployed; steps 2-8 waiting.** Written 26 October 2026.
+Status: **step 1 committed (`d73a459`), step 2 built but not committed or deployed; steps 3-8 waiting.** Written 26 October 2026.
 The owner approved the plan with the recommended answers to the five decisions in section 2.
 
 Step 1 (26 Oct): the password text has a stronger shadow plus a faint shade behind it
@@ -237,3 +237,28 @@ The full run, Password → Login → Intro → Journey → Wedding and back:
 - **It's 2.5D.** A true 3D fly-through would need new 3D or video art from the designer.
 - **Not touched:** password checking, sessions, RSVP, admin, sync and all wedding content
   keep working as they do.
+
+---
+
+## 5. Step 2 as built (26 Oct)
+
+- **One window for both folders:** `components/site/scene/GlassWindow.tsx`, styled by `.gw*` in
+  `app/globals.css`, measured in `config/glass-windows.ts` (mockup pixels, with a test).
+- **Material:** a frosted body at about 83% opacity, a plate set into it at about 65% (a soft
+  inner shadow above, a bright line below), tabs in the same glass (the raised tab is lighter
+  and runs down into the body), pastel traffic lights, a bright rim on the top and left edges.
+  All of it is CSS: gradients, inset shadows and `backdrop-filter`. Text is `#14160f` or `#1d1f18`
+  on at least 90% milky glass, well above 7:1.
+- **Fading:** the window fades with the CSS variable `--win-o` (and `transform`), never `opacity`
+  or `filter`, because either one would switch off the layers' backdrop blur until it ended.
+  `transitions.ts` and both scenes were changed to match.
+- **Journey:** the tabs now break as in the mockup (IT STARTED / WITH A WEDDING, IT SHOULDN'T /
+  HAVE HAPPENED, MEET FAMILY / & FRIENDS); `frame0`-`frame5` and their pipeline step are gone.
+- **Wedding:** text tabs with dots (DETAILS, TIMELINE, MOTIF, ENTOURAGE, FAQ), and DETAILS is
+  split as in the new image: date, countdown, venue and directions on the left, the map on the
+  right. The other four tabs keep their content.
+- **Checked:** both windows open, close, reopen and switch tabs; the journey window comes back
+  after a visit to the wedding; typecheck, lint, 209 tests and the production build pass.
+- **Not checked:** a real Safari or phone (the desktop windows only), and the pixel-level
+  match against the mockups beyond looking at both (the preview pane shows only crops).
+

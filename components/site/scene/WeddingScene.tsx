@@ -9,14 +9,16 @@ import { FaqTab } from '@/components/site/wedding/FaqTab';
 import { MotifTab } from '@/components/site/wedding/MotifTab';
 import { TimelineTab } from '@/components/site/wedding/TimelineTab';
 import type { WeddingTab } from '@/components/site/wedding/TabBar';
+import { plateBox, stageBox, weddingWindow } from '@/config/glass-windows';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { easings } from './ease';
+import { GlassWindow } from './GlassWindow';
 import { useScene } from './SceneProvider';
 import { Stage, StageFill, boxStyle } from './Stage';
 import { playToEnd, prefersReducedMotion, sleep } from './timing';
 
 // Screen 05 (prototype-v3 "05 · new chapter"): the river, a "new chapter"
-// folder, and a frosted window with five icon tabs. The tab bodies are the
+// folder, and a frosted glass window (GlassWindow) with five tabs. The tab bodies are the
 // existing wedding components (countdown, map, timeline, motif, entourage,
 // FAQ); each scrolls inside the window when it is taller than it.
 
@@ -33,66 +35,19 @@ export type WeddingHandle = {
   reset: () => void;
 };
 
-const ANIMATED = 'transform,opacity,filter,visibility,transformOrigin';
+// the window fades with --win-o (see GlassWindow), never opacity or filter
+const ANIMATED = 'transform,--win-o,visibility,transformOrigin';
 
-// the window, as % of the stage (the prototype's measurement)
-const W5 = { x: 15, y: 24.4, w: 68.8, h: 55.6 };
+// the window, as % of the stage
+const W5 = stageBox(weddingWindow);
+const PLATE = plateBox(weddingWindow);
 
-const icon = (paths: ReactNode) => (
-  <svg viewBox="0 0 16 16" aria-hidden="true">
-    {paths}
-  </svg>
-);
-
-const TABS: { id: WeddingTab; label: string; icon: ReactNode }[] = [
-  {
-    id: 'detail',
-    label: 'DETAIL',
-    icon: icon(
-      <>
-        <path d="M8 14s4.5-4.2 4.5-7.5a4.5 4.5 0 0 0-9 0C3.5 9.8 8 14 8 14z" />
-        <circle cx="8" cy="6.5" r="1.6" />
-      </>,
-    ),
-  },
-  {
-    id: 'timeline',
-    label: 'TIMELINE',
-    icon: icon(
-      <>
-        <rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
-        <path d="M2.5 7h11M5.5 2v3M10.5 2v3" />
-      </>,
-    ),
-  },
-  {
-    id: 'motif',
-    label: 'MOTIF',
-    icon: icon(
-      <path d="M6 2.5 3 4.5l1.3 2.3L5.5 6v7.5h5V6l1.2.8L13 4.5l-3-2a2 2 0 0 1-4 0z" />,
-    ),
-  },
-  {
-    id: 'entourage',
-    label: 'ENTOURAGE',
-    icon: icon(
-      <>
-        <circle cx="6" cy="5.5" r="2" />
-        <circle cx="11.5" cy="6.5" r="1.6" />
-        <path d="M2.5 13c0-2.2 1.6-3.8 3.5-3.8s3.5 1.6 3.5 3.8M10 9.6c1.6 0 3 1.2 3 3.2" />
-      </>,
-    ),
-  },
-  {
-    id: 'faq',
-    label: 'FAQ',
-    icon: icon(
-      <>
-        <circle cx="8" cy="8" r="5.5" />
-        <path d="M6.3 6.4a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.1" />
-      </>,
-    ),
-  },
+const TABS: { id: WeddingTab; label: string }[] = [
+  { id: 'detail', label: 'DETAILS' },
+  { id: 'timeline', label: 'TIMELINE' },
+  { id: 'motif', label: 'MOTIF' },
+  { id: 'entourage', label: 'ENTOURAGE' },
+  { id: 'faq', label: 'FAQ' },
 ];
 
 export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
@@ -153,21 +108,20 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
       const tl = gsap.timeline();
       tl.fromTo(
         w,
-        { scale: 0.2, opacity: 0, filter: 'blur(6px)' },
+        { scale: 0.2, '--win-o': 0 },
         {
           keyframes: {
-            '35%': { scale: 0.55, opacity: 0.75, filter: 'blur(3px)' },
-            '100%': { scale: 1, opacity: 1, filter: 'blur(0px)' },
+            '35%': { scale: 0.55, '--win-o': 0.75 },
+            '100%': { scale: 1, '--win-o': 1 },
           },
           easeEach: easings.grow,
           duration: 0.8,
-          // a leftover filter would switch off the frosted glass
-          clearProps: 'filter,transform',
+          clearProps: 'transform',
         },
       );
       await playToEnd(tl);
     } else {
-      gsap.set(w, { opacity: 1 });
+      gsap.set(w, { '--win-o': 1 });
     }
     folderRef.current?.classList.remove('is-selected');
   }
@@ -178,10 +132,10 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
     gsap.set(w, { transformOrigin: folderOrigin() });
     if (!prefersReducedMotion()) {
       const tl = gsap.timeline();
-      tl.fromTo(w, { scale: 1, opacity: 1 }, { scale: 0.06, opacity: 0, duration: 0.52, ease: easings.shrink });
+      tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
       await playToEnd(tl);
     }
-    gsap.set(w, { visibility: 'hidden', clearProps: 'transform,opacity' });
+    gsap.set(w, { visibility: 'hidden', clearProps: 'transform,--win-o' });
   }
 
   useEffect(() => {
@@ -242,45 +196,31 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
           />
         </button>
 
-        <div
+        <GlassWindow
           ref={windowRef}
-          role="dialog"
-          aria-label="The wedding"
-          className="w5"
+          spec={weddingWindow}
+          label="The wedding"
+          tabs={TABS.map((t) => ({ ...t, controls: `w5-panel-${t.id}` }))}
+          selected={TABS.findIndex((t) => t.id === tab)}
+          onSelect={(i) => setTab(TABS[i].id)}
+          onClose={() => setWindowOpen(false)}
         >
-          <div className="w5-bar" role="tablist">
-            <button
-              type="button"
-              aria-label="Close window"
-              className="w5-dot w5-dot--close"
-              onClick={() => setWindowOpen(false)}
-            />
-            <i className="w5-dot w5-dot--mid" />
-            <i className="w5-dot w5-dot--end" />
-            {TABS.map((t) => (
-              <button
-                key={t.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === t.id}
-                aria-controls={`w5-panel-${t.id}`}
-                onClick={() => setTab(t.id)}
-                className="w5-tab"
-              >
-                {t.icon}
-                {t.label}
-              </button>
-            ))}
-            <span className="w5-rest" />
-          </div>
-          <div className="w5-body">
-            {panel('detail', <DetailTab active={open && tab === 'detail'} />)}
+          <div
+            className="gw-pane"
+            style={{
+              left: `${PLATE.x}%`,
+              top: `${PLATE.y}%`,
+              width: `${PLATE.w}%`,
+              height: `${PLATE.h}%`,
+            }}
+          >
+            {panel('detail', <DetailTab active={open && tab === 'detail'} layout="split" />)}
             {panel('timeline', <TimelineTab />)}
             {panel('motif', <MotifTab />)}
             {panel('entourage', <EntourageTab />)}
             {panel('faq', <FaqTab />)}
           </div>
-        </div>
+        </GlassWindow>
 
         <div
           ref={cursorRef}

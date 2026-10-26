@@ -25,7 +25,7 @@ function allSources(): string[] {
 describe('scene layer manifest', () => {
   it('only names files that exist under public/', () => {
     const sources = allSources();
-    expect(sources.length).toBeGreaterThan(60);
+    expect(sources.length).toBeGreaterThan(50);
     for (const src of sources) {
       const file = join(publicDir, src);
       expect(existsSync(file), src).toBe(true);

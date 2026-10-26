@@ -7,14 +7,18 @@ import { siteConfig } from '@/config/site';
 const MAP_ZOOM = 15;
 const INVALIDATE_DELAY_MS = 150;
 
-type VenueMapProps = { active: boolean };
+type VenueMapProps = {
+  active: boolean;
+  /** Fill the parent's height (the wedding window) instead of keeping a 5:2 box. */
+  fill?: boolean;
+};
 
 // Leaflet + plain OpenStreetMap tiles — no API key, no billing account.
 // docs/PLAN.md "The map is embedded, not a link out": the keyless Google
 // Maps Embed form silently rendered a blank box, and CARTO's basemaps now
 // return an "API KEY REQUIRED" watermark tile that still passes every
 // naive "did it load" check (HTTP 200, a valid image, non-zero size).
-export function VenueMap({ active }: VenueMapProps) {
+export function VenueMap({ active, fill = false }: VenueMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
 
@@ -67,7 +71,11 @@ export function VenueMap({ active }: VenueMapProps) {
       ref={containerRef}
       role="img"
       aria-label={`Map showing ${siteConfig.venueName}, ${siteConfig.venueLocation}`}
-      className="aspect-[5/2] w-full rounded-[24px] bg-[#e7e9e2] [&_.leaflet-container]:font-sans [&_.leaflet-tile-pane]:[filter:grayscale(.85)_contrast(.92)_brightness(1.04)] max-[768px]:aspect-[4/3]"
+      className={`bg-[#e7e9e2] [&_.leaflet-container]:font-sans [&_.leaflet-tile-pane]:[filter:grayscale(.85)_contrast(.92)_brightness(1.04)] ${
+        fill
+          ? 'h-full w-full rounded-[1.8cqw]'
+          : 'aspect-[5/2] w-full rounded-[24px] max-[768px]:aspect-[4/3]'
+      }`}
     />
   );
 }

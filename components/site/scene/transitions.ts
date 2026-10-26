@@ -162,8 +162,7 @@ export function createTransitions(refs: Refs): Partial<Record<
         gsap.to(jp.window, {
           scale: canFly ? 0.95 : 0.9,
           yPercent: canFly ? 0 : -16,
-          opacity: 0,
-          filter: 'blur(6px)',
+          '--win-o': 0, // the window fades with --win-o so its glass keeps its blur (GlassWindow)
           transformOrigin: '50% 50%',
           duration: canFly ? 0.6 : 0.85,
           ease: canFly ? 'power1.in' : easings.shrink,
@@ -224,7 +223,8 @@ export function createTransitions(refs: Refs): Partial<Record<
       gsap.set(jr, { autoAlpha: 1 });
       gsap.set(jp.fly, { opacity: 0 });
       if (prefersReducedMotion()) {
-        gsap.set([jp.window, jp.folder], { clearProps: 'transform,opacity,filter' });
+        gsap.set(jp.window, { clearProps: 'transform,--win-o' });
+        gsap.set(jp.folder, { clearProps: 'transform,opacity,filter' });
         await crossfade(wr, jr);
         wedding.reset();
         return;
@@ -243,8 +243,8 @@ export function createTransitions(refs: Refs): Partial<Record<
       if (move.to.journeyOpen) {
         tl.fromTo(
           jp.window,
-          { scale: 0.95, opacity: 0, filter: 'blur(6px)', yPercent: 0 },
-          { scale: 1, opacity: 1, filter: 'blur(0px)', duration: 0.9, ease: 'power2.out', clearProps: 'filter,transform' },
+          { scale: 0.95, '--win-o': 0, yPercent: 0 },
+          { scale: 1, '--win-o': 1, duration: 0.9, ease: 'power2.out', clearProps: 'transform' },
           0.8,
         );
       }

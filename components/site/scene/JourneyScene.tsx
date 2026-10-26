@@ -2,15 +2,13 @@
 
 import gsap from 'gsap';
 import Image from 'next/image';
-import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
+import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
-import {
-  chapterLayouts,
-  tabSpans,
-  type WindowBox,
-} from '@/config/journey-layout';
+import { journeyWindow, stageBox } from '@/config/glass-windows';
+import { chapterLayouts, type WindowBox } from '@/config/journey-layout';
 import { journeyChapters } from '@/content/chapters';
 import { easings } from './ease';
+import { GlassWindow } from './GlassWindow';
 import { Stage, StageFill, boxStyle } from './Stage';
 import { useScene } from './SceneProvider';
 import { playToEnd, prefersReducedMotion, sleep } from './timing';
@@ -18,8 +16,8 @@ import { playToEnd, prefersReducedMotion, sleep } from './timing';
 // Screen 04 (prototype-v3 "04 · journey"): a meadow with a folder. The cursor
 // glides in, double-clicks it, and a frosted glass window grows out of it with
 // five chapter tabs. Everything in the window is real: the tab labels, the
-// paragraphs, the photos and the (still empty) film slot; only the glass is a
-// picture, one per active tab.
+// paragraphs, the photos and the (still empty) film slot, and the glass is CSS
+// (GlassWindow).
 
 export type JourneyHandle = {
   parts: () => {
@@ -32,15 +30,14 @@ export type JourneyHandle = {
   reset: () => void;
 };
 
-const frames = [a.frame0, a.frame1, a.frame2, a.frame3, a.frame4, a.frame5];
-const win = a.frame0; // every frame is the same box
-const WIN_X0 = 194;
-const WIN_W = 1522;
-const WIN_Y0 = 244;
-const WIN_H = 718;
+const win = stageBox(journeyWindow);
+const TABS = journeyChapters.map((chapter, i) => ({
+  id: `journey-tab-${i + 1}`,
+  label: chapter.tabLabel ?? chapter.title,
+}));
 
-const ANIMATED = 'transform,opacity,filter,visibility,transformOrigin';
-const pct = (n: number, of: number) => `${(n / of) * 100}%`;
+// the window fades with --win-o (see GlassWindow), never opacity or filter
+const ANIMATED = 'transform,--win-o,visibility,transformOrigin';
 const rel = (box: WindowBox) => ({
   left: `${box.x}%`,
   top: `${box.y}%`,
@@ -62,42 +59,23 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
   const folderRef = useRef<HTMLButtonElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
   const flyRef = useRef<HTMLVideoElement>(null);
-  const shown = useRef(0); // 0 = the empty frame, 1..5 = a chapter
+  const shown = useRef(0); // 0 = no tab raised yet, 1..5 = a chapter
+  const [raised, setRaised] = useState(0);
 
   const q = (sel: string) =>
     Array.from(windowRef.current?.querySelectorAll<HTMLElement>(sel) ?? []);
 
-  /** The tab swap: the new glass and words fade in over the old, so the glass never goes see-through. */
+  /** The tab swap: the tab's raise is CSS; the old words fade out as the new ones fade in. */
   function setTab(n: number, instant = false) {
     const prev = shown.current;
     shown.current = n;
-    const fr = q('[data-frame]');
+    setRaised(n);
     const panes = q('[data-pane]');
-    const reduced = prefersReducedMotion();
-    if (instant || reduced) {
-      fr.forEach((f, i) => gsap.set(f, { opacity: i === n ? 1 : 0, zIndex: i === n ? 2 : 1, clearProps: 'filter' }));
+    if (instant || prefersReducedMotion()) {
       panes.forEach((p, i) => gsap.set(p, { opacity: i + 1 === n ? 1 : 0 }));
       return;
     }
     if (prev === n) return;
-    fr.forEach((f, i) => {
-      if (i !== prev && i !== n) gsap.set(f, { opacity: 0, zIndex: 1 });
-    });
-    gsap.set(fr[prev], { zIndex: 2 });
-    gsap.set(fr[n], { zIndex: 3 });
-    gsap.fromTo(
-      fr[n],
-      { opacity: 0, filter: 'blur(5px)' },
-      {
-        opacity: 1,
-        filter: 'blur(0px)',
-        duration: 0.48,
-        clearProps: 'filter',
-        onComplete: () => {
-          if (shown.current !== prev) gsap.set(fr[prev], { opacity: 0 });
-        },
-      },
-    );
     if (prev > 0) gsap.to(panes[prev - 1], { opacity: 0, duration: 0.3 });
     if (n > 0) gsap.fromTo(panes[n - 1], { opacity: 0 }, { opacity: 1, duration: 0.48, delay: 0.1 });
   }
@@ -119,21 +97,20 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     setTab(0, true);
     gsap.set(w, { visibility: 'visible', transformOrigin: folderOrigin(a.j00_folder) });
     if (prefersReducedMotion()) {
-      gsap.set(w, { opacity: 1 });
+      gsap.set(w, { '--win-o': 1 });
     } else {
       const tl = gsap.timeline();
       tl.fromTo(
         w,
-        { scale: 0.2, opacity: 0, filter: 'blur(6px)' },
+        { scale: 0.2, '--win-o': 0 },
         {
           keyframes: {
-            '35%': { scale: 0.55, opacity: 0.75, filter: 'blur(3px)' },
-            '100%': { scale: 1, opacity: 1, filter: 'blur(0px)' },
+            '35%': { scale: 0.55, '--win-o': 0.75 },
+            '100%': { scale: 1, '--win-o': 1 },
           },
           easeEach: easings.grow,
           duration: 0.8,
-          // a leftover filter (even blur(0)) would switch off the frosted glass
-          clearProps: 'filter,transform',
+          clearProps: 'transform',
         },
       );
       await playToEnd(tl);
@@ -185,10 +162,10 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     gsap.set(w, { transformOrigin: folderOrigin(a.j00_folder) });
     if (!prefersReducedMotion()) {
       const tl = gsap.timeline();
-      tl.fromTo(w, { scale: 1, opacity: 1 }, { scale: 0.06, opacity: 0, duration: 0.52, ease: easings.shrink });
+      tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
       await playToEnd(tl);
     }
-    gsap.set(w, { visibility: 'hidden', clearProps: 'transform,opacity' });
+    gsap.set(w, { visibility: 'hidden', clearProps: 'transform,--win-o' });
     shown.current = 0;
     setTab(0, true);
   }
@@ -263,65 +240,15 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
           />
         </button>
 
-        <div
+        <GlassWindow
           ref={windowRef}
-          role="dialog"
-          aria-label="Our journey"
-          className="absolute"
-          style={{ ...boxStyle(win), visibility: 'hidden' }}
+          spec={journeyWindow}
+          label="Our journey"
+          tabs={TABS}
+          selected={raised - 1}
+          onSelect={(i) => goToTab(i + 1)}
+          onClose={() => setWindowOpen(false)}
         >
-          {frames.map((frame, i) => (
-            <StageFill
-              key={frame.src}
-              asset={frame}
-              data-frame={String(i)}
-              className={i === 0 ? '' : 'opacity-0'}
-            />
-          ))}
-
-          <button
-            type="button"
-            aria-label="Close window"
-            onClick={() => setWindowOpen(false)}
-            className="absolute z-[5] cursor-pointer rounded-full"
-            style={{
-              left: pct(216 - WIN_X0, WIN_W),
-              top: pct(292 - WIN_Y0, WIN_H),
-              width: pct(24, WIN_W),
-              height: pct(24, WIN_H),
-            }}
-          />
-
-          {journeyChapters.map((chapter, i) => {
-            const [x0, x1] = tabSpans[i];
-            const active = open && state.journeyTab === i + 1;
-            return (
-              <button
-                key={chapter.title}
-                type="button"
-                role="tab"
-                aria-selected={active}
-                onClick={() => goToTab(i + 1)}
-                className="absolute z-[5] flex cursor-pointer items-center gap-[0.7cqw] text-left text-[0.62cqw] font-semibold uppercase leading-[1.25] tracking-[0.02em] text-[#1d1f18]"
-                style={{
-                  left: pct(x0 - WIN_X0, WIN_W),
-                  top: pct(262 - WIN_Y0, WIN_H),
-                  width: pct(x1 - x0, WIN_W),
-                  height: pct(64, WIN_H),
-                  paddingLeft: '1.5cqw',
-                }}
-              >
-                <i
-                  aria-hidden="true"
-                  className="block size-[0.55cqw] flex-none rounded-full bg-[#8a9a4b]"
-                />
-                <span className="block max-w-[8cqw] whitespace-pre-line">
-                  {chapter.tabLabel ?? chapter.title}
-                </span>
-              </button>
-            );
-          })}
-
           {journeyChapters.map((chapter, i) => {
             const layout = chapterLayouts[i];
             const photos = a.chapters[String(i + 1) as keyof typeof a.chapters];
@@ -377,7 +304,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
               </section>
             );
           })}
-        </div>
+        </GlassWindow>
 
         <div
           ref={cursorRef}

@@ -22,7 +22,7 @@ function format(value: number, pad: boolean): string {
 // server guarantees a hydration mismatch. Starts as an em dash per unit so
 // there's no flash of "0" before the first tick — prototype/index.html's
 // tickCountdown().
-export function Countdown() {
+export function Countdown({ compact = false }: { compact?: boolean }) {
   const [value, setValue] = useState<CountdownValue | null>(null);
 
   useEffect(() => {
@@ -35,16 +35,34 @@ export function Countdown() {
   }, []);
 
   return (
-    <div className="my-[3.2vh] flex flex-wrap justify-center gap-[clamp(7px,1.1vw,16px)]">
+    <div
+      className={
+        compact
+          ? 'my-[1.3cqw] flex justify-center gap-[0.45cqw]'
+          : 'my-[3.2vh] flex flex-wrap justify-center gap-[clamp(7px,1.1vw,16px)]'
+      }
+    >
       {UNITS.map((unit) => (
         <div
           key={unit.key}
-          className="glass-light flex min-w-[clamp(58px,7.4vw,96px)] flex-col gap-[.6vh] rounded-[14px] px-[clamp(11px,1.5vw,24px)] py-[clamp(9px,1.4vh,17px)] max-[768px]:min-w-0 max-[768px]:flex-1 max-[768px]:basis-[52px] max-[768px]:px-[.5rem]"
+          className={`glass-light flex flex-col ${
+            compact
+              ? 'min-w-[4cqw] gap-[0.3cqw] rounded-[0.7cqw] px-[0.6cqw] py-[0.65cqw]'
+              : 'min-w-[clamp(58px,7.4vw,96px)] gap-[.6vh] rounded-[14px] px-[clamp(11px,1.5vw,24px)] py-[clamp(9px,1.4vh,17px)] max-[768px]:min-w-0 max-[768px]:flex-1 max-[768px]:basis-[52px] max-[768px]:px-[.5rem]'
+          }`}
         >
-          <b className="text-[clamp(20px,3.9vh,44px)] font-semibold leading-none tracking-[-.02em] [font-variant-numeric:tabular-nums]">
+          <b
+            className={`font-semibold leading-none tracking-[-.02em] [font-variant-numeric:tabular-nums] ${
+              compact ? 'text-[1.35cqw]' : 'text-[clamp(20px,3.9vh,44px)]'
+            }`}
+          >
             {value ? format(value[unit.key], unit.pad) : '—'}
           </b>
-          <span className="text-[8.5px] tracking-[.14em] text-[rgba(0,0,0,.5)]">{unit.label}</span>
+          <span
+            className={`tracking-[.14em] text-[rgba(0,0,0,.5)] ${compact ? 'text-[0.4cqw]' : 'text-[8.5px]'}`}
+          >
+            {unit.label}
+          </span>
         </div>
       ))}
     </div>

@@ -88,7 +88,8 @@ export const journeyChapters: readonly JourneyChapter[] = [
 - **Film**: each chapter has an empty film slot. To fill it, put the file in `public/video/` and add `video: '/video/your-file.mp4'` to the chapter. Until then the slot shows "Film coming soon".
 - **Photos**: for now they are crops of the design mockups, in `public/img/scenes/journey/standin/` (`ch<chapter>_<n>.jpg`), laid out as in the mockups. They are listed in `config/scene-layers.generated.ts`, which is written by `scripts/design/prepare_assets.py`; don't edit that file by hand. When the real photos arrive, ask for the collage layout to be updated.
 - **Where things sit in the window** (text block, film slot per chapter): `config/journey-layout.ts`.
-- **Number of chapters**: the window has exactly five tabs, so adding or removing a chapter also needs a new glass frame from the design mockups.
+- **Tab label line breaks**: a chapter's optional `tabLabel` is its tab text with a forced line break (`'Meet family\n& friends'`); without it the tab wraps `title` by itself.
+- **Number of chapters**: the window has exactly five tabs, drawn in CSS by `components/site/scene/GlassWindow.tsx`. Their positions are in `config/glass-windows.ts`, so adding or removing a chapter means editing the tab list there too.
 - **Phones** don't show the window. Their photocards (`chapters`, `stories`, at the bottom of the file) are derived from the same chapters, one card per paragraph, so there is only one copy of the words to edit. Don't hand-edit that derived part.
 
 ### 4. Wedding page tabs
