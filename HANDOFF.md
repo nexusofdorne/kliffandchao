@@ -1,11 +1,66 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 26 October 2026: the desktop redesign is built (not pushed)
+## Latest update — 26 October 2026: desktop redesign live; phone prototype built
 
-Steps 0–7 of `docs/REDESIGN_PLAN.md` are done on `redesign/monitor`: assets, scene engine,
-gate and dive, terminal + intro, journey, wedding and the cleanup. Nothing is pushed, and
-the production migration `rsvp_deliveries` is still unapplied, so **don't push or deploy
-until it is**. What's left is review and the checks below, not building.
+**Where things stand**
+- **Production is live with the desktop redesign.** `main` was pushed (by the owner, from their
+  terminal) and Vercel deployed it; the deployment was Ready on 26 Oct. Wide screens get the
+  scene engine; phones still get the old stacked layout, **on purpose** (decision 4 in
+  `docs/REDESIGN_PLAN.md`), until the phone port is done.
+- **The `rsvp_deliveries` migration is applied to production** (26 Oct, before the push).
+  `prisma migrate status` against the real database (`iibxpudrhuruymcnzoio`) reports all four
+  migrations applied. The test project is `yplulqnwnlkuzemkebjv`; check which one `.env.local`
+  points at before running anything against a database.
+- **Rollback:** Vercel → Deployments → the previous production deployment → Instant Rollback.
+  The migration only added tables, so rolling the code back never needs a database rollback.
+- **Git:** the checkout is on `main`, 2 commits ahead of `origin/main` (the phone prototype and
+  its server fix: tooling only, nothing the site builds). `redesign/monitor` is at the same
+  commit. Pushing needs the owner's terminal or GitHub Desktop: this session's git has no
+  GitHub credential.
+- **Previews need a Vercel login** (free plan, no shareable links), so they can't be shown to
+  anyone without the owner's account. To show someone a build, use production or a local
+  server on the same Wi-Fi.
+
+**Phone prototype (`prototype-mobile/`)**
+The redesign framed for a portrait phone (1080 x 2340), as plain HTML/CSS/JS like
+`prototype-v3/`. It is the reference for the phone port; the site doesn't use it.
+- Run `python prototype-mobile/serve.py`, then open `http://<PC's Wi-Fi address>:4322` on a
+  phone on the same network (it was `http://192.168.1.7:4322`). Allow Python through the Windows
+  firewall on private networks if asked. Any password works. `?scene=2` … `?scene=5` jumps.
+- The server maps `/site/` to `public/`, so the real song, intro film, fly-through and journey
+  photos are used without copies, and it answers byte-range requests (Safari on iPhone won't
+  play video without them).
+- `scripts/design/prepare_portrait.py` builds its layers from the desktop layers in
+  `public/img/scenes/`. Screen 03's grass ring is rebuilt as a tall frame (the four corners as
+  drawn, the top and bottom bands from the x 1460–1860 slice, the side bands mirror-tiled from
+  stretches without painted-over patches; bubbles cover the patches left where the desktop
+  logo and RSVP were painted out). Screen 01 is a centred crop of the hill with the sky
+  extended upward; 04/05 use the crop the fly-through gets on a portrait screen, so the cut
+  into the clip lines up. `scripts/design/dump-content.ts` writes the site's copy into
+  `prototype-mobile/assets/content.js`.
+- Layout on the phone: logo, mute and RSVP at the top; the section nav at the bottom; the
+  journey as a tall glass card (chapter chips that scroll sideways, film slot, copy, photos);
+  the wedding as a glass sheet with five icon tabs and the site's real content. Swipe up/down
+  steps the story; a card that can still scroll keeps the swipe until its end.
+- Checked only in the preview pane at 390 x 844 (gate → dive → terminal → intro → journey →
+  fly-through → wedding). **Not yet tried on a real phone**: the song starting from the Enter
+  tap, the films playing on iPhone, swipe feel and performance are the things to watch.
+- The 04/05 backgrounds are about 2x enlargements of the 1920-wide mockups, so they're softer
+  than desktop. Better source images, or portrait art from the designer, would fix that.
+
+**Next**
+1. The owner tries the prototype on their phone and gives feedback; iterate in `prototype-mobile/`.
+2. Then port it into the site: a portrait stage mode, the scenes' portrait layouts, phone
+   assets (and a lighter mobile encode of the 11.8 MB intro film), retire `StackedStory` and the
+   old phone panels, and test on real phones (iPhone audio, mid-range Android performance,
+   Messenger's in-app browser, the notch).
+3. Still open from before: the production `DATABASE_URL` has no `sslmode`; a real-iPhone check
+   of the current phone gate; reduced motion and performance on the desktop scenes.
+
+## Earlier update — 26 October 2026: the desktop redesign is built
+
+Steps 0–7 of `docs/REDESIGN_PLAN.md`: assets, scene engine, gate and dive, terminal + intro,
+journey, wedding and the cleanup. (Since then: migrated and deployed, see the section above.)
 
 ### How it fits together
 - **Wide screens** (`/story`, above 768px) run the scene engine: `components/site/scene/`.
@@ -38,8 +93,8 @@ silently stops verifying. In this session's preview pane, screenshots are croppe
 (use 0.5), and native `scroll` events don't fire, so drive scroll-based code with synthetic events.
 
 ### Not yet checked
-- A real Vercel preview, including the Preview database isolation (guest search for "Kho"
-  should return the synthetic Kho Family).
+- The Preview database isolation on a live preview (guest search for "Kho" should return
+  the synthetic Kho Family). A preview was built, but previews need the owner's Vercel login.
 - A real iPhone: the audio handshake on the phone gate (unchanged, but never re-verified).
 - Reduced motion on the desktop scenes (code paths exist: crossfades, no typing, no glitch).
 - Performance on a mid-range laptop: screen 03 is about 20 layers plus the 11.8 MB film.
