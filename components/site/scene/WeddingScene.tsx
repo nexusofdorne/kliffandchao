@@ -14,7 +14,7 @@ import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { easings } from './ease';
 import { GlassWindow } from './GlassWindow';
 import { useScene } from './SceneProvider';
-import { Stage, StageFill, boxStyle } from './Stage';
+import { Stage, boxStyle } from './Stage';
 import { playToEnd, prefersReducedMotion, sleep } from './timing';
 
 // Screen 05 (prototype-v3 "05 · new chapter"): the river, a "new chapter"
@@ -174,8 +174,6 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
   return (
     <Stage>
       <div ref={stageRef} className="absolute inset-0">
-        <StageFill asset={a.j05_bg} />
-
         <button
           ref={folderRef}
           type="button"

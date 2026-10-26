@@ -1,32 +1,35 @@
 import gsap from 'gsap';
 import type { RefObject } from 'react';
+import {
+  arrivalCamera,
+  crossingBackdrop,
+  crossingCamera,
+  crossingFront,
+} from '@/lib/scene/world';
 import { easings } from './ease';
+import type { GlitchHandle } from './GlitchBurst';
 import type { IntroHandle } from './IntroScene';
 import type { JourneyHandle } from './JourneyScene';
-import type { WeddingHandle } from './WeddingScene';
 import type { MovePlayer } from './SceneProvider';
 import { playToEnd, prefersReducedMotion, sleep } from './timing';
+import type { WeddingHandle } from './WeddingScene';
+import type { WorldHandle } from './WorldScene';
 
 type Refs = {
   intro: RefObject<IntroHandle | null>;
   journey: RefObject<JourneyHandle | null>;
+  wedding: RefObject<WeddingHandle | null>;
+  world: RefObject<WorldHandle | null>;
+  glitch: RefObject<GlitchHandle | null>;
   introRoot: RefObject<HTMLElement | null>;
   journeyRoot: RefObject<HTMLElement | null>;
-  wedding: RefObject<WeddingHandle | null>;
   weddingRoot: RefObject<HTMLElement | null>;
-  haze: RefObject<HTMLElement | null>;
-  setChromeVisible: (visible: boolean) => void;
 };
 
-// How far into the clip (seconds) we are deep in the motion blur, where the river takes over.
-const FLY_CUT = 4.9;
+/** How far the camera pushes into the monitor before the cut (the stage's scale). */
+const PUSH = 1.6;
 
-async function until(test: () => boolean, maxMs: number) {
-  const t0 = performance.now();
-  while (!test() && performance.now() - t0 < maxMs) await sleep(30);
-}
-
-/** A plain crossfade between two scene roots: reduced motion, and the fallback. */
+/** A plain crossfade between two scene roots: reduced motion only. */
 async function crossfade(from: HTMLElement, to: HTMLElement) {
   const tl = gsap.timeline();
   tl.set(to, { autoAlpha: 0 }, 0)
@@ -35,180 +38,212 @@ async function crossfade(from: HTMLElement, to: HTMLElement) {
   await playToEnd(tl);
 }
 
-export function createTransitions(refs: Refs): Partial<Record<
-  'intro->journey' | 'journey->intro' | 'journey->wedding' | 'wedding->journey',
-  MovePlayer
->> {
+/** Runs `onUpdate` with a progress that goes from `from` to `to` on the timeline. */
+function tweenProgress(
+  tl: gsap.core.Timeline,
+  at: number,
+  from: number,
+  to: number,
+  duration: number,
+  ease: string | gsap.EaseFunction,
+  onUpdate: (p: number) => void,
+) {
+  const state = { p: from };
+  onUpdate(from);
+  tl.to(state, { p: to, duration, ease, onUpdate: () => onUpdate(state.p) }, at);
+}
+
+export function createTransitions(refs: Refs): Partial<
+  Record<
+    'intro->journey' | 'journey->intro' | 'journey->wedding' | 'wedding->journey',
+    MovePlayer
+  >
+> {
+  const crossing = (world: WorldHandle) => (q: number) =>
+    world.pose({
+      camera: crossingCamera(q),
+      show: ['journey', 'wedding'],
+      backdrop: crossingBackdrop(q),
+      front: crossingFront(q),
+    });
+
   return {
-    // 03 -> 04 (until the camera move of review step 5): the camera pushes into
-    // the monitor and the meadow settles in behind it.
+    // 03 -> 04: the camera pushes into the monitor until the screen fills the view,
+    // a burst of static covers the cut, and the camera travels on into the meadow:
+    // its layers come up from a little way back, the nearer ones moving faster.
     'intro->journey': async () => {
       const intro = refs.intro.current;
       const journey = refs.journey.current;
+      const world = refs.world.current;
+      const glitch = refs.glitch.current;
       const introRoot = refs.introRoot.current;
       const journeyRoot = refs.journeyRoot.current;
-      if (!intro || !journey || !introRoot || !journeyRoot) return;
+      if (!intro || !journey || !world || !glitch || !introRoot || !journeyRoot) return;
       journey.reset();
-      gsap.set(journeyRoot, { autoAlpha: 1 });
       const p = intro.parts();
+      const jp = journey.parts();
       if (prefersReducedMotion()) {
+        world.rest('journey');
         await crossfade(introRoot, journeyRoot);
         intro.setPlaying(false);
         return;
       }
-      const D = 1.8;
-      const tl = gsap.timeline();
-      tl.to(p.ui, { opacity: 0, duration: 0.35 }, 0)
-        .to(p.stage, { scale: 1.9, opacity: 0, duration: D, ease: easings.dive }, 0.1)
-        .fromTo(journey.parts().stage, { scale: 1.12 }, { scale: 1, duration: D + 0.5, ease: 'power2.out' }, 0);
-      await playToEnd(tl);
+      // the meadow is drawn behind the monitor, a little way back, before the cut
+      world.pose({ camera: arrivalCamera(0), show: ['journey'] });
+      gsap.set(journeyRoot, { autoAlpha: 0 });
+      gsap.set(jp.folder, { opacity: 0 });
+
+      const push = gsap.timeline();
+      push
+        .to(p.ui, { opacity: 0, duration: 0.3 }, 0)
+        .to(p.stage, { scale: PUSH, duration: 1.3, ease: 'power2.in' }, 0);
+      await playToEnd(push);
+
+      const burst = glitch.burst(560);
+      await sleep(230);
       gsap.set(introRoot, { autoAlpha: 0 });
+      gsap.set(journeyRoot, { autoAlpha: 1 });
+
+      const tl = gsap.timeline();
+      tweenProgress(tl, 0, 0, 1, 2.1, 'power3.out', (q) =>
+        world.pose({ camera: arrivalCamera(q), show: ['journey'] }),
+      );
+      tl.to(jp.folder, { opacity: 1, duration: 0.7 }, 1.5);
+      await Promise.all([burst, playToEnd(tl)]);
+      world.rest('journey');
+      gsap.set(jp.folder, { clearProps: 'opacity' });
       intro.rest();
       intro.setPlaying(false);
-      gsap.set(journey.parts().stage, { clearProps: 'transform' });
     },
 
-    // 04 -> 03: climb back out through the screen
+    // 04 -> 03: the camera backs out of the meadow, static covers the cut, and the
+    // monitor pulls back from the screen.
     'journey->intro': async () => {
       const intro = refs.intro.current;
       const journey = refs.journey.current;
+      const world = refs.world.current;
+      const glitch = refs.glitch.current;
       const introRoot = refs.introRoot.current;
       const journeyRoot = refs.journeyRoot.current;
-      if (!intro || !journey || !introRoot || !journeyRoot) return;
+      if (!intro || !journey || !world || !glitch || !introRoot || !journeyRoot) return;
       const p = intro.parts();
+      const jp = journey.parts();
       intro.setPlaying(true);
       if (prefersReducedMotion()) {
         await crossfade(journeyRoot, introRoot);
+        world.rest(null);
         journey.reset();
         return;
       }
+      gsap.set(p.stage, { scale: PUSH });
+      gsap.set(p.ui, { opacity: 0 });
+
+      const back = gsap.timeline();
+      tweenProgress(back, 0, 1, 0, 1.2, 'power2.in', (q) =>
+        world.pose({ camera: arrivalCamera(q), show: ['journey'] }),
+      );
+      back.to(jp.folder, { opacity: 0, duration: 0.4 }, 0);
+      if (jp.window) back.to(jp.window, { '--win-o': 0, scale: 0.96, duration: 0.5 }, 0);
+      await playToEnd(back);
+
+      const burst = glitch.burst(560);
+      await sleep(230);
       gsap.set(introRoot, { autoAlpha: 1 });
-      const D = 1.6;
-      const tl = gsap.timeline();
-      tl.to(journey.parts().stage, { scale: 1.12, duration: D, ease: easings.surfaceOut }, 0)
-        .fromTo(p.stage, { scale: 1.9, opacity: 0 }, { scale: 1, opacity: 1, duration: D, ease: easings.surfaceOut }, 0)
-        .fromTo(p.ui, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 1.0);
-      await playToEnd(tl);
       gsap.set(journeyRoot, { autoAlpha: 0 });
-      gsap.set(journey.parts().stage, { clearProps: 'transform' });
+      world.rest(null);
       journey.reset();
+
+      const out = gsap.timeline();
+      out
+        .to(p.stage, { scale: 1, duration: 1.6, ease: easings.surfaceOut }, 0)
+        .to(p.ui, { opacity: 1, duration: 0.7 }, 1.0);
+      await Promise.all([burst, playToEnd(out)]);
       intro.rest();
     },
 
-    // 04 -> 05: the camera dashes forward low through the meadow grass (the
-    // clip) and comes out of the motion blur at the river. The clip has the
-    // top bar baked in, so the real one is hidden while it plays.
-    'journey->wedding': async (move, from) => {
+    // 04 -> 05: the camera travels on through the meadow. Its plants rush past the
+    // lens, its ground slides away underneath, and the river's valley, water and
+    // banks come up out of the distance behind them; the meadow's sky and far
+    // hills give way to the river's while the plants are passing.
+    'journey->wedding': async (_move, from) => {
       const journey = refs.journey.current;
       const wedding = refs.wedding.current;
-      const jr = refs.journeyRoot.current;
-      const wr = refs.weddingRoot.current;
-      const haze = refs.haze.current;
-      if (!journey || !wedding || !jr || !wr || !haze) return;
+      const world = refs.world.current;
+      const journeyRoot = refs.journeyRoot.current;
+      const weddingRoot = refs.weddingRoot.current;
+      if (!journey || !wedding || !world || !journeyRoot || !weddingRoot) return;
       wedding.reset();
-      gsap.set(wr, { autoAlpha: 0, zIndex: 4 });
+      const jp = journey.parts();
+      const wp = wedding.parts();
+      gsap.set(weddingRoot, { autoAlpha: 0, zIndex: 1 });
       if (prefersReducedMotion()) {
-        await crossfade(jr, wr);
+        world.rest('wedding');
+        await crossfade(journeyRoot, weddingRoot);
         await wedding.cursorIn();
         return;
       }
-      const jp = journey.parts();
-      const wp = wedding.parts();
-      const fly = jp.fly;
-      const canFly = !!fly && fly.readyState >= 2;
-      if (from.journeyOpen) {
-        gsap.to(jp.window, {
-          scale: canFly ? 0.95 : 0.9,
-          yPercent: canFly ? 0 : -16,
-          '--win-o': 0, // the window fades with --win-o so its glass keeps its blur (GlassWindow)
-          transformOrigin: '50% 50%',
-          duration: canFly ? 0.6 : 0.85,
-          ease: canFly ? 'power1.in' : easings.shrink,
-        });
-      }
-      gsap.to(jp.folder, { opacity: 0, duration: canFly ? 0.4 : 0.5 });
-      refs.setChromeVisible(false);
+      const pose = crossing(world);
+      pose(0);
+      gsap.set(wp.folder, { opacity: 0 });
 
-      if (canFly && fly) {
-        fly.currentTime = 0;
-        await until(() => !fly.seeking, 1500);
-        await sleep(550);
-        gsap.set(fly, { opacity: 1 }); // the clip opens on this exact meadow, so the swap is invisible
-        fly.playbackRate = 1.3;
-        await fly.play().catch(() => {});
-        await until(() => fly.currentTime >= FLY_CUT || fly.ended || fly.paused, 8000);
-        const tl = gsap.timeline();
-        tl.fromTo(
-          wp.stage,
-          { scale: 1.2, filter: 'blur(14px)' },
-          { scale: 1, filter: 'blur(0px)', duration: 1.6, ease: easings.arrive, clearProps: 'filter,transform' },
-          0,
-        ).to(wr, { autoAlpha: 1, duration: 0.75, ease: 'power1.inOut' }, 0);
-        await playToEnd(tl);
-        fly.pause();
-        gsap.set(fly, { opacity: 0 });
-      } else {
-        // the clip can't play: push up and forward through a haze
-        const tl = gsap.timeline();
-        tl.to(jp.stage, { yPercent: -7, scale: 1.6, filter: 'blur(10px)', duration: 2.1, ease: 'power2.in' }, 0.25)
-          .to(haze, { keyframes: { '50%': { opacity: 0.88 }, '100%': { opacity: 0 } }, duration: 2.7 }, 0.45)
-          .fromTo(
-            wp.stage,
-            { yPercent: 9, scale: 1.3, filter: 'blur(10px)' },
-            { yPercent: 0, scale: 1, filter: 'blur(0px)', duration: 2.1, ease: easings.arrive, clearProps: 'filter,transform' },
-            1.45,
-          )
-          .to(wr, { autoAlpha: 1, duration: 0.9, ease: 'power1.out' }, 1.45);
-        await playToEnd(tl);
+      const tl = gsap.timeline();
+      if (from.journeyOpen && jp.window) {
+        tl.to(jp.window, { '--win-o': 0, scale: 0.95, duration: 0.6, ease: 'power1.in' }, 0);
       }
-      gsap.set(jr, { autoAlpha: 0 });
-      gsap.set(jp.stage, { clearProps: 'transform,filter' });
-      refs.setChromeVisible(true);
-      await sleep(1000);
+      tl.to(jp.folder, { opacity: 0, duration: 0.45 }, 0);
+      tweenProgress(tl, 0.25, 0, 1, 3.8, 'power2.inOut', pose);
+      // the river's folder is there to be found as the camera settles
+      tl.set(weddingRoot, { autoAlpha: 1 }, 3.2).to(wp.folder, { opacity: 1, duration: 0.8 }, 3.2);
+      await playToEnd(tl);
+
+      gsap.set(journeyRoot, { autoAlpha: 0 });
+      gsap.set(jp.window, { clearProps: 'transform,--win-o' });
+      gsap.set(jp.folder, { clearProps: 'opacity' });
+      gsap.set(wp.folder, { clearProps: 'opacity' });
+      world.rest('wedding');
+      await sleep(900);
       await wedding.cursorIn();
     },
 
-    // 05 -> 04: back out of the river to the meadow
+    // 05 -> 04: back the way we came
     'wedding->journey': async (move) => {
       const journey = refs.journey.current;
       const wedding = refs.wedding.current;
-      const jr = refs.journeyRoot.current;
-      const wr = refs.weddingRoot.current;
-      const haze = refs.haze.current;
-      if (!journey || !wedding || !jr || !wr || !haze) return;
+      const world = refs.world.current;
+      const journeyRoot = refs.journeyRoot.current;
+      const weddingRoot = refs.weddingRoot.current;
+      if (!journey || !wedding || !world || !journeyRoot || !weddingRoot) return;
       const jp = journey.parts();
       const wp = wedding.parts();
-      gsap.set(jr, { autoAlpha: 1 });
-      gsap.set(jp.fly, { opacity: 0 });
+      gsap.set(journeyRoot, { autoAlpha: 1 });
       if (prefersReducedMotion()) {
         gsap.set(jp.window, { clearProps: 'transform,--win-o' });
-        gsap.set(jp.folder, { clearProps: 'transform,opacity,filter' });
-        await crossfade(wr, jr);
+        gsap.set(jp.folder, { clearProps: 'opacity' });
+        world.rest('journey');
+        await crossfade(weddingRoot, journeyRoot);
         wedding.reset();
         return;
       }
+      const pose = crossing(world);
+      pose(1);
+      gsap.set(jp.folder, { opacity: 0 });
+
       const tl = gsap.timeline();
-      tl.fromTo(
-        jp.stage,
-        { scale: 1.25, filter: 'blur(10px)' },
-        { scale: 1, filter: 'blur(0px)', duration: 1.8, ease: easings.arrive, clearProps: 'filter,transform' },
-        0,
-      )
-        .fromTo(jp.folder, { opacity: 0 }, { opacity: 1, duration: 0.6 }, 0.6)
-        .to(haze, { keyframes: { '45%': { opacity: 0.7 }, '100%': { opacity: 0 } }, duration: 1.9 }, 0)
-        .to(wp.stage, { yPercent: 9, scale: 1.3, filter: 'blur(10px)', duration: 1.5, ease: easings.shrink }, 0)
-        .to(wr, { autoAlpha: 0, duration: 1.1 }, 0.3);
+      tl.to([wp.folder, wp.cursor], { opacity: 0, duration: 0.4 }, 0);
+      tweenProgress(tl, 0.15, 1, 0, 3.4, 'power2.inOut', pose);
+      tl.set(weddingRoot, { autoAlpha: 0 }, 2.2).to(jp.folder, { opacity: 1, duration: 0.7 }, 2.6);
       if (move.to.journeyOpen) {
         tl.fromTo(
           jp.window,
-          { scale: 0.95, '--win-o': 0, yPercent: 0 },
+          { scale: 0.95, '--win-o': 0 },
           { scale: 1, '--win-o': 1, duration: 0.9, ease: 'power2.out', clearProps: 'transform' },
-          0.8,
+          3.0,
         );
       }
       await playToEnd(tl);
-      gsap.set(wp.stage, { clearProps: 'transform,filter' });
-      gsap.set(wr, { autoAlpha: 0 });
+      gsap.set(weddingRoot, { autoAlpha: 0 });
+      gsap.set(jp.folder, { clearProps: 'opacity' });
+      world.rest('journey');
       wedding.reset();
     },
   };

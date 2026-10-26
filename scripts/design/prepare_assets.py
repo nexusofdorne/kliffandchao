@@ -4,9 +4,10 @@ Slices the v3 mockups into animatable layers (docs/REDESIGN_PLAN.md, step 1).
     python scripts/design/prepare_assets.py [--out DIR]
 
 Reads the flat mockups in docs/design/v3/ and writes the layered assets the site
-uses: images under public/img/scenes/<scene>/, the fly-through at
-public/video/to-wedding.mp4 and config/scene-layers.generated.ts (each layer's
-position as a % of the 16:9 stage, plus its pixel size). With --out DIR it writes
+uses: images under public/img/scenes/<scene>/ and config/scene-layers.generated.ts
+(each layer's position as a % of the 16:9 stage, plus its pixel size). Screen 03's
+grass ring and the 04 -> 05 fly-through clip are gone: the intro film plays on screen
+02's monitor and the camera moves are drawn from depth layers (build_world.py). With --out DIR it writes
 everything flat into DIR instead, with manifest.json, for experiments.
 (prototype-v3/assets/ holds the output of the first version of this script and is
 frozen.) Offline design tooling: not part of the Next.js build, and needs Python 3
@@ -42,11 +43,8 @@ VIDEO_OUT = os.path.join(REPO, "public", "video") if SITE else OUT
 os.makedirs(OUT, exist_ok=True)
 os.makedirs(VIDEO_OUT, exist_ok=True)
 
-# The fly-through clip is used as-is (it is already faststart, video-only H.264).
-FLY_SOURCE = "transition-04-05-flythrough.mp4"
-
 # Which scene folder a file lands in, by name prefix (site layout only).
-SCENE_DIRS = (("s01_", "gate"), ("s02_", "terminal"), ("s03_", "intro"), ("j05_", "wedding"))
+SCENE_DIRS = (("s01_", "gate"), ("s02_", "terminal"), ("j05_", "wedding"))
 
 
 def target(name):
@@ -268,141 +266,6 @@ save_rgb(_s02, "s02_bg.jpg", 86)
 full("s02_bg", "s02_bg.jpg", _s02)
 manifest["s02_screen"] = dict(x=100 * 152 / 3288, y=100 * 73 / 1850, w=100 * 2977 / 3288, h=100 * 1723 / 1850)
 
-# ---------------------------------------------------------------- screen 03
-print("screen 03 ...")
-img = load("03-intro-vid.jpg", W_HI)
-H, W = img.shape[:2]
-sh = (H, W)
-
-def measure_screen(img):
-    """Inner edge of the monitor bezel, found by scanning in from each side for grass."""
-    H, W = img.shape[:2]
-    r, g, b = img[..., 0], img[..., 1], img[..., 2]
-    L_ = lum(img)
-    grassy = ((g >= r - 6) & ((g - b) > 0.25 * g) & (L_ < 150)) | (L_ < 40)
-    run = ndi.minimum_filter1d(grassy.astype(np.uint8), 5, axis=1, origin=-2)
-    runv = ndi.minimum_filter1d(grassy.astype(np.uint8), 5, axis=0, origin=-2)
-    band = int(300 * K)
-
-    def first_hit(a, axis):
-        a = a[:, :band] if axis == 1 else a[:band]
-        hit = a.argmax(axis=axis).astype(np.float32)
-        hit[a.max(axis=axis) == 0] = band
-        return ndi.median_filter(hit, 61, mode="nearest")
-
-    def fit(edge, inward_sign):
-        # gentle curve through the scan; misses only ever err inward, so reject those
-        n = len(edge)
-        t = np.arange(n, dtype=np.float64)
-        sel = (t > n * 0.12) & (t < n * 0.88) & (edge < band)
-        for _ in range(8):
-            c = np.polyfit(t[sel], edge[sel], 2)
-            res = (edge - np.polyval(c, t)) * inward_sign
-            sel &= res < 2.5
-        return np.polyval(c, t) - 1.5 * inward_sign
-
-    L = fit(first_hit(run, 1), 1)
-    R = W - 1 - fit(first_hit(run[:, ::-1], 1), 1)
-    T = fit(first_hit(runv, 0), 1)
-    B = H - 1 - fit(first_hit(runv[::-1], 0), 1)
-    yy, xx = np.mgrid[:H, :W]
-    m = (xx >= L[:, None]) & (xx <= R[:, None]) & (yy >= T[None, :]) & (yy <= B[None, :])
-    rad = 78 * K  # round the corners (morphological opening by a disk)
-    core = ndi.distance_transform_edt(m) > rad
-    return ndi.distance_transform_edt(~core) <= rad
-
-
-interior_tight = measure_screen(img)
-interior =ndi.binary_dilation(interior_tight, iterations=int(10 * K) + 2)
-
-bub03 = [(633, 482, 49), (665, 845, 26), (327, 1069, 64), (442, 1184, 22), (536, 1442, 51),
-         (1078, 1433, 31), (913, 1613, 36), (318, 1664, 131), (2615, 238, 60), (2878, 636, 98),
-         (2278, 716, 26), (2942, 1273, 118)]
-bub03 = [s(*b) for b in bub03]
-nav_box = s(1036, 103, 1970, 201)
-rsvp_box = s(2334, 98, 2559, 202)
-mute = s(187, 1705, 60)
-logo_box = s(236, 92, 372, 208)
-verse_box = s(2290, 1550, 3125, 1765)
-
-ub = np.zeros(sh, bool)
-for cx, cy, r in bub03:
-    ub |= disk(sh, cx, cy, r * 1.1)
-ui = rect(sh, *nav_box) | rect(sh, *rsvp_box)
-
-# video blob (the flat blue area)
-r_, g_, b_ = img[..., 0], img[..., 1], img[..., 2]
-blue = (b_ > r_ + 25) & (b_ > g_ + 5) & (b_ > 140) & interior
-lab, n = ndi.label(blue)
-blob = lab == lab[int(925 * K), int(1644 * K)]
-blob = ndi.binary_fill_holes(blob)
-bf = inpaint(blob.astype(np.float32), ub | ui, iters=60) > 0.5
-blob = ndi.binary_fill_holes(bf | blob)
-blob = ndi.binary_opening(blob, iterations=2)
-blob = ndi.binary_dilation(blob, iterations=3)  # eat the pale halo on grass tips
-blob_alpha = feather(blob, 1.4)
-ys, xs = np.where(blob)
-bb = (xs.min(), ys.min(), xs.max() + 1, ys.max() + 1)
-manifest["s03_blob"] = dict(x=100 * bb[0] / W, y=100 * bb[1] / H, w=100 * (bb[2] - bb[0]) / W, h=100 * (bb[3] - bb[1]) / H)
-
-# move grass texture over the baked verse so it can be live text
-work = img.copy()
-vx0, vy0, vx1, vy1 = [int(v) for v in verse_box]
-dx = int(860 * K)
-patch = work[vy0:vy1, vx0 - dx : vx1 - dx]
-fm = np.zeros((vy1 - vy0, vx1 - vx0), np.float32)
-fm[12:-12, 12:-12] = 1
-fm = feather(fm, 7)[..., None]
-work[vy0:vy1, vx0:vx1] = work[vy0:vy1, vx0:vx1] * (1 - fm) + patch * fm
-
-mute_m = disk(sh, *mute)
-holes = ub | ui | mute_m | rect(sh, *logo_box)
-bg = inpaint(work, holes)
-
-mute_soft = feather(disk(sh, mute[0], mute[1], mute[2] * 1.05), 2)
-for i, (cx, cy, r) in enumerate(bub03):
-    bubble_sprite(work, bg, cx, cy, r, f"s03_bubble{i}.webp", f"s03_bubble{i}", W, H, exclude=mute_soft)
-
-la = np.clip((lum(work) - lum(bg)) / np.maximum(255 - lum(bg), 1) * 1.5, 0, 1) * rect(sh, *logo_box)
-la[la < 0.08] = 0
-box = save_rgba(np.full_like(img, 255), la, "s03_logo.webp", crop=logo_box)
-place("s03_logo", "s03_logo.webp", box, W, H)
-
-clean = bg
-grass_region = interior_tight & ~ndi.binary_dilation(blob, iterations=int(14 * K))
-grass_region &= ~ndi.binary_dilation(~interior_tight, iterations=int(14 * K))
-mx, mn = clean.max(2), clean.min(2)
-petals = (lum(clean) > 185) & ((mx - mn) < 60) & grass_region
-fl = ndi.binary_dilation(petals, iterations=2) & grass_region
-lab, n = ndi.label(fl)
-sizes = ndi.sum(fl, lab, range(1, n + 1))
-fl = np.isin(lab, np.where(sizes >= 6)[0] + 1)
-grass_alpha = feather(interior, 1.0) * (1 - blob_alpha)
-flower_alpha = feather(fl, 0.7) * grass_alpha
-box = save_rgba(clean, flower_alpha, "s03_flowers.webp")
-place("s03_flowers", "s03_flowers.webp", box, W, H)
-grass = inpaint(clean, ndi.binary_dilation(fl, iterations=2), iters=30)
-
-# split the grass ring into 4 pieces (top / right / bottom / left) by angle
-yy, xx = np.mgrid[:H, :W].astype(np.float32)
-ang = np.degrees(np.arctan2((yy - H * 0.5) / H, (xx - W * 0.5) / W))
-sectors = {"top": (ang >= -135) & (ang < -45), "right": (ang >= -45) & (ang < 45),
-           "bottom": (ang >= 45) & (ang < 135), "left": (ang >= 135) | (ang < -135)}
-for name, m in sectors.items():
-    # generous feathered overlap: identical pixels at rest, no cracks while pieces slide in
-    reach = int(28 * K)
-    soft = np.clip(1 - ndi.distance_transform_edt(~m) / reach, 0, 1)
-    soft = np.maximum(soft, ndi.binary_dilation(m, iterations=2))
-    a = grass_alpha * soft
-    box = save_rgba(grass, a, f"s03_grass_{name}.webp")
-    place(f"s03_grass_{name}", f"s03_grass_{name}.webp", box, W, H)
-
-bezel_alpha = 1 - feather(interior_tight, 1.2)
-box = save_rgba(img, bezel_alpha, "s03_bezel.webp", crop=(0, 0, W, H))
-place("s03_bezel", "s03_bezel.webp", box, W, H)
-manifest["s03_interior"] = dict(x=100 * 66 / 3288, y=100 * 42 / 1850, w=100 * (3225 - 66) / 3288, h=100 * (1803 - 42) / 1850)
-manifest["s03_mute"] = dict(cx=100 * 187 / 3288, cy=100 * 1705 / 1850, d=100 * 112 / 3288)
-
 # ---------------------------------------------------------------- screens 04 / 05
 print("screens 04 / 05 ...")
 W, H = 1920, 1080
@@ -503,10 +366,6 @@ for ch, boxes in APPROX.items():
 manifest["window_video_slot"] = dict(
     x=100 * (VIDEO_BOX[0] - win_box[0]) / ww, y=100 * (VIDEO_BOX[1] - win_box[1]) / wh,
     w=100 * (VIDEO_BOX[2] - VIDEO_BOX[0]) / ww, h=100 * (VIDEO_BOX[3] - VIDEO_BOX[1]) / wh)
-
-# --- the 04 -> 05 fly-through
-shutil.copyfile(os.path.join(ROOT, FLY_SOURCE), os.path.join(VIDEO_OUT, "to-wedding.mp4"))
-manifest["video_fly"] = dict(src="/video/to-wedding.mp4" if SITE else "to-wedding.mp4")
 
 # --- manifest
 if SITE:

@@ -4,10 +4,12 @@ import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
 import { useAudio } from '@/components/site/AudioProvider';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
+import { GlitchBurst, type GlitchHandle } from './GlitchBurst';
 import { IntroScene, type IntroHandle } from './IntroScene';
 import { JourneyScene, type JourneyHandle } from './JourneyScene';
 import { SceneRoot } from './SceneRoot';
 import { WeddingScene, type WeddingHandle } from './WeddingScene';
+import { WorldScene, type WorldHandle } from './WorldScene';
 import { SceneProvider, useScene } from './SceneProvider';
 import { Terminal, type TerminalHandle } from './Terminal';
 import { createTransitions } from './transitions';
@@ -35,7 +37,8 @@ function Story({ arrival }: { arrival: boolean }) {
   const journeyRoot = useRef<HTMLElement>(null);
   const wedding = useRef<WeddingHandle>(null);
   const weddingRoot = useRef<HTMLElement>(null);
-  const haze = useRef<HTMLDivElement>(null);
+  const world = useRef<WorldHandle>(null);
+  const glitch = useRef<GlitchHandle>(null);
   const terminal = useRef<TerminalHandle>(null);
   const introRoot = useRef<HTMLElement>(null);
   const arrivalRoot = useRef<HTMLElement>(null);
@@ -50,18 +53,18 @@ function Story({ arrival }: { arrival: boolean }) {
     const players = createTransitions({
       intro,
       journey,
+      wedding,
+      world,
+      glitch,
       introRoot,
       journeyRoot,
-      wedding,
       weddingRoot,
-      haze,
-      setChromeVisible,
     });
     const offs = Object.entries(players).map(([kind, player]) =>
       registerPlayer(kind as keyof typeof players, player),
     );
     return () => offs.forEach((off) => off());
-  }, [registerPlayer, setChromeVisible]);
+  }, [registerPlayer]);
 
   useEffect(() => {
     const ctl = new AbortController();
@@ -111,10 +114,13 @@ function Story({ arrival }: { arrival: boolean }) {
 
   return (
     <>
-      <SceneRoot id="journey" rootRef={journeyRoot} z={2}>
+      <SceneRoot id="world" visible z={0}>
+        <WorldScene ref={world} />
+      </SceneRoot>
+      <SceneRoot id="journey" rootRef={journeyRoot} z={2} clear>
         <JourneyScene ref={journey} />
       </SceneRoot>
-      <SceneRoot id="wedding" rootRef={weddingRoot} z={1}>
+      <SceneRoot id="wedding" rootRef={weddingRoot} z={1} clear>
         <WeddingScene ref={wedding} />
       </SceneRoot>
       <SceneRoot id="intro" rootRef={introRoot} z={3}>
@@ -123,16 +129,7 @@ function Story({ arrival }: { arrival: boolean }) {
       <SceneRoot id="arrival" rootRef={arrivalRoot} visible z={5}>
         <Terminal ref={terminal} />
       </SceneRoot>
-      {/* the soft white-blue wash the fallback flight and the way back pass through */}
-      <div
-        ref={haze}
-        aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-[8] opacity-0"
-        style={{
-          background:
-            'radial-gradient(ellipse at 50% 55%, #f4f8fb 0%, #dfeaf2 55%, #c9dbe8 100%)',
-        }}
-      />
+      <GlitchBurst ref={glitch} />
     </>
   );
 }

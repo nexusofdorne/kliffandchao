@@ -10,12 +10,15 @@ const HIDDEN: CSSProperties = { visibility: 'hidden', opacity: 0 };
 export function SceneRoot({
   id,
   visible = false,
+  clear = false,
   z,
   rootRef,
   children,
 }: {
-  id: SceneId | 'arrival';
+  id: SceneId | 'arrival' | 'world';
   visible?: boolean;
+  /** A scene that only holds interface over the world (no background of its own). */
+  clear?: boolean;
   z?: number;
   rootRef?: RefObject<HTMLElement | null>;
   children: ReactNode;
@@ -25,11 +28,11 @@ export function SceneRoot({
     <section
       ref={(el) => {
         if (rootRef) rootRef.current = el;
-        if (id !== 'arrival') registerScene(id, el);
+        if (id !== 'arrival' && id !== 'world') registerScene(id, el);
       }}
       data-scene={id}
       aria-label={id}
-      className="scene-root"
+      className={clear ? 'scene-root scene-root--clear' : 'scene-root'}
       style={{ ...(visible ? undefined : HIDDEN), zIndex: z }}
     >
       {children}

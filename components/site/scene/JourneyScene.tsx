@@ -9,11 +9,11 @@ import { chapterLayouts, type WindowBox } from '@/config/journey-layout';
 import { journeyChapters } from '@/content/chapters';
 import { easings } from './ease';
 import { GlassWindow } from './GlassWindow';
-import { Stage, StageFill, boxStyle } from './Stage';
+import { Stage, boxStyle } from './Stage';
 import { useScene } from './SceneProvider';
 import { playToEnd, prefersReducedMotion, sleep } from './timing';
 
-// Screen 04 (prototype-v3 "04 · journey"): a meadow with a folder. The cursor
+// Screen 04 (prototype-v3 "04 · journey"): a meadow (WorldScene draws it) with a folder. The cursor
 // glides in, double-clicks it, and a frosted glass window grows out of it with
 // five chapter tabs. Everything in the window is real: the tab labels, the
 // paragraphs, the photos and the (still empty) film slot, and the glass is CSS
@@ -24,7 +24,6 @@ export type JourneyHandle = {
     stage: HTMLElement | null;
     window: HTMLElement | null;
     folder: HTMLElement | null;
-    fly: HTMLVideoElement | null;
   };
   /** Back to the folder on the meadow, window closed, nothing selected. */
   reset: () => void;
@@ -58,7 +57,6 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
   const windowRef = useRef<HTMLDivElement>(null);
   const folderRef = useRef<HTMLButtonElement>(null);
   const cursorRef = useRef<HTMLDivElement>(null);
-  const flyRef = useRef<HTMLVideoElement>(null);
   const shown = useRef(0); // 0 = no tab raised yet, 1..5 = a chapter
   const [raised, setRaised] = useState(0);
 
@@ -198,7 +196,6 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
       stage: stageRef.current,
       window: windowRef.current,
       folder: folderRef.current,
-      fly: flyRef.current,
     }),
     reset,
   }));
@@ -208,18 +205,6 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
   return (
     <Stage>
       <div ref={stageRef} className="absolute inset-0">
-        <StageFill asset={a.j00_bg} />
-        {/* the flight to the river (04 -> 05); its first frame is this meadow */}
-        <video
-          ref={flyRef}
-          src={a.video_fly.src}
-          muted
-          playsInline
-          preload="auto"
-          aria-hidden="true"
-          tabIndex={-1}
-          className="stage-fill pointer-events-none object-cover opacity-0"
-        />
         <button
           ref={folderRef}
           type="button"

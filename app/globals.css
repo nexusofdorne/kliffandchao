@@ -580,6 +580,9 @@
   overflow: hidden;
   background: #000;
 }
+.scene-root--clear {
+  background: transparent;
+}
 
 .stage {
   position: absolute;
@@ -896,6 +899,14 @@
       0 -200%,
       0 0;
   }
+}
+
+/* One layer of the meadow or the river; the camera scales it about the vanishing point */
+.world-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  will-change: transform, opacity;
 }
 
 /* The intro film on the login monitor's screen: same box and rounded corners as the

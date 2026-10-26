@@ -2,6 +2,7 @@ import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { sceneAssets } from '../../config/scene-layers.generated';
+import { worldLayers } from '../../config/world-layers.generated';
 import { isInsideStage, type SceneLayer } from './layers';
 
 const publicDir = join(process.cwd(), 'public');
@@ -25,7 +26,7 @@ function allSources(): string[] {
 describe('scene layer manifest', () => {
   it('only names files that exist under public/', () => {
     const sources = allSources();
-    expect(sources.length).toBeGreaterThan(50);
+    expect(sources.length).toBeGreaterThan(30);
     for (const src of sources) {
       const file = join(publicDir, src);
       expect(existsSync(file), src).toBe(true);
@@ -37,7 +38,7 @@ describe('scene layer manifest', () => {
     const placed = Object.entries(sceneAssets).filter(
       ([, v]) => 'src' in v && 'w' in v && 'h' in v && 'x' in v,
     ) as [string, SceneLayer][];
-    expect(placed.length).toBeGreaterThan(30);
+    expect(placed.length).toBeGreaterThan(10);
     for (const [key, layer] of placed) {
       if (key === 's01_sky') continue; // padded on purpose so clouds can drift
       expect(isInsideStage(layer), key).toBe(true);
@@ -48,6 +49,19 @@ describe('scene layer manifest', () => {
     const chapters = sceneAssets.chapters;
     expect(Object.keys(chapters)).toEqual(['1', '2', '3', '4', '5']);
     expect(chapters['4']).toHaveLength(9);
+  });
+});
+
+describe('world layers', () => {
+  it('has the five depth layers for the meadow and the river, all on disk', () => {
+    for (const scene of [worldLayers.journey, worldLayers.wedding]) {
+      expect(scene.layers.map((l) => l.kind)).toEqual(['sky', 'far', 'mid', 'near', 'fore']);
+      for (const layer of scene.layers) {
+        const file = join(publicDir, layer.src);
+        expect(existsSync(file), layer.src).toBe(true);
+        expect(statSync(file).size, layer.src).toBeGreaterThan(0);
+      }
+    }
   });
 });
 
