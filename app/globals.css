@@ -825,3 +825,208 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   Desktop gate (screen 01) — prototype-v3/styles.css 01 · password
+   ============================================================ */
+/* grass sway: copies of the foreground, masked to the field and leaning from the roots */
+.gate-sway {
+  position: absolute;
+  inset: 0;
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  transform-origin: 50% 100%;
+  will-change: transform;
+  pointer-events: none;
+}
+.gate-sway--far {
+  mask-image: linear-gradient(to bottom, transparent 70%, #000 80%);
+  animation: scene-sway-a 5.2s ease-in-out infinite alternate;
+}
+.gate-sway--near-l,
+.gate-sway--near-r {
+  mask-image:
+    linear-gradient(to bottom, transparent 78%, #000 88%),
+    linear-gradient(to right, #000 38%, transparent 62%);
+  mask-composite: intersect;
+  animation: scene-sway-b 3.6s ease-in-out infinite alternate;
+}
+.gate-sway--near-r {
+  mask-image:
+    linear-gradient(to bottom, transparent 78%, #000 88%),
+    linear-gradient(to left, #000 38%, transparent 62%);
+  animation-duration: 4.3s;
+  animation-delay: -1.7s;
+}
+
+/* the little monitor's screen glitches in bursts */
+.gate-monitor {
+  position: absolute;
+  overflow: hidden;
+  border-radius: 12% / 14%;
+  background: #111;
+  animation: scene-crt-jitter 4.2s steps(1) infinite;
+}
+.gate-monitor > img,
+.gate-monitor__ghost,
+.gate-monitor__scan,
+.gate-monitor__dark {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+}
+.gate-monitor > img {
+  object-fit: cover;
+}
+.gate-monitor__ghost {
+  background-position: center;
+  background-size: 100% 100%;
+  mix-blend-mode: screen;
+  opacity: 0;
+}
+.gate-monitor__ghost--r {
+  filter: sepia(1) saturate(6) hue-rotate(-50deg);
+  animation: scene-ghost-r 4.2s steps(1) infinite;
+}
+.gate-monitor__ghost--b {
+  filter: sepia(1) saturate(6) hue-rotate(150deg);
+  animation: scene-ghost-b 4.2s steps(1) infinite;
+}
+.gate-monitor__scan {
+  background:
+    linear-gradient(
+        to bottom,
+        transparent 0 40%,
+        rgba(255, 255, 255, 0.16) 50%,
+        transparent 60% 100%
+      )
+      0 0 / 100% 300%,
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.28) 0 1px,
+      transparent 1px 3px
+    );
+  animation:
+    scene-roll 3.1s linear infinite,
+    scene-flicker 0.14s steps(2) infinite;
+  mix-blend-mode: multiply;
+}
+.gate-monitor__dark {
+  background: #000;
+  opacity: 0;
+}
+@keyframes scene-roll {
+  from {
+    background-position:
+      0 100%,
+      0 0;
+  }
+  to {
+    background-position:
+      0 -200%,
+      0 0;
+  }
+}
+
+/* the glass password pill; it reads ENTER when you reach for it */
+.gate-pill {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  border-radius: 999px;
+  border: 0.09cqw solid rgba(255, 255, 255, 0.55);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.2),
+    rgba(255, 255, 255, 0.06)
+  );
+  box-shadow:
+    inset 0 0.1cqw 0.25cqw rgba(255, 255, 255, 0.5),
+    0 0.4cqw 1.6cqw rgba(20, 40, 10, 0.18);
+  backdrop-filter: blur(0.5cqw) saturate(1.3);
+  transition: box-shadow 0.3s;
+}
+.gate-pill:hover {
+  box-shadow:
+    inset 0 0.1cqw 0.25cqw rgba(255, 255, 255, 0.5),
+    0 0.4cqw 1.6cqw rgba(20, 40, 10, 0.18),
+    0 0 1.6cqw rgba(255, 255, 255, 0.14);
+}
+.gate-pill:focus-within {
+  box-shadow:
+    inset 0 0.1cqw 0.25cqw rgba(255, 255, 255, 0.5),
+    0 0 0 0.12cqw rgba(255, 255, 255, 0.45),
+    0 0 2cqw rgba(255, 255, 255, 0.18);
+}
+.gate-pill input {
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  padding: 0 2.6cqw;
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  outline: none;
+  color: #fff;
+  caret-color: #fff;
+  text-align: center;
+  font-weight: 500;
+  font-size: 1.25cqw;
+  letter-spacing: 0.35em;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
+}
+.gate-pill input::placeholder {
+  color: transparent;
+  letter-spacing: 0.14em;
+  font-size: 1.02cqw;
+  transition: color 0.25s;
+}
+.gate-pill:hover input::placeholder,
+.gate-pill input:focus::placeholder {
+  color: rgba(255, 255, 255, 0.95);
+}
+.gate-pill.is-wrong {
+  animation: scene-shake 0.45s;
+}
+@keyframes scene-shake {
+  20%,
+  60% {
+    transform: translateX(-1.2%);
+  }
+  40%,
+  80% {
+    transform: translateX(1.2%);
+  }
+}
+.gate-go {
+  position: absolute;
+  right: 0.55cqw;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 2.6cqw;
+  height: 2.6cqw;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #1a2410;
+  transform: translateY(-50%);
+  cursor: pointer;
+}
+.gate-go svg {
+  width: 46%;
+  height: 46%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gate-sway,
+  .gate-monitor,
+  .gate-monitor__ghost,
+  .gate-monitor__scan {
+    animation: none;
+  }
+  .gate-monitor__ghost {
+    display: none;
+  }
+}
