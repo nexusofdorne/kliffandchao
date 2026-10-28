@@ -24,7 +24,13 @@ export function playToEnd(
   });
 }
 
-export function prefersReducedMotion(): boolean {
+/**
+ * "Reduce motion" is on (Windows' animation effects off, iOS Reduce Motion...). The site plays
+ * its calm version rather than stopping: no camera flights, zooms, blur or screen tearing (the
+ * scenes dissolve into each other through the mist and light instead) and slower ambient motion.
+ * Windows, the cursor, tabs and typing play as usual.
+ */
+export function calmMotion(): boolean {
   return matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 

@@ -6,7 +6,7 @@ import { VerseCycler } from '@/components/site/intro/VerseCycler';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { siteConfig } from '@/config/site';
 import { Stage, StageFill, boxStyle } from './Stage';
-import { playToEnd, prefersReducedMotion } from './timing';
+import { calmMotion, playToEnd } from './timing';
 
 // Screen 03: the intro film plays on the login monitor's own screen. The
 // monitor is the same picture as the terminal's (02 - splash login 1), so the
@@ -60,7 +60,7 @@ export function IntroScene({
   async function powerOn({ fast = false }: { fast?: boolean } = {}) {
     const k = fast ? 0.5 : 1;
     const tl = gsap.timeline();
-    if (prefersReducedMotion()) {
+    if (calmMotion()) {
       tl.to([filmRef.current, uiRef.current], { opacity: 1, duration: 0.4 }, 0);
     } else {
       // tuning in: bright and soft, then the picture settles

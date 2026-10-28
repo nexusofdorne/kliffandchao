@@ -171,6 +171,7 @@ export default function RsvpPage() {
                 <RsvpBanner party={stage.party} />
                 <PartyForm
                   party={stage.party}
+                  guestId={stage.guestId}
                   onSubmit={handleSubmit}
                   submitting={submitting}
                 />

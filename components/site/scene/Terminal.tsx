@@ -7,7 +7,7 @@ import { terminalCopy } from '@/content/terminal';
 import { typingTick } from '@/lib/audio/typing';
 import { finishPercent, rampPercent } from '@/lib/scene/terminal';
 import { Stage, StageFill, boxStyle } from './Stage';
-import { prefersReducedMotion, rand, sleep } from './timing';
+import { calmMotion, rand, sleep } from './timing';
 
 // Screen 02 (prototype-v3 "02 · terminal"): the monitor's screen types its
 // boot lines, "LOGIN SUCCESSFUL", a progress bar, a greeting and a running
@@ -133,7 +133,7 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
     if (caret.current) p.append(caret.current);
     for (const ch of text) {
       node.data += ch;
-      if (!prefersReducedMotion()) typingTick(ch);
+      typingTick(ch);
       await sleep(speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0), signal);
     }
   }
@@ -190,19 +190,6 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
 
   async function run(ready: Promise<unknown>, signal: AbortSignal) {
     reset();
-    if (prefersReducedMotion()) {
-      // no typing: the finished screen, held long enough to read
-      [terminalCopy.boot, terminalCopy.hello].forEach((copy, i) =>
-        lines(i ? helloRef.current : bootRef.current).forEach((p, j) => {
-          p.textContent = copy[j];
-        }),
-      );
-      gsap.set([loginRef.current, progressRef.current, dinoRef.current], { opacity: 1 });
-      if (barRef.current) barRef.current.style.width = '100%';
-      if (pctRef.current) pctRef.current.textContent = '100%';
-      await sleep(1800, signal);
-      return;
-    }
     await sleep(700, signal);
     const boot = lines(bootRef.current);
     for (const [i, p] of boot.entries()) {
@@ -299,7 +286,8 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
   }
 
   async function breakUp(signal: AbortSignal) {
-    if (prefersReducedMotion()) {
+    // the calm version skips the screen tearing apart
+    if (calmMotion()) {
       await sleep(300, signal);
       return;
     }

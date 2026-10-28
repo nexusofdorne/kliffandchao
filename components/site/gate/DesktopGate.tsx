@@ -9,7 +9,7 @@ import {
   StageLayer,
   boxStyle,
 } from '@/components/site/scene/Stage';
-import { playToEnd, prefersReducedMotion } from '@/components/site/scene/timing';
+import { calmMotion, playToEnd } from '@/components/site/scene/timing';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { frameTransform, ridingFrame, zoomFrame } from '@/lib/scene/camera';
 import type { GateFormProps } from './MobileGate';
@@ -66,7 +66,7 @@ export function DesktopGate({
     }
 
     const timeline = gsap.timeline();
-    if (prefersReducedMotion()) {
+    if (calmMotion()) {
       // no camera move: the scene just goes to the terminal's black screen
       timeline
         .set(ride, { opacity: 1 }, 0)

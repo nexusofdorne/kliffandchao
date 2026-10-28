@@ -8,6 +8,7 @@ import {
   crossingBackdrop,
   crossingCamera,
   crossingFront,
+  crossingMeadow,
   perspectiveScale,
 } from './world';
 
@@ -54,6 +55,14 @@ describe('the cameras', () => {
     expect(crossingFront(0)).toBe(0);
     expect(crossingBackdrop(1)).toBe(0);
     expect(crossingFront(1)).toBe(1);
+  });
+
+  it('lets the meadow ground go once the river is up, so it never stands in front of the water', () => {
+    expect(crossingMeadow(0)).toBe(1);
+    expect(crossingMeadow(1)).toBe(0);
+    for (const p of [0.6, 0.75, 0.9]) {
+      expect(crossingFront(p)).toBeGreaterThanOrEqual(1 - crossingMeadow(p));
+    }
   });
 
   it('turns the sky before the river plants appear', () => {

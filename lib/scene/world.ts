@@ -37,8 +37,13 @@ export function perspectiveScale(nearness: number, c: number): number {
   return 1 / Math.max(0.04, 1 - nearness * c);
 }
 
-/** How far back the meadow starts when we arrive from the monitor (c < 0). */
-export const ARRIVAL_BACK = -0.22;
+/** How far back the meadow starts when we arrive from the monitor (c < 0). Kept small: further
+ *  back, the nearest layers shrink enough to uncover their edges and the fills behind them; the
+ *  sense of travel comes from the mist streaming past (MIST_TRAVEL). */
+export const ARRIVAL_BACK = -0.06;
+
+/** How much further the mist travels than the scenery on the way in (it passes the lens). */
+export const MIST_TRAVEL = 0.5;
 
 /** The camera, in each scene's own frame (0 = that scene's painting as drawn). */
 export type Camera = { journey: number; wedding: number };
@@ -73,4 +78,28 @@ export function crossingBackdrop(p: number): number {
 /** The river's near layers come up out of the distance once the sky behind them has turned. */
 export function crossingFront(p: number): number {
   return smoothstep(0.22, 0.62, p);
+}
+
+/**
+ * The meadow's ground and plants on the way to the river. Its middle distance never quite
+ * passes the lens (at c = 1 it is only about three times its size), so it gives way to the
+ * river's banks and water inside the mist instead of standing in front of them at the end.
+ */
+export function crossingMeadow(p: number): number {
+  return 1 - smoothstep(0.5, 0.88, p);
+}
+
+/** The mist the camera flies through on the way to the river: thickest while the skies change. */
+export function crossingFog(p: number): number {
+  return 0.62 * Math.pow(Math.sin(Math.PI * clamp01(p)), 1.2);
+}
+
+/** Arriving from the monitor: thick mist that clears as the camera comes forward. */
+export function arrivalFog(p: number): number {
+  return 0.9 * (1 - smoothstep(0.04, 0.92, p));
+}
+
+/** Arriving from the monitor: the screen's light, fading as the meadow comes through. */
+export function arrivalLight(p: number): number {
+  return 1 - smoothstep(0, 0.5, p);
 }

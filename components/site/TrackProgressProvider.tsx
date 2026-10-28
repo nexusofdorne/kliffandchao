@@ -17,7 +17,8 @@ type TrackProgressContextValue = {
   setChromeLight: (light: boolean | null) => void;
   chromeVisible: boolean;
   setChromeVisible: (visible: boolean) => void;
-  setUpdate: (update: { progress: number; panel: number }) => void;
+  /** `active` names the highlighted section while the capsule glides (a jump straight past one). */
+  setUpdate: (update: { progress: number; panel: number; active?: Section }) => void;
   registerJump: (jump: (section: Section) => void) => void;
   jump: (section: Section) => void;
 };
@@ -35,13 +36,15 @@ const TrackProgressContext = createContext<TrackProgressContextValue | null>(nul
 export function TrackProgressProvider({ children }: { children: ReactNode }) {
   const [progress, setProgress] = useState(0);
   const [panel, setPanel] = useState(0);
+  const [activeOverride, setActiveOverride] = useState<Section | null>(null);
   const [chromeLight, setChromeLight] = useState<boolean | null>(null);
   const [chromeVisible, setChromeVisible] = useState(true);
   const jumpRef = useRef<(section: Section) => void>(() => {});
 
-  const setUpdate = useCallback((update: { progress: number; panel: number }) => {
+  const setUpdate = useCallback((update: { progress: number; panel: number; active?: Section }) => {
     setProgress(update.progress);
     setPanel(update.panel);
+    setActiveOverride(update.active ?? null);
   }, []);
 
   const registerJump = useCallback((jumpImpl: (section: Section) => void) => {
@@ -56,8 +59,8 @@ export function TrackProgressProvider({ children }: { children: ReactNode }) {
     () => ({
       progress,
       panel,
-      activeSection: computeActiveSection(panel),
-      isLight: chromeLight ?? computeActiveSection(panel) === 2,
+      activeSection: activeOverride ?? computeActiveSection(panel),
+      isLight: chromeLight ?? (activeOverride ?? computeActiveSection(panel)) === 2,
       setChromeLight,
       chromeVisible,
       setChromeVisible,
@@ -65,7 +68,7 @@ export function TrackProgressProvider({ children }: { children: ReactNode }) {
       registerJump,
       jump,
     }),
-    [progress, panel, chromeLight, chromeVisible, setUpdate, registerJump, jump],
+    [progress, panel, activeOverride, chromeLight, chromeVisible, setUpdate, registerJump, jump],
   );
 
   return <TrackProgressContext.Provider value={value}>{children}</TrackProgressContext.Provider>;

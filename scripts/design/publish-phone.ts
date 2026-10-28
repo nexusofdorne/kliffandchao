@@ -5,11 +5,13 @@
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import { phonePublicContent } from '../../lib/phone/content';
+import { buildWorldGL } from './build-world-gl';
 import { siteConfig } from '../../config/site';
 
 const SRC = 'prototype-mobile';
 const OUT = 'public/m';
 
+buildWorldGL();
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 for (const file of ['app.js', 'styles.css']) cpSync(`${SRC}/${file}`, `${OUT}/${file}`);

@@ -52,7 +52,8 @@ export function MobileGate({
           alt=""
           fill
           priority
-          sizes="100vw"
+          // only shown on phones; wide screens render this tree hidden, so they fetch the smallest copy
+          sizes="(max-width: 768px) 100vw, 1px"
           className="object-cover [animation:gate-drift_42s_ease-in-out_infinite_alternate] [transform-origin:52%_62%]"
         />
         <div className="absolute inset-0 bg-black/40" />

@@ -48,7 +48,9 @@ export function AudioProvider({ children }: { children: ReactNode }) {
     const audio = audioRef.current;
     if (!audio) return;
     audio.muted = true;
-    void audio.play();
+    // a wrong password pauses it again before it has started, which rejects this promise
+    // (an AbortError); that is expected, not a failure
+    audio.play().catch(() => {});
   }, []);
 
   const beginMusic = useCallback(() => {

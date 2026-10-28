@@ -15,7 +15,7 @@ import { easings } from './ease';
 import { GlassWindow } from './GlassWindow';
 import { useScene } from './SceneProvider';
 import { Stage, boxStyle } from './Stage';
-import { playToEnd, prefersReducedMotion, sleep } from './timing';
+import { playToEnd, sleep } from './timing';
 
 // Screen 05 (prototype-v3 "05 · new chapter"): the river, a "new chapter"
 // folder, and a frosted glass window (GlassWindow) with five tabs. The tab bodies are the
@@ -76,10 +76,6 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
   async function cursorIn() {
     const cursor = cursorRef.current;
     if (!cursor) return;
-    if (prefersReducedMotion()) {
-      gsap.set(cursor, { opacity: 1 });
-      return;
-    }
     gsap.set(cursor, { transformOrigin: '10% 5%' });
     const tl = gsap.timeline();
     tl.fromTo(
@@ -89,8 +85,8 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
         keyframes: {
           '45%': { opacity: 1, xPercent: 160, yPercent: 80 },
           '100%': { opacity: 1, xPercent: 0, yPercent: 0 },
+          easeEach: easings.cursor,
         },
-        easeEach: easings.cursor,
         duration: 1.3,
       },
     );
@@ -105,25 +101,22 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
     await sleep(160);
     // inherit, not visible: a hidden scene must hide (and stop the clicks of) its window too
     gsap.set(w, { visibility: 'inherit', transformOrigin: folderOrigin() });
-    if (!prefersReducedMotion()) {
-      const tl = gsap.timeline();
-      tl.fromTo(
-        w,
-        { scale: 0.2, '--win-o': 0 },
-        {
-          keyframes: {
-            '35%': { scale: 0.55, '--win-o': 0.75 },
-            '100%': { scale: 1, '--win-o': 1 },
-          },
+    const tl = gsap.timeline();
+    tl.fromTo(
+      w,
+      { scale: 0.2, '--win-o': 0 },
+      {
+        keyframes: {
+          '35%': { scale: 0.55, '--win-o': 0.75 },
+          '100%': { scale: 1, '--win-o': 1 },
+          // the ease between keyframes belongs inside the keyframes object
           easeEach: easings.grow,
-          duration: 0.8,
-          clearProps: 'transform',
         },
-      );
-      await playToEnd(tl);
-    } else {
-      gsap.set(w, { '--win-o': 1 });
-    }
+        duration: 0.8,
+        clearProps: 'transform',
+      },
+    );
+    await playToEnd(tl);
     folderRef.current?.classList.remove('is-selected');
   }
 
@@ -131,11 +124,9 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
     const w = windowRef.current;
     if (!w) return;
     gsap.set(w, { transformOrigin: folderOrigin() });
-    if (!prefersReducedMotion()) {
-      const tl = gsap.timeline();
-      tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
-      await playToEnd(tl);
-    }
+    const tl = gsap.timeline();
+    tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
+    await playToEnd(tl);
     gsap.set(w, { visibility: 'hidden', clearProps: 'transform,--win-o' });
   }
 

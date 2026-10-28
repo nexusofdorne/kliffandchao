@@ -33,7 +33,7 @@ import {
   type SceneId,
   type SceneState,
 } from '@/lib/scene/machine';
-import { playToEnd, prefersReducedMotion } from './timing';
+import { playToEnd } from './timing';
 
 gsap.registerPlugin(Observer);
 
@@ -63,6 +63,8 @@ const SCENE_CHANGES: readonly MoveKind[] = [
   'journey->intro',
   'journey->wedding',
   'wedding->journey',
+  'intro->wedding',
+  'wedding->intro',
 ];
 
 const CROSSFADE_S = 0.7;
@@ -120,7 +122,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
     const fromEl = scenesRef.current[from];
     const toEl = scenesRef.current[to];
     if (!fromEl || !toEl) return;
-    const d = prefersReducedMotion() ? 0 : CROSSFADE_S;
+    const d = CROSSFADE_S;
     const tl = gsap.timeline();
     tl.set(toEl, { autoAlpha: 0 }, 0)
       .to(toEl, { autoAlpha: 1, duration: d, ease: 'power1.inOut' }, 0)
@@ -128,12 +130,15 @@ export function SceneProvider({ children }: { children: ReactNode }) {
     await playToEnd(tl);
   }, []);
 
-  // keeps the nav capsule gliding with the scene
+  // keeps the nav capsule gliding with the scene; the section it is heading for is the one
+  // highlighted, so a jump from the intro to the wedding never lights up the journey
   const glidePanel = useCallback(
     async (from: SceneId, to: SceneId) => {
       const proxy = { v: sectionOf(from) as number };
-      const apply = () => setUpdate({ progress: proxy.v / 2, panel: proxy.v });
-      const d = prefersReducedMotion() ? 0 : CROSSFADE_S;
+      const target = sectionOf(to);
+      const apply = () =>
+        setUpdate({ progress: proxy.v / 2, panel: proxy.v, active: proxy.v === target ? undefined : target });
+      const d = CROSSFADE_S;
       const tl = gsap.timeline();
       tl.to(proxy, {
         v: sectionOf(to),
@@ -161,7 +166,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
         return;
       }
       if (custom) await custom(move, from);
-      else await wait(prefersReducedMotion() ? 0 : IN_SCENE_MS);
+      else await wait(IN_SCENE_MS);
     },
     [crossfade, glidePanel],
   );

@@ -23,7 +23,11 @@
   const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const rand = (a, b) => a + Math.random() * (b - a);
-  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // "Reduce motion" on: the calm version rather than a frozen one. The camera stays put and the
+  // scenes dissolve through the mist and light (no zooms, flights or screen tearing), the scenery
+  // moves at half speed; cards, the cursor, tabs and typing play as usual. As the site's calmMotion().
+  const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const ZOOM = calm ? 'none' : 'scale(1.6)';
   const phone = $('#phone');
   const site = p => (LIVE ? p : 'site' + p);  // the prototype's server maps /site/ to public/
 
@@ -64,10 +68,10 @@
   // every animation commits its end state as inline style, so scenes stay put after a move
   function play(el, frames, opts = {}) {
     if (!el) return Promise.resolve();
-    const d = reduced ? Math.min(opts.duration || 600, 200) : (opts.duration || 600);
-    const a = el.animate(frames, { easing: 'ease', fill: 'both', ...opts, duration: d, delay: reduced ? 0 : (opts.delay || 0) });
+    const d = opts.duration || 600;
+    const a = el.animate(frames, { easing: 'ease', fill: 'both', ...opts, duration: d, delay: opts.delay || 0 });
     // a background tab can freeze animation frames; never let a move hang
-    const guard = wait(d + (reduced ? 0 : (opts.delay || 0)) + 400);
+    const guard = wait(d + (opts.delay || 0) + 400);
     return Promise.race([a.finished, guard]).then(() => {
       try { a.finish(); a.commitStyles(); } catch (e) { /* not rendered */ }
       a.cancel();
@@ -148,26 +152,41 @@
     let noise = null;
     return {
       unlock() { try { ctx = ctx || new AudioContext(); ctx.resume(); } catch (e) { ctx = null; } },
+      // a sharp tick over a short low thock, as the site's lib/audio/typing.ts (peaks near -10 dBFS)
       tick(ch) {
-        if (!ctx || ctx.state !== 'running' || Music.isMuted() || ch === ' ') return;
+        if (!ctx || ctx.state !== 'running' || Music.isMuted()) return;
+        const space = ch === ' ';
+        const vary = 0.85 + Math.random() * 0.3;
+        const LEVEL = 0.5;
         if (!noise) {
-          noise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.03), ctx.sampleRate);
+          noise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.04), ctx.sampleRate);
           const d = noise.getChannelData(0);
           for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
         }
-        const t = ctx.currentTime;
+        const t = ctx.currentTime + 0.001;
         const src = ctx.createBufferSource();
         src.buffer = noise;
-        const f = ctx.createBiquadFilter();
-        f.type = 'bandpass';
-        f.frequency.value = 1800 + Math.random() * 1600;
-        f.Q.value = 1.2;
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = (space ? 900 : 1700) * vary;
         const g = ctx.createGain();
-        g.gain.setValueAtTime(0.05 * (0.7 + Math.random() * 0.6), t);
-        g.gain.exponentialRampToValueAtTime(0.0001, t + 0.028);
-        src.connect(f).connect(g).connect(ctx.destination);
+        g.gain.setValueAtTime(0, t);
+        g.gain.linearRampToValueAtTime((space ? 0.35 : 0.5) * LEVEL * vary, t + 0.0008);
+        g.gain.exponentialRampToValueAtTime(0.0005, t + (space ? 0.03 : 0.016));
+        src.connect(hp).connect(g).connect(ctx.destination);
         src.start(t);
-        src.stop(t + 0.03);
+        src.stop(t + 0.04);
+        const o = ctx.createOscillator();
+        o.type = 'triangle';
+        o.frequency.setValueAtTime((space ? 120 : 200) * vary, t);
+        o.frequency.exponentialRampToValueAtTime((space ? 80 : 140) * vary, t + 0.04);
+        const og = ctx.createGain();
+        og.gain.setValueAtTime(0, t);
+        og.gain.linearRampToValueAtTime((space ? 0.4 : 0.28) * LEVEL, t + 0.002);
+        og.gain.exponentialRampToValueAtTime(0.0005, t + (space ? 0.06 : 0.04));
+        o.connect(og).connect(ctx.destination);
+        o.start(t);
+        o.stop(t + 0.07);
       },
     };
   })();
@@ -262,23 +281,23 @@
       f2.push({ offset: t, transform: `translate(${T2[0]}%, ${T2[1]}%) scale(${A * s})` });
       dof.push({ offset: t, filter: `blur(${(12 * Math.min(1, Math.max(0, (e - 0.1) / 0.45)) / s).toFixed(3)}px)` });
     }
-    const D = reduced ? 400 : 3200;
+    const D = calm ? 400 : 3200;
     const lin = { duration: D, easing: 'linear' };
     play($('.s01-form', st1), [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
-    if (!reduced) {
+    if (!calm) {
       play($('.s01-bg', st1), dof, lin);
       play($('.monitor__dark', st1), [{ opacity: 0 }, { opacity: 0, offset: 0.22 }, { opacity: 1, offset: 0.36 }, { opacity: 1 }], lin);
     }
     reset02();
     scenes[2].style.background = 'transparent';
     show(2);
-    const zoom = reduced ? Promise.resolve() : play(st1, f1, lin);
-    if (!reduced) play(st2, f2, lin);
+    const zoom = calm ? Promise.resolve() : play(st1, f1, lin);
+    if (!calm) play(st2, f2, lin);
     play(scenes[2], [{ opacity: 0 }, { opacity: 0, offset: 0.34 }, { opacity: 1, offset: 0.4 }, { opacity: 1 }], lin);
     play($('.full', st2), [{ opacity: 0 }, { opacity: 0, offset: 0.78 }, { opacity: 1 }], lin);
     setTimeout(() => { current = 2; run02(500); }, D * 0.9);
     await zoom;
-    await wait(reduced ? 400 : 0);
+    await wait(calm ? 400 : 0);
     scenes[2].style.background = '';
     resetStyles(st2);
     st2.style.transformOrigin = '';
@@ -299,8 +318,8 @@
     p.append(tn, caret);
     for (const ch of text) {
       tn.data += ch;
-      if (!reduced) Typing.tick(ch);
-      await wait(reduced ? 0 : speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0));
+      Typing.tick(ch);
+      await wait(speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0));
     }
   }
 
@@ -435,7 +454,7 @@
       crt.style.filter = Math.random() < 0.1 * k ? `brightness(${rand(1.4, 2.2)}) contrast(1.4)` : '';
     };
     const iv = setInterval(tick, 33);  // a timer, so a background tab can't freeze it
-    await wait(reduced ? 200 : dur);
+    await wait(calm ? 200 : dur);
     clearInterval(iv);
     tears.forEach(t => t.remove());
     term.style.transform = term.style.opacity = crt.style.filter = '';
@@ -563,7 +582,7 @@
     $('#worldStage').append(wrap);
     layerEls[scene + '-' + kind] = wrap;
   });
-  function pose({ camera, on, backdrop = 1, front = 1 }) {
+  function domPose({ camera, on, backdrop = 1, front = 1, meadow = 1 }) {
     ORDER.forEach(([scene, kind]) => {
       const el = layerEls[scene + '-' + kind];
       if (!el) return;
@@ -571,6 +590,7 @@
       let o = 1;
       if (scene === 'journey' && (kind === 'sky' || kind === 'far')) o = backdrop;
       if (scene === 'wedding' && kind !== 'sky' && kind !== 'far') o = front;
+      if (scene === 'journey' && kind !== 'sky' && kind !== 'far') o = meadow;
       const vis = on.includes(scene) && o > 0.002 && sc < 14;
       el.style.visibility = vis ? 'visible' : 'hidden';
       if (!vis) return;
@@ -578,11 +598,63 @@
       el.style.opacity = o >= 0.998 ? '' : o.toFixed(3);
     });
   }
+  // Drawn with WebGL where it can be (assets/world-gl.js, the site's lib/world-gl): wind in the
+  // plants, the river moving, mist the camera travels through, light for the cut from the film.
+  // The DOM layers above stay as the fallback and show until the GPU has the pictures.
+  const G = window.WorldGL;
+  let gl = null;
+  let lastPose = { camera: { journey: 0, wedding: 0 }, on: [] };
+  const toGL = p => ({ ...p, show: p.on });
+  function pose(p) {
+    if (calm) p = { ...p, camera: { journey: 0, wedding: 0 }, mistLag: 0 };
+    lastPose = p;
+    if (gl) gl.pose(toGL(p)); else domPose(p);
+  }
+  if (G) {
+    const canvas = document.createElement('canvas');
+    canvas.className = 'world-gl';
+    canvas.style.visibility = 'hidden';
+    $('.world').append(canvas);
+    const stageEl = $('#worldStage');
+    const nearJ = WORLD.journey.layers.find(l => l.kind === 'near');
+    // the phone's stage is a crop of the painting: its real width is the near layer's (no padding)
+    const paint = nearJ ? { x: nearJ.x, y: 0, w: nearJ.w, h: 100 } : undefined;
+    const r = G.createWorldGL(canvas, {
+      scenes: {
+        journey: { vp: WORLD.journey.vp, layers: WORLD.journey.layers, paint },
+        wedding: { vp: WORLD.wedding.vp, layers: WORLD.wedding.layers, paint, water: 'assets/world/w_water.png' },
+      },
+      stageRect: () => {
+        const s = stageEl.getBoundingClientRect();
+        const c = canvas.getBoundingClientRect();
+        return { left: s.left - c.left, top: s.top - c.top, width: s.width, height: s.height };
+      },
+      maxDpr: 1.25,
+      lite: true,
+      calm,
+      onLost: () => { gl = null; canvas.style.visibility = 'hidden'; domPose(lastPose); },
+    });
+    if (r) {
+      r.ready.then(ok => {
+        if (!ok) { r.destroy(); return; }
+        gl = r;
+        r.pose(toGL(lastPose));
+        canvas.style.visibility = 'visible';
+        domPose({ ...lastPose, on: [] });
+      });
+    }
+  }
   const restWorld = scene => pose({ camera: { journey: 0, wedding: 0 }, on: scene ? [scene] : [] });
-  const poseArrival = p => pose({ camera: { journey: ARRIVAL_BACK * (1 - clamp01(p)), wedding: 0 }, on: ['journey'] });
+  // arriving from the film: the camera eases in (p) while the light fades and the mist clears on time (t)
+  const poseArrival = (p, t = p) => pose({
+    camera: G ? G.arrivalCamera(p) : { journey: ARRIVAL_BACK * (1 - clamp01(p)), wedding: 0 }, on: ['journey'],
+    fog: G ? G.arrivalFog(t) : 0, light: G ? G.arrivalLight(t) : 0, mistLag: G ? G.MIST_TRAVEL * (1 - p) : 0,
+  });
   const poseCross = q => pose({
     camera: { journey: q, wedding: (q - 1) * RIVER_LAG }, on: ['journey', 'wedding'],
     backdrop: 1 - sstep(0.12, 0.55, q), front: sstep(0.22, 0.62, q),
+    meadow: G ? G.crossingMeadow(q) : 1 - sstep(0.5, 0.88, q),
+    fog: G ? G.crossingFog(q) : 0, light: G ? 0.1 * G.crossingFog(q) : 0,
   });
   // runs fn(eased progress) over ms; a timer finishes it if frames stop (a background tab)
   function tween(ms, ease, fn) {
@@ -601,29 +673,30 @@
     });
   }
 
-  // 03 -> 04: the camera pushes into the screen until the film fills the view, the film dissolves
-  // (no static: there is no monitor on the phone), and the camera travels on into the meadow (its
-  // layers come up from a little way back, the nearer ones moving faster)
+  // 03 -> 04: the camera pushes into the film until it flares to white (no static: there is
+  // no monitor on the phone), and the meadow comes up out of the light: the camera drifts
+  // forward through mist that streams past and clears.
+  const veil = $('#veil');
   async function go34(target = 4) {
     busy = true;
     const st3 = stageOf(3);
     await slideNav(target === 5 ? 2 : 1);
     reset04();
-    poseArrival(0);
+    poseArrival(0, 0);
     folder4.style.opacity = 0;
     play($('.s03-ui', st3), [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
-    await play(st3, [{ transform: 'none' }, { transform: 'scale(1.6)' }], { duration: 1300, easing: 'cubic-bezier(.45,0,.9,.6)' });
-    show(4);
-    const dissolve = play(scenes[3], [{ opacity: 1 }, { opacity: 0 }], { duration: 700, easing: 'ease-in-out' }).then(() => {
-      hide(3);
-      scenes[3].style.removeProperty('opacity');
-      resetStyles(st3, $('.s03-ui', st3));
-      video3.pause();
-    });
     await Promise.all([
-      dissolve,
-      tween(reduced ? 200 : 2100, easeOut3, poseArrival),
-      play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1500 }),
+      play(st3, [{ transform: 'none' }, { transform: ZOOM }], { duration: 1300, easing: 'cubic-bezier(.45,0,.9,.6)' }),
+      play(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 750, easing: 'ease-in' }),
+    ]);
+    show(4);
+    hide(3);
+    resetStyles(st3, $('.s03-ui', st3));
+    video3.pause();
+    await Promise.all([
+      play(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' }),
+      tween(3200, p => p, t => poseArrival(easeOut3(t), t)),
+      play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 800, delay: 2000 }),
     ]);
     restWorld('journey');
     current = 4;
@@ -631,28 +704,29 @@
     busy = false;
   }
 
-  // 04 -> 03: the camera backs out of the meadow, the film dissolves in and pulls back (no static)
+  // 04 -> 03: the camera backs out of the meadow into the mist and the light, and the film
+  // pulls back from it (no static)
   async function go43() {
     busy = true;
     const st3 = stageOf(3);
     slideNav(0);
     if (winOpen) play(win4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
     play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
-    await tween(reduced ? 200 : 1200, easeIn2, q => poseArrival(1 - q));
-    st3.style.transform = 'scale(1.6)';
+    await Promise.all([
+      tween(1600, p => p, s => { const t = 1 - s; poseArrival(t * t, t); }),
+      play(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 1000, easing: 'ease-in' }),
+    ]);
+    st3.style.transform = ZOOM;
     $('.s03-ui', st3).style.opacity = 0;
-    scenes[3].style.opacity = 0;
     show(3);
     video3.style.opacity = 1;  // the film may never have tuned in (a ?scene= jump)
     video3.play().catch(() => {});
+    hide(4);
+    reset04();
+    restWorld(null);
     await Promise.all([
-      play(scenes[3], [{ opacity: 0 }, { opacity: 1 }], { duration: 600, easing: 'ease-in-out' }).then(() => {
-        scenes[3].style.removeProperty('opacity');
-        hide(4);
-        reset04();
-        restWorld(null);
-      }),
-      play(st3, [{ transform: 'scale(1.6)' }, { transform: 'none' }], { duration: 1600, easing: 'cubic-bezier(.2,.75,.2,1)' }),
+      play(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' }),
+      play(st3, [{ transform: ZOOM }, { transform: 'none' }], { duration: 1600, easing: 'cubic-bezier(.2,.75,.2,1)' }),
       play($('.s03-ui', st3), [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1000 }),
     ]);
     current = 3;
@@ -698,7 +772,7 @@
     chipEls.forEach((c, i) => c.setAttribute('aria-selected', String(i + 1 === n)));
     paneEls.forEach((p, i) => { p.classList.toggle('is-on', i + 1 === n); if (i + 1 === n) p.scrollTop = 0; });
     const c = chipEls[n - 1];
-    if (c) chips.scrollTo({ left: c.offsetLeft - chips.offsetLeft - 24, behavior: reduced ? 'auto' : 'smooth' });
+    if (c) chips.scrollTo({ left: c.offsetLeft - chips.offsetLeft - 24, behavior: 'smooth' });
   }
   function stepTab(n) {
     busy = true;
@@ -712,7 +786,14 @@
     folder4.classList.remove('is-selected');
     winOpen = false;
     tab = 0;
-    paneEls.forEach(p => p.classList.remove('is-on'));
+    // no fade here: a pane fading out stays visible (its transition holds visibility) even
+    // inside the hidden scene, and would show over the film
+    paneEls.forEach(p => {
+      p.style.transition = 'none';
+      p.classList.remove('is-on');
+      void p.offsetWidth;
+      p.style.removeProperty('transition');
+    });
     chipEls.forEach(c => c.setAttribute('aria-selected', 'false'));
   }
 
@@ -751,7 +832,6 @@
 
   // the pointer glides in, lands on the folder and double-clicks it
   async function autoOpenFolder() {
-    if (reduced) return openWindow4();
     await play(cursor4, [
       { opacity: 0, transform: 'translate(320%, 380%)' },
       { opacity: 1, transform: 'translate(120%, 110%)', offset: 0.45 },
@@ -783,7 +863,6 @@
   const s5 = scenes[5];
 
   async function cursorTo5() {
-    if (reduced) { c5.style.opacity = 1; return; }
     await play(c5, [
       { opacity: 0, transform: 'translate(300%, 360%)' },
       { opacity: 1, transform: 'translate(110%, 120%)', offset: 0.45 },
@@ -793,7 +872,7 @@
   // the cursor finds the folder and opens it, as on the journey
   async function autoOpen5() {
     await cursorTo5();
-    await wait(reduced ? 0 : 350);
+    await wait(350);
     busy = false;
     if (current === 5 && !win5Open) folder5.click();
   }
@@ -814,7 +893,7 @@
     }
     play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 450 });
     let river = false;
-    await tween(reduced ? 300 : 3800, easeInOut2, q => {
+    await tween(3800, easeInOut2, q => {
       poseCross(q);
       if (!river && q > 0.84) {
         river = true;
@@ -826,7 +905,7 @@
     hide(4);
     restWorld('wedding');
     current = 5;
-    await wait(reduced ? 0 : 900);
+    await wait(900);
     await autoOpen5();
   }
 
@@ -842,7 +921,7 @@
     show(4);
     poseCross(1);
     let meadow = false;
-    await tween(reduced ? 300 : 3400, easeInOut2, q => {
+    await tween(3400, easeInOut2, q => {
       poseCross(1 - q);
       if (!meadow && q > 0.55) {
         meadow = true;
@@ -859,7 +938,8 @@
     resetStyles(win5, c5, folder5);
     win5Open = false;
     current = 4;
-    await wait(reduced ? 0 : 400);
+    await wait(400);
+    if (!winOpen) await autoOpenFolder();
     busy = false;
   }
 
@@ -981,9 +1061,99 @@
   }
   async function goTo(n) {
     if (busy || n === current || current < 3) return;
-    if (current === 3) { await go34(n); if (n === 5) await go45(); }
+    if (current === 3) await (n === 5 ? go35() : go34());
     else if (current === 4) await (n === 5 ? go45() : go43());
-    else if (current === 5) { await go54(); if (n === 3) await go43(); }
+    else if (current === 5) await (n === 3 ? go53() : go54());
+  }
+
+  // The intro and the wedding straight to each other (a nav tap): one camera move from just
+  // through the film all the way to the river, u = time 0..1. The meadow passes without a stop
+  // (no folder, no card, Journey never highlighted). As the site's transitions.ts throughMeadow.
+  const DIRECT_MS = 5200;
+  const DIRECT_ARRIVAL = 0.28;
+  function poseDirect(u) {
+    const back = G ? G.ARRIVAL_BACK : ARRIVAL_BACK;
+    const c = back + (1 - back) * easeInOut2(u);
+    const q = Math.max(0, c);
+    const a = Math.min(1, u / DIRECT_ARRIVAL);
+    pose({
+      camera: { journey: c, wedding: (q - 1) * RIVER_LAG }, on: ['journey', 'wedding'],
+      backdrop: 1 - sstep(0.12, 0.55, q), front: sstep(0.22, 0.62, q),
+      meadow: G ? G.crossingMeadow(q) : 1 - sstep(0.5, 0.88, q),
+      fog: G ? Math.max(G.arrivalFog(a), G.crossingFog(q)) : 0,
+      light: G ? Math.max(G.arrivalLight(a), 0.1 * G.crossingFog(q)) : 0,
+      mistLag: G ? G.MIST_TRAVEL * (1 - a) : 0,
+    });
+  }
+
+  // 03 -> 05: the film flares to light and the camera comes out into the meadow and keeps going
+  async function go35() {
+    busy = true;
+    const st3 = stageOf(3);
+    slideNav(2);
+    reset04();
+    resetStyles(subtree(s5));
+    folder5.style.opacity = 0;
+    poseDirect(0);
+    play($('.s03-ui', st3), [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+    await Promise.all([
+      play(st3, [{ transform: 'none' }, { transform: ZOOM }], { duration: 1300, easing: 'cubic-bezier(.45,0,.9,.6)' }),
+      play(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 750, easing: 'ease-in' }),
+    ]);
+    hide(3);
+    resetStyles(st3, $('.s03-ui', st3));
+    video3.pause();
+    let river = false;
+    await Promise.all([
+      play(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' }),
+      tween(DIRECT_MS, p => p, u => {
+        poseDirect(u);
+        if (!river && u > 0.84) {
+          river = true;
+          show(5);
+          play(folder5, [{ opacity: 0 }, { opacity: 1 }], { duration: 800 });
+        }
+      }),
+    ]);
+    show(5);
+    restWorld('wedding');
+    current = 5;
+    await wait(700);
+    await autoOpen5();
+  }
+
+  // 05 -> 03: back the same way without stopping in the meadow, into the light, and the film
+  async function go53() {
+    busy = true;
+    const st3 = stageOf(3);
+    slideNav(0);
+    if (win5Open) play(win5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
+    play(folder5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
+    play(c5, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+    setTimeout(() => hide(5), 500);
+    await Promise.all([
+      tween(DIRECT_MS, p => p, u => poseDirect(1 - u)),
+      play(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: DIRECT_MS - 450, easing: 'ease-in' }),
+    ]);
+    hide(5);
+    win5.classList.remove('is-open');
+    resetStyles(win5, c5, folder5);
+    win5Open = false;
+    reset04();
+    st3.style.transform = ZOOM;
+    $('.s03-ui', st3).style.opacity = 0;
+    show(3);
+    video3.style.opacity = 1;
+    video3.play().catch(() => {});
+    restWorld(null);
+    await Promise.all([
+      play(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' }),
+      play(st3, [{ transform: ZOOM }, { transform: 'none' }], { duration: 1600, easing: 'cubic-bezier(.2,.75,.2,1)' }),
+      play($('.s03-ui', st3), [{ opacity: 0 }, { opacity: 1 }], { duration: 700, delay: 1000 }),
+    ]);
+    resetStyles(st3, $('.s03-ui', st3));
+    current = 3;
+    busy = false;
   }
   $$('[data-go]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); goTo(+b.dataset.go); }));
   $$('[data-rsvp]').forEach(b => b.addEventListener('click', e => {

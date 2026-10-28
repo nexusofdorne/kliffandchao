@@ -4,9 +4,9 @@ import gsap from 'gsap';
 import { useEffect, useRef } from 'react';
 import { useAudio } from '@/components/site/AudioProvider';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
-import { GlitchBurst, type GlitchHandle } from './GlitchBurst';
 import { IntroScene, type IntroHandle } from './IntroScene';
 import { JourneyScene, type JourneyHandle } from './JourneyScene';
+import { LightVeil } from './LightVeil';
 import { SceneRoot } from './SceneRoot';
 import { WeddingScene, type WeddingHandle } from './WeddingScene';
 import { WorldScene, type WorldHandle } from './WorldScene';
@@ -45,7 +45,7 @@ function Story({ arrival }: { arrival: boolean }) {
   const wedding = useRef<WeddingHandle>(null);
   const weddingRoot = useRef<HTMLElement>(null);
   const world = useRef<WorldHandle>(null);
-  const glitch = useRef<GlitchHandle>(null);
+  const veil = useRef<HTMLDivElement>(null);
   const terminal = useRef<TerminalHandle>(null);
   const introRoot = useRef<HTMLElement>(null);
   const arrivalRoot = useRef<HTMLElement>(null);
@@ -62,7 +62,7 @@ function Story({ arrival }: { arrival: boolean }) {
       journey,
       wedding,
       world,
-      glitch,
+      veil,
       introRoot,
       journeyRoot,
       weddingRoot,
@@ -136,7 +136,7 @@ function Story({ arrival }: { arrival: boolean }) {
       <SceneRoot id="arrival" rootRef={arrivalRoot} visible z={5} ambient={AMBIENT.monitor}>
         <Terminal ref={terminal} />
       </SceneRoot>
-      <GlitchBurst ref={glitch} />
+      <LightVeil ref={veil} />
     </>
   );
 }

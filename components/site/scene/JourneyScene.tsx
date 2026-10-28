@@ -11,7 +11,7 @@ import { easings } from './ease';
 import { GlassWindow } from './GlassWindow';
 import { Stage, boxStyle } from './Stage';
 import { useScene } from './SceneProvider';
-import { playToEnd, prefersReducedMotion, sleep } from './timing';
+import { playToEnd, sleep } from './timing';
 
 // Screen 04 (prototype-v3 "04 · journey"): a meadow (WorldScene draws it) with a folder. The cursor
 // glides in, double-clicks it, and a frosted glass window grows out of it with
@@ -69,7 +69,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     shown.current = n;
     setRaised(n);
     const panes = q('[data-pane]');
-    if (instant || prefersReducedMotion()) {
+    if (instant) {
       panes.forEach((p, i) => gsap.set(p, { opacity: i + 1 === n ? 1 : 0 }));
       return;
     }
@@ -95,29 +95,26 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     setTab(0, true);
     // inherit, not visible: a hidden scene must hide (and stop the clicks of) its window too
     gsap.set(w, { visibility: 'inherit', transformOrigin: folderOrigin(a.j00_folder) });
-    if (prefersReducedMotion()) {
-      gsap.set(w, { '--win-o': 1 });
-    } else {
-      const tl = gsap.timeline();
-      tl.fromTo(
-        w,
-        { scale: 0.2, '--win-o': 0 },
-        {
-          keyframes: {
-            '35%': { scale: 0.55, '--win-o': 0.75 },
-            '100%': { scale: 1, '--win-o': 1 },
-          },
+    const tl = gsap.timeline();
+    tl.fromTo(
+      w,
+      { scale: 0.2, '--win-o': 0 },
+      {
+        keyframes: {
+          '35%': { scale: 0.55, '--win-o': 0.75 },
+          '100%': { scale: 1, '--win-o': 1 },
+          // the ease between keyframes belongs inside the keyframes object
           easeEach: easings.grow,
-          duration: 0.8,
-          clearProps: 'transform',
         },
-      );
-      await playToEnd(tl);
-    }
+        duration: 0.8,
+        clearProps: 'transform',
+      },
+    );
+    await playToEnd(tl);
     folderRef.current?.classList.remove('is-selected');
     await sleep(150);
     setTab(tab);
-    await sleep(prefersReducedMotion() ? 0 : 500);
+    await sleep(500);
   }
 
   async function cursorFlourish() {
@@ -133,8 +130,8 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
         keyframes: {
           '45%': { opacity: 1, xPercent: 180, yPercent: 70 },
           '100%': { opacity: 1, xPercent: 0, yPercent: 0 },
+          easeEach: easings.cursor,
         },
-        easeEach: easings.cursor,
         duration: 1.3,
       },
     );
@@ -159,11 +156,9 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     const w = windowRef.current;
     if (!w) return;
     gsap.set(w, { transformOrigin: folderOrigin(a.j00_folder) });
-    if (!prefersReducedMotion()) {
-      const tl = gsap.timeline();
-      tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
-      await playToEnd(tl);
-    }
+    const tl = gsap.timeline();
+    tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
+    await playToEnd(tl);
     gsap.set(w, { visibility: 'hidden', clearProps: 'transform,--win-o' });
     shown.current = 0;
     setTab(0, true);
@@ -173,7 +168,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     const offs = [
       registerPlayer('journey-open', async (move) => {
         const folder = folderRef.current;
-        if (move.auto && !prefersReducedMotion()) {
+        if (move.auto) {
           await cursorFlourish();
         } else {
           folder?.classList.add('is-selected');
@@ -184,7 +179,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
       registerPlayer('journey-close', closeWindow),
       registerPlayer('journey-tab', async (move) => {
         setTab(move.to.journeyTab);
-        await sleep(prefersReducedMotion() ? 0 : 650);
+        await sleep(650);
       }),
     ];
     return () => offs.forEach((off) => off());

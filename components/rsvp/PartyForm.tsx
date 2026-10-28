@@ -10,6 +10,8 @@ export type RsvpSubmitPayload = { responses: { guestId: string; status: Attendan
 
 type PartyFormProps = {
   party: PartyView;
+  /** The guest filling in the form (their own answer goes with a message-only update). */
+  guestId: string;
   onSubmit: (payload: RsvpSubmitPayload) => void;
   submitting: boolean;
 };
@@ -25,7 +27,7 @@ const DATE_FORMAT = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'l
 // enforced server-side (409); `party.editable` here only disables the
 // controls so a guest can't be misled into thinking a doomed submit will go
 // through.
-export function PartyForm({ party, onSubmit, submitting }: PartyFormProps) {
+export function PartyForm({ party, guestId, onSubmit, submitting }: PartyFormProps) {
   const [picks, setPicks] = useState<Record<string, AttendanceChoice | null>>(() =>
     Object.fromEntries(party.members.map((member) => [member.id, member.status])),
   );
@@ -35,6 +37,11 @@ export function PartyForm({ party, onSubmit, submitting }: PartyFormProps) {
   const changed = party.members.filter(
     (member) => picks[member.id] != null && picks[member.id] !== member.status,
   );
+  // a guest who has answered already may come back just to leave a message: it is sent with
+  // their own answer as it stands (the API takes at least one answer)
+  const self = party.members.find((member) => member.id === guestId);
+  const messageOnly = changed.length === 0 && message.trim() !== '' && picks[guestId] != null;
+  const sendable = changed.length > 0 ? changed : messageOnly && self ? [self] : [];
   const ctaLabel = submitting ? 'SENDING…' : party.hasSubmission ? 'UPDATE OUR RSVP' : 'SEND OUR RSVP';
 
   function handlePick(guestId: string, status: AttendanceChoice) {
@@ -42,9 +49,9 @@ export function PartyForm({ party, onSubmit, submitting }: PartyFormProps) {
   }
 
   function handleSubmit() {
-    // the filter in `changed` already drops unanswered members — the cast
-    // just reflects that to the type checker
-    const responses = changed.map((member) => ({
+    // every member in `sendable` has an answer picked — the cast just
+    // reflects that to the type checker
+    const responses = sendable.map((member) => ({
       guestId: member.id,
       status: picks[member.id] as AttendanceChoice,
     }));
@@ -122,7 +129,7 @@ export function PartyForm({ party, onSubmit, submitting }: PartyFormProps) {
 
       <button
         type="button"
-        disabled={changed.length === 0 || !party.editable || submitting}
+        disabled={sendable.length === 0 || !party.editable || submitting}
         onClick={handleSubmit}
         className="mt-[4.4vh] h-[58px] w-full rounded-full bg-[var(--lime)] font-semibold tracking-[.14em] text-[#1c2610] shadow-[0_8px_26px_rgba(157,203,90,.22)] transition-[background,transform] duration-200 enabled:hover:-translate-y-px enabled:hover:bg-[#aedc68] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
       >

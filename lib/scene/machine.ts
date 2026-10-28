@@ -22,6 +22,8 @@ export type MoveKind =
   | 'journey->intro'
   | 'journey->wedding'
   | 'wedding->journey'
+  | 'intro->wedding'
+  | 'wedding->intro'
   | 'journey-tab'
   | 'journey-open'
   | 'journey-close'
@@ -83,9 +85,7 @@ export function stepPlan(state: SceneState, dir: 1 | -1): Move[] {
       : [{ kind: 'journey->intro', to: leaveJourney(state) }];
   }
   // wedding: nothing lies beyond it
-  return dir < 0
-    ? [{ kind: 'wedding->journey', to: leaveWedding(state) }]
-    : [];
+  return dir < 0 ? backToJourney(state) : [];
 }
 
 function enterJourney(state: SceneState): Move[] {
@@ -109,17 +109,42 @@ function enterWedding(state: SceneState): Move[] {
   ];
 }
 
+// Back to the meadow from the river: the journey window comes back as it was, or (when the
+// guest went straight from the intro to the wedding and never opened it) opens by itself.
+function backToJourney(state: SceneState): Move[] {
+  const arrived = leaveWedding(state);
+  const moves: Move[] = [{ kind: 'wedding->journey', to: arrived }];
+  if (!arrived.journeyOpen) {
+    moves.push({ kind: 'journey-open', to: { ...arrived, journeyOpen: true }, auto: true });
+  }
+  return moves;
+}
+
 // Going back out through the screen closes the window and forgets the tab; the
 // next arrival opens it again from chapter 1 (prototype reset04).
 function leaveJourney(state: SceneState): SceneState {
   return { ...state, scene: 'intro', journeyOpen: false, journeyTab: 1 };
 }
 
-/** A nav click: hop scene by scene, skipping the flourish on the way past. */
+/**
+ * A nav click. Between neighbours it is the same move a scroll makes. The intro and the
+ * wedding go straight to each other in one move (the camera still travels through the
+ * meadow, but the journey is not a stop: no folder, no window, no highlight in the nav).
+ */
 export function jumpPlan(state: SceneState, target: SceneId): Move[] {
   const from = sectionOf(state.scene);
   const to = sectionOf(target);
   if (from === to) return [];
+  if (state.scene === 'intro' && target === 'wedding') {
+    const arrived: SceneState = { ...state, scene: 'wedding' };
+    return [
+      { kind: 'intro->wedding', to: arrived },
+      { kind: 'wedding-open', to: { ...arrived, weddingOpen: true }, auto: true },
+    ];
+  }
+  if (state.scene === 'wedding' && target === 'intro') {
+    return [{ kind: 'wedding->intro', to: leaveJourney(leaveWedding(state)) }];
+  }
   const dir = to > from ? 1 : -1;
   const moves: Move[] = [];
   let cur = state;
@@ -129,8 +154,8 @@ export function jumpPlan(state: SceneState, target: SceneId): Move[] {
     moves.push(isLast ? hop : { ...hop, quick: true });
     cur = hop.to;
   }
-  // arriving at the journey from the intro opens its window, as a scroll would
-  if (state.scene === 'intro' && target === 'journey' && !cur.journeyOpen) {
+  // arriving at the journey opens its window, as a scroll would
+  if (target === 'journey' && !cur.journeyOpen) {
     moves.push({
       kind: 'journey-open',
       to: { ...cur, journeyOpen: true },

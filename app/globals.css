@@ -824,11 +824,8 @@
   animation: scene-ghost-b 7s steps(1) infinite;
 }
 
+/* the calm version (reduce motion) keeps the slow drift and sway; only the flicker stops */
 @media (prefers-reduced-motion: reduce) {
-  .amb-cloud,
-  .amb-sway-far,
-  .amb-sway-near,
-  .amb-bob,
   .amb-jitter,
   .amb-ghost-r,
   .amb-ghost-b {
@@ -946,6 +943,24 @@
   inset: 0;
   pointer-events: none;
   will-change: transform, opacity;
+}
+/* the WebGL world (WorldScene): over the DOM layers, which stay as the fallback */
+.world-gl {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  pointer-events: none;
+}
+/* the light the camera passes through between the monitor and the meadow */
+.light-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(120% 95% at 50% 42%, #fffdf7 0%, #fbf7ec 45%, #f1ebde 100%);
 }
 
 /* The meadow and the river are alive, slowly. Plants sway as a tilt about the bottom of
@@ -1143,10 +1158,8 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .gate-sway,
   .gate-monitor,
-  .gate-monitor__ghost,
-  .gate-monitor__scan {
+  .gate-monitor__ghost {
     animation: none;
   }
   .gate-monitor__ghost {
@@ -1376,14 +1389,6 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .crt-caret,
-  .crt-ground,
-  .crt-scan,
-  .crt-progress.is-loading .crt-hourglass {
-    animation: none;
-  }
 }
 
 /* The music button sits inside the monitor's screen on desktop scenes */
@@ -1618,9 +1623,4 @@ button.gw-light {
 }
 .gw-pane .wedding-tab-panel {
   padding: 2.2cqw 3cqw 2.6cqw;
-}
-@media (prefers-reduced-motion: reduce) {
-  .gw-tab {
-    transition: none;
-  }
 }

@@ -334,6 +334,24 @@ img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(-
     inset -.3cqw 0 .4cqw rgba(120,135,140,.12);
   -webkit-backdrop-filter: blur(3.4cqw) saturate(1.1); backdrop-filter: blur(3.4cqw) saturate(1.1);
 }
+/* the window's outer top corners curve like its bottom ones (4.4cqw): the first segment's left,
+   and the strip's right edge (it clips the scrolling chips, so the corner holds while they scroll) */
+.lights { border-top-left-radius: 4.4cqw; }
+.icontabs { border-top-right-radius: 4.4cqw; }
+/* the journey's chips scroll under the corner, and sit 12% below the strip's top (only the raised
+   one is full height): round the clip at their top edge, so a chip cut off there is curved too */
+.chips {
+  --r: 4.4cqw; --top: calc(6.4cqh * .12);
+  -webkit-mask:
+    linear-gradient(#000, #000) left top / calc(100% - var(--r)) 100% no-repeat,
+    linear-gradient(#000, #000) right bottom / var(--r) calc(100% - var(--top) - var(--r)) no-repeat,
+    radial-gradient(circle at 0 100%, #000 calc(var(--r) - .5px), transparent var(--r)) right 0 top var(--top) / var(--r) var(--r) no-repeat;
+  mask:
+    linear-gradient(#000, #000) left top / calc(100% - var(--r)) 100% no-repeat,
+    linear-gradient(#000, #000) right bottom / var(--r) calc(100% - var(--top) - var(--r)) no-repeat,
+    radial-gradient(circle at 0 100%, #000 calc(var(--r) - .5px), transparent var(--r)) right 0 top var(--top) / var(--r) var(--r) no-repeat;
+}
+.chips::after, .icontabs::after { border-top-right-radius: 4.4cqw; }
 .lights { flex: none; display: flex; align-items: center; gap: 1cqw; height: 88%; padding: 0 2.6cqw; }
 .dot { flex: none; width: 3cqw; height: 3cqw; border-radius: 50%; background: #eedc8e; box-shadow: inset 0 .3cqw .5cqw rgba(255,255,255,.45), 0 .1cqw .4cqw rgba(0,0,0,.12); }
 .dot--close { position: relative; background: #dc7f72; }
@@ -428,6 +446,11 @@ details p { margin: 2.4cqw 0 0; font-size: 3.2cqw; }
 /* the meadow and the river (assets/world.js): depth layers the camera scales about their vanishing point */
 .world { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: #000; }
 .wlayer { position: absolute; inset: 0; pointer-events: none; will-change: transform, opacity; }
+/* the WebGL world (assets/world-gl.js) over the DOM layers, which stay as the fallback */
+.world-gl { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none; }
+/* the light the camera passes through between the film and the meadow (under the header) */
+.veil { position: absolute; inset: 0; z-index: 40; pointer-events: none; opacity: 0;
+  background: radial-gradient(120% 90% at 50% 42%, #fffdf7 0%, #fbf7ec 45%, #f1ebde 100%); }
 .wlayer img { position: absolute; display: block; max-width: none; user-select: none; -webkit-user-drag: none; }
 .wsway, .wglint { position: absolute; inset: 0; }
 .wsway { transform-origin: 50% 100%; animation: wsway var(--sway-t, 9s) ease-in-out var(--sway-d, 0s) infinite; }
@@ -453,7 +476,8 @@ details p { margin: 2.4cqw 0 0; font-size: 3.2cqw; }
 .toast.is-on { opacity: 1; transform: translate(-50%, 0); }
 
 @media (prefers-reduced-motion: reduce) {
-  .amb-cloud, .bub img, .sway, .monitor, .monitor__ghost, .monitor__scan, .crt__scan, .t-ground, .caret, .wsway, .wglint, .music .eq i { animation: none !important; }
+  /* the calm version keeps the slow drift and sway; only the flicker stops */
+  .monitor, .monitor__ghost { animation: none !important; }
 }
 
 .pill__go[hidden] { display: none; }
