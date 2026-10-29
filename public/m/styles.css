@@ -510,3 +510,7 @@ details p { margin: 2.4cqw 0 0; font-size: 3.2cqw; }
 .lightbox .lb-next { right: 10px; top: 50%; transform: translateY(-50%); }
 .lightbox .lb-count { position: absolute; bottom: calc(env(safe-area-inset-bottom, 0px) + 18px); margin: 0; color: rgba(255,255,255,.7); font-size: 12px; letter-spacing: .14em; }
 .photos img { cursor: zoom-in; }
+
+/* the RSVP form, framed over the story so the song keeps playing (app.js openRsvp) */
+.rsvp-frame { position: fixed; inset: 0; z-index: 90; background: #0a0c07; }
+.rsvp-frame iframe { display: block; width: 100%; height: 100%; border: 0; }

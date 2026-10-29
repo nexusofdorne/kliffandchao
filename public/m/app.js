@@ -1220,9 +1220,28 @@
     busy = false;
   }
   $$('[data-go]').forEach(b => b.addEventListener('click', e => { e.stopPropagation(); goTo(+b.dataset.go); }));
+  // The RSVP form opens in a frame over this page rather than replacing it, so the song keeps
+  // playing (a full page load would stop it, and a phone won't restart it without a tap). The
+  // form's Close and "Back to home" post kc-rsvp-close, which takes the frame away again.
+  let rsvpFrame = null;
+  function openRsvp() {
+    if (rsvpFrame) return;
+    rsvpFrame = document.createElement('div');
+    rsvpFrame.className = 'rsvp-frame';
+    rsvpFrame.innerHTML = '<iframe src="/rsvp" title="RSVP"></iframe>';
+    document.body.append(rsvpFrame);
+  }
+  function closeRsvp() {
+    if (!rsvpFrame) return;
+    rsvpFrame.remove();
+    rsvpFrame = null;
+  }
+  addEventListener('message', e => {
+    if (e.origin === location.origin && e.data && e.data.type === 'kc-rsvp-close') closeRsvp();
+  });
   $$('[data-rsvp]').forEach(b => b.addEventListener('click', e => {
     e.stopPropagation();
-    if (LIVE) location.href = '/rsvp';
+    if (LIVE) openRsvp();
     else toast('RSVP opens the real form on the site');
   }));
 
@@ -1314,7 +1333,7 @@
   // touch: one swipe = one step
   let touch = null;
   addEventListener('touchstart', e => {
-    if (lightbox) { touch = null; return; }
+    if (lightbox || rsvpFrame) { touch = null; return; }
     const pane = e.target.closest && e.target.closest('.pane');
     touch = { y: e.touches[0].clientY, x: e.touches[0].clientX, pane,
       up: canScroll(pane, 1), down: canScroll(pane, -1), chips: !!(e.target.closest && e.target.closest('.chips, .icontabs')) };
@@ -1341,7 +1360,7 @@
   let lastWheel = 0;
   let gated = false;
   addEventListener('wheel', e => {
-    if (lightbox) { e.preventDefault(); return; }
+    if (lightbox || rsvpFrame) { e.preventDefault(); return; }
     const pane = e.target.closest && e.target.closest('.pane');
     if (pane && canScroll(pane, Math.sign(e.deltaY))) return;  // let the card scroll
     e.preventDefault();
@@ -1360,7 +1379,7 @@
   }, { passive: false });
 
   addEventListener('keydown', e => {
-    if (e.target === pw || lightbox) return;
+    if (e.target === pw || lightbox || rsvpFrame) return;
     if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); if (!canScroll(openPane(), 1)) onStep(1); }
     if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); if (!canScroll(openPane(), -1)) onStep(-1); }
   });

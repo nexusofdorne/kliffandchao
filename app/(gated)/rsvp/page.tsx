@@ -14,6 +14,9 @@ import { GlassWash } from '@/components/site/glass/GlassWash';
 import type { PartyView } from '@/lib/rsvp/build-party';
 import { siteConfig } from '@/config/site';
 
+/** What the page posts to the phone design that framed it when the guest closes it. */
+const RSVP_CLOSE_MESSAGE = 'kc-rsvp-close';
+
 type Stage =
   | { kind: 'search'; error: string | null }
   | { kind: 'confirm-identity'; guest: GuestSearchResult }
@@ -34,6 +37,16 @@ export default function RsvpPage() {
   const [submissionId, setSubmissionId] = useState(() => crypto.randomUUID());
 
   const goHome = useCallback(() => {
+    // The phone design opens this page in a frame over itself, so its song keeps playing
+    // (a full page load would stop it): there, "close" tells the phone page to take the frame
+    // away instead of navigating.
+    if (window.parent !== window) {
+      window.parent.postMessage(
+        { type: RSVP_CLOSE_MESSAGE },
+        window.location.origin,
+      );
+      return;
+    }
     router.push('/story');
   }, [router]);
 
