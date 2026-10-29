@@ -9,12 +9,14 @@ import {
 } from '@/components/rsvp/GuestSearch';
 import { PartyForm, type RsvpSubmitPayload } from '@/components/rsvp/PartyForm';
 import { RsvpBanner } from '@/components/rsvp/RsvpBanner';
+import { IdentityCheck } from '@/components/rsvp/IdentityCheck';
 import { GlassWash } from '@/components/site/glass/GlassWash';
 import type { PartyView } from '@/lib/rsvp/build-party';
 import { siteConfig } from '@/config/site';
 
 type Stage =
   | { kind: 'search'; error: string | null }
+  | { kind: 'confirm-identity'; guest: GuestSearchResult }
   | { kind: 'loading' }
   | { kind: 'party'; party: PartyView; guestId: string; error: string | null }
   | { kind: 'confirmation'; attendingCount: number };
@@ -35,7 +37,12 @@ export default function RsvpPage() {
     router.push('/story');
   }, [router]);
 
-  async function handleSelectGuest(guest: GuestSearchResult) {
+  // picking a name first asks "are you …?", so nobody answers for someone else by accident
+  function handleSelectGuest(guest: GuestSearchResult) {
+    setStage({ kind: 'confirm-identity', guest });
+  }
+
+  async function loadParty(guest: GuestSearchResult) {
     setStage({ kind: 'loading' });
     // A fresh idempotency key per party loaded, not per submit click — a
     // retry of the same submission should reuse it, but searching again
@@ -160,6 +167,13 @@ export default function RsvpPage() {
               <p className="mt-[2vh] text-center text-[11px] tracking-[.1em] text-red-300">
                 {stage.error}
               </p>
+            )}
+            {stage.kind === 'confirm-identity' && (
+              <IdentityCheck
+                guest={stage.guest}
+                onConfirm={() => void loadParty(stage.guest)}
+                onCancel={() => setStage({ kind: 'search', error: null })}
+              />
             )}
             {stage.kind === 'loading' && (
               <p className="mt-[3vh] text-center text-[11px] tracking-[.1em] opacity-50">
