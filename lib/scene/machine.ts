@@ -84,8 +84,10 @@ export function stepPlan(state: SceneState, dir: 1 | -1): Move[] {
       ? enterWedding(state)
       : [{ kind: 'journey->intro', to: leaveJourney(state) }];
   }
-  // wedding: nothing lies beyond it
-  return dir < 0 ? backToJourney(state) : [];
+  // wedding: nothing lies beyond it, and scrolling back up stays here too (the wedding tabs
+  // scroll, and reaching the top of one shouldn't fly the guest back to the journey); the
+  // nav's Journey button still goes back
+  return [];
 }
 
 function enterJourney(state: SceneState): Move[] {
@@ -109,17 +111,6 @@ function enterWedding(state: SceneState): Move[] {
   ];
 }
 
-// Back to the meadow from the river: the journey window comes back as it was, or (when the
-// guest went straight from the intro to the wedding and never opened it) opens by itself.
-function backToJourney(state: SceneState): Move[] {
-  const arrived = leaveWedding(state);
-  const moves: Move[] = [{ kind: 'wedding->journey', to: arrived }];
-  if (!arrived.journeyOpen) {
-    moves.push({ kind: 'journey-open', to: { ...arrived, journeyOpen: true }, auto: true });
-  }
-  return moves;
-}
-
 // Going back out through the screen closes the window and forgets the tab; the
 // next arrival opens it again from chapter 1 (prototype reset04).
 function leaveJourney(state: SceneState): SceneState {
@@ -139,7 +130,11 @@ export function jumpPlan(state: SceneState, target: SceneId): Move[] {
     const arrived: SceneState = { ...state, scene: 'wedding' };
     return [
       { kind: 'intro->wedding', to: arrived },
-      { kind: 'wedding-open', to: { ...arrived, weddingOpen: true }, auto: true },
+      {
+        kind: 'wedding-open',
+        to: { ...arrived, weddingOpen: true },
+        auto: true,
+      },
     ];
   }
   if (state.scene === 'wedding' && target === 'intro') {
@@ -199,10 +194,7 @@ function hopFrom(state: SceneState, dir: 1 | -1): Move {
 }
 
 /** The folder or the window's red dot. Null when it would change nothing. */
-export function windowMove(
-  state: SceneState,
-  open: boolean,
-): Move | null {
+export function windowMove(state: SceneState, open: boolean): Move | null {
   if (state.scene === 'journey' && state.journeyOpen !== open) {
     return {
       kind: open ? 'journey-open' : 'journey-close',

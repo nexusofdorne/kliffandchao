@@ -7,6 +7,7 @@ import { computeParallaxOffset } from '@/lib/track/progress';
 import { DetailTab } from './DetailTab';
 import { EntourageTab } from './EntourageTab';
 import { FaqTab } from './FaqTab';
+import { FinalNoteTab } from './FinalNoteTab';
 import { MotifTab } from './MotifTab';
 import { TabBar, type WeddingTab } from './TabBar';
 import { TimelineTab } from './TimelineTab';
@@ -80,6 +81,11 @@ export function WeddingPanel() {
         className={`wedding-tab-panel relative z-[1] ${activeTab === 'faq' ? 'is-active' : ''}`}
       >
         <FaqTab />
+      </div>
+      <div
+        className={`wedding-tab-panel relative z-[1] ${activeTab === 'note' ? 'is-active' : ''}`}
+      >
+        <FinalNoteTab />
       </div>
     </div>
   );

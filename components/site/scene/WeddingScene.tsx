@@ -2,10 +2,18 @@
 
 import gsap from 'gsap';
 import Image from 'next/image';
-import { useEffect, useImperativeHandle, useRef, useState, type ReactNode, type Ref } from 'react';
+import {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type ReactNode,
+  type Ref,
+} from 'react';
 import { DetailTab } from '@/components/site/wedding/DetailTab';
 import { EntourageTab } from '@/components/site/wedding/EntourageTab';
 import { FaqTab } from '@/components/site/wedding/FaqTab';
+import { FinalNoteTab } from '@/components/site/wedding/FinalNoteTab';
 import { MotifTab } from '@/components/site/wedding/MotifTab';
 import { TimelineTab } from '@/components/site/wedding/TimelineTab';
 import type { WeddingTab } from '@/components/site/wedding/TabBar';
@@ -17,10 +25,10 @@ import { useScene } from './SceneProvider';
 import { Stage, boxStyle } from './Stage';
 import { playToEnd, sleep } from './timing';
 
-// Screen 05 (prototype-v3 "05 · new chapter"): the river, a "new chapter"
-// folder, and a frosted glass window (GlassWindow) with five tabs. The tab bodies are the
-// existing wedding components (countdown, map, timeline, motif, entourage,
-// FAQ); each scrolls inside the window when it is taller than it.
+// Screen 05 (3.0 "04 - wedding"): the hall with the round window, a "new chapter"
+// folder, and a frosted glass window (GlassWindow) with six tabs. The tab bodies are the
+// wedding components (countdown, map, timeline, motif, entourage, FAQ, final note); each
+// scrolls inside the window when it is taller than it.
 
 export type WeddingHandle = {
   parts: () => {
@@ -48,6 +56,7 @@ const TABS: { id: WeddingTab; label: string }[] = [
   { id: 'motif', label: 'MOTIF' },
   { id: 'entourage', label: 'ENTOURAGE' },
   { id: 'faq', label: 'FAQ' },
+  { id: 'note', label: 'FINAL NOTE' },
 ];
 
 export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
@@ -70,7 +79,7 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
     gsap.set(windowRef.current, { visibility: 'hidden' });
     gsap.set(cursorRef.current, { opacity: 0 });
     gsap.set(folderRef.current, { clearProps: 'opacity' });
-    folderRef.current?.classList.remove('is-selected');
+    folderRef.current?.classList.remove('is-selected', 'is-away');
   }
 
   async function cursorIn() {
@@ -118,6 +127,8 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
     );
     await playToEnd(tl);
     folderRef.current?.classList.remove('is-selected');
+    // the folder has been opened: it steps away until the window is closed again
+    folderRef.current?.classList.add('is-away');
   }
 
   async function closeWindow() {
@@ -125,9 +136,14 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
     if (!w) return;
     gsap.set(w, { transformOrigin: folderOrigin() });
     const tl = gsap.timeline();
-    tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
+    tl.fromTo(
+      w,
+      { scale: 1, '--win-o': 1 },
+      { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink },
+    );
     await playToEnd(tl);
     gsap.set(w, { visibility: 'hidden', clearProps: 'transform,--win-o' });
+    folderRef.current?.classList.remove('is-away');
   }
 
   useEffect(() => {
@@ -184,7 +200,9 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
             draggable={false}
             className="block h-full w-full max-w-none"
           />
-          <span className="stage-folder__label">and now, our new chapter begins</span>
+          <span className="stage-folder__label">
+            and now, our new chapter begins
+          </span>
         </button>
 
         <GlassWindow
@@ -205,11 +223,15 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
               height: `${PLATE.h}%`,
             }}
           >
-            {panel('detail', <DetailTab active={open && tab === 'detail'} layout="split" />)}
-            {panel('timeline', <TimelineTab />)}
+            {panel(
+              'detail',
+              <DetailTab active={open && tab === 'detail'} layout="split" />,
+            )}
+            {panel('timeline', <TimelineTab layout="line" />)}
             {panel('motif', <MotifTab />)}
             {panel('entourage', <EntourageTab />)}
             {panel('faq', <FaqTab />)}
+            {panel('note', <FinalNoteTab />)}
           </div>
         </GlassWindow>
 

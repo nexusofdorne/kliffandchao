@@ -65,21 +65,30 @@ describe('stepPlan', () => {
 
   it('skips the tabs when the window is closed', () => {
     const state = inJourney({ journeyOpen: false, journeyTab: 3 });
-    expect(kinds(stepPlan(state, 1))).toEqual(['journey->wedding', 'wedding-open']);
+    expect(kinds(stepPlan(state, 1))).toEqual([
+      'journey->wedding',
+      'wedding-open',
+    ]);
     expect(kinds(stepPlan(state, -1))).toEqual(['journey->intro']);
   });
 
-  it('goes back from the wedding to the journey and has nowhere further to go', () => {
+  it('stays at the wedding when scrolling either way (the nav goes back)', () => {
     // reached by scrolling, so the journey window was open on its last tab
-    const state: SceneState = { ...initialState, scene: 'wedding', journeyOpen: true, journeyTab: 5 };
-    expect(kinds(stepPlan(state, -1))).toEqual(['wedding->journey']);
+    const state: SceneState = {
+      ...initialState,
+      scene: 'wedding',
+      journeyOpen: true,
+      journeyTab: 5,
+    };
+    expect(stepPlan(state, -1)).toEqual([]);
     expect(stepPlan(state, 1)).toEqual([]);
+    expect(kinds(jumpPlan(state, 'journey'))).toEqual(['wedding->journey']);
   });
 
   it('remembers the journey tab across a trip to the wedding and back', () => {
     let state = inJourney({ journeyOpen: true, journeyTab: 5 });
     state = settle(state, stepPlan(state, 1));
-    state = settle(state, stepPlan(state, -1));
+    state = settle(state, jumpPlan(state, 'journey'));
     expect(state).toMatchObject({
       scene: 'journey',
       journeyOpen: true,
@@ -104,28 +113,49 @@ describe('jumpPlan', () => {
     const plan = jumpPlan(initialState, 'wedding');
     expect(kinds(plan)).toEqual(['intro->wedding', 'wedding-open']);
     expect(plan[1].auto).toBe(true);
-    expect(settle(initialState, plan)).toMatchObject({ scene: 'wedding', weddingOpen: true, journeyOpen: false });
+    expect(settle(initialState, plan)).toMatchObject({
+      scene: 'wedding',
+      weddingOpen: true,
+      journeyOpen: false,
+    });
   });
 
   it('goes from the wedding straight back to the intro', () => {
-    const state: SceneState = { ...initialState, scene: 'wedding', weddingOpen: true };
+    const state: SceneState = {
+      ...initialState,
+      scene: 'wedding',
+      weddingOpen: true,
+    };
     const plan = jumpPlan(state, 'intro');
     expect(kinds(plan)).toEqual(['wedding->intro']);
-    expect(settle(state, plan)).toMatchObject({ scene: 'intro', weddingOpen: false, journeyOpen: false });
+    expect(settle(state, plan)).toMatchObject({
+      scene: 'intro',
+      weddingOpen: false,
+      journeyOpen: false,
+    });
   });
 
   it('opens the journey window on the way back from the wedding when it was never opened', () => {
-    const state: SceneState = { ...initialState, scene: 'wedding', journeyOpen: false };
-    expect(kinds(stepPlan(state, -1))).toEqual(['wedding->journey', 'journey-open']);
-    expect(kinds(jumpPlan(state, 'journey'))).toEqual(['wedding->journey', 'journey-open']);
+    const state: SceneState = {
+      ...initialState,
+      scene: 'wedding',
+      journeyOpen: false,
+    };
+    expect(kinds(jumpPlan(state, 'journey'))).toEqual([
+      'wedding->journey',
+      'journey-open',
+    ]);
     const open: SceneState = { ...state, journeyOpen: true, journeyTab: 5 };
-    expect(kinds(stepPlan(open, -1))).toEqual(['wedding->journey']);
+    expect(kinds(jumpPlan(open, 'journey'))).toEqual(['wedding->journey']);
   });
 
   it('never passes through the journey on a jump between the intro and the wedding', () => {
-    const scenes = (start: SceneState, target: SceneId) => jumpPlan(start, target).map((m) => m.to.scene);
+    const scenes = (start: SceneState, target: SceneId) =>
+      jumpPlan(start, target).map((m) => m.to.scene);
     expect(scenes(initialState, 'wedding')).not.toContain('journey');
-    expect(scenes({ ...initialState, scene: 'wedding' }, 'intro')).not.toContain('journey');
+    expect(
+      scenes({ ...initialState, scene: 'wedding' }, 'intro'),
+    ).not.toContain('journey');
   });
 
   it('closes the journey window and forgets the tab when leaving for the intro', () => {
@@ -144,12 +174,15 @@ describe('jumpPlan', () => {
   });
 
   it('closes the wedding window when flying back to the journey', () => {
-    const state: SceneState = { ...initialState, scene: 'wedding', weddingOpen: true };
-    expect(settle(state, stepPlan(state, -1))).toMatchObject({
+    const state: SceneState = {
+      ...initialState,
+      scene: 'wedding',
+      weddingOpen: true,
+    };
+    expect(settle(state, jumpPlan(state, 'journey'))).toMatchObject({
       scene: 'journey',
       weddingOpen: false,
     });
-    expect(settle(state, jumpPlan(state, 'journey')).weddingOpen).toBe(false);
   });
 
   it('marks the window opening that follows an arrival as automatic', () => {
@@ -175,7 +208,10 @@ describe('windowMove and tabMove', () => {
   it('opens and closes the journey window', () => {
     const closed = inJourney();
     const open = windowMove(closed, true);
-    expect(open).toMatchObject({ kind: 'journey-open', to: { journeyOpen: true } });
+    expect(open).toMatchObject({
+      kind: 'journey-open',
+      to: { journeyOpen: true },
+    });
     expect(windowMove(open!.to, false)).toMatchObject({
       kind: 'journey-close',
       to: { journeyOpen: false },

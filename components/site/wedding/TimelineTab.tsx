@@ -1,19 +1,31 @@
-import { daySchedule, timelineIntroLines, type ScheduleStop } from '@/content/wedding';
+import {
+  daySchedule,
+  timelineIntroLines,
+  type ScheduleStop,
+} from '@/content/wedding';
 
 const ICONS: Record<ScheduleStop['icon'], string> = {
   door: 'M14 3H6v18h8M14 3l4 2v14l-4 2M10 12h.01',
   ring: 'M12 21a6 6 0 1 0 0-12 6 6 0 0 0 0 12zM9 8l3-5 3 5',
   glass: 'M8 3h8l-1 6a3 3 0 0 1-6 0L8 3zM12 12v8M9 21h6',
-  music: 'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z',
-  plate: 'M5 3v8a3 3 0 0 0 6 0V3M8 3v18M17 3c-1.5 2-2 4-2 6s.5 3 2 3 2-1 2-3-.5-4-2-6zM17 12v9',
+  music:
+    'M9 18V6l10-2v12M9 18a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0zM19 16a2.5 2.5 0 1 1-5 0 2.5 2.5 0 0 1 5 0z',
+  plate:
+    'M5 3v8a3 3 0 0 0 6 0V3M8 3v18M17 3c-1.5 2-2 4-2 6s.5 3 2 3 2-1 2-3-.5-4-2-6zM17 12v9',
   wave: 'M12 21a9 9 0 0 0 9-9M8 13V6a1.5 1.5 0 0 1 3 0v5M11 11V4.5a1.5 1.5 0 0 1 3 0V11M14 11V6a1.5 1.5 0 0 1 3 0v7M8 13l-2-2a1.5 1.5 0 0 0-2 2l3 5',
 };
 
-// A vertical spine with an olive circular node per stop, each carrying its
-// own icon — redesigned from the PDF's horizontal axis, following
-// wedding.jongjeonglee.com (docs/PLAN.md "TIMELINE"). The list scrolls in
-// its own area on mobile only; desktop has room for all six stops.
-export function TimelineTab() {
+// Two layouts. `line` (the desktop wedding window, 3.0 "04 - wedding 2"): the six stops as
+// glass beads on one olive line, each with its time and name under it, and the note below.
+// `spine` (the stacked phone layout): a vertical spine with an olive circular node per stop,
+// each carrying its own icon, following wedding.jongjeonglee.com (docs/PLAN.md "TIMELINE");
+// the list scrolls in its own area on mobile only.
+export function TimelineTab({
+  layout = 'spine',
+}: {
+  layout?: 'line' | 'spine';
+}) {
+  if (layout === 'line') return <TimelineLine />;
   return (
     <div>
       <p className="text-[clamp(10px,1.35vh,14px)] leading-[1.9] text-[#3a4030]">
@@ -48,7 +60,9 @@ export function TimelineTab() {
                   </svg>
                 </span>
                 <span>
-                  <b className="block text-[clamp(11px,1.5vh,16px)] font-semibold tracking-[.05em]">{stop.time}</b>
+                  <b className="block text-[clamp(11px,1.5vh,16px)] font-semibold tracking-[.05em]">
+                    {stop.time}
+                  </b>
                   <span className="mt-[.3vh] block text-[clamp(9px,1.12vh,12px)] tracking-[.14em] text-[#4a5140]">
                     {stop.label}
                   </span>
@@ -66,9 +80,36 @@ export function TimelineTab() {
           className="pointer-events-none absolute bottom-[6px] left-1/2 z-[3] flex -translate-x-1/2 flex-col items-center gap-[3px] opacity-0 transition-opacity duration-300 ease-in-out group-hover:opacity-75 max-[768px]:hidden"
         >
           <span className="relative h-[27px] w-[17px] rounded-[9px] border-[1.4px] border-[var(--olive)] after:absolute after:left-1/2 after:top-[5px] after:h-[5px] after:w-[2.5px] after:-translate-x-1/2 after:rounded-[2px] after:bg-[var(--olive)] after:content-[''] after:[animation:wheel-dot_1.5s_ease-in-out_infinite]" />
-          <em className="text-[7.5px] not-italic tracking-[.14em] text-[var(--olive)]">SCROLL</em>
+          <em className="text-[7.5px] not-italic tracking-[.14em] text-[var(--olive)]">
+            SCROLL
+          </em>
         </div>
       </div>
+    </div>
+  );
+}
+
+function TimelineLine() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-[7vh] py-[4vh]">
+      <ol className="timeline-line">
+        {daySchedule.map((stop, i) => (
+          <li key={stop.label}>
+            <span aria-hidden="true" className="timeline-bead" />
+            <b className={i === daySchedule.length - 1 ? 'font-bold' : ''}>
+              {stop.time}
+            </b>
+            <span>{stop.label}</span>
+          </li>
+        ))}
+      </ol>
+      <p className="m-0 text-center text-[clamp(10px,1.4vh,14px)] leading-[1.6] text-[#2c3124]">
+        {timelineIntroLines.map((line) => (
+          <span key={line} className="block">
+            {line}
+          </span>
+        ))}
+      </p>
     </div>
   );
 }

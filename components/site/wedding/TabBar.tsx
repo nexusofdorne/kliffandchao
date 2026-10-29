@@ -2,7 +2,8 @@
 
 import { useLayoutEffect, useRef, useState } from 'react';
 
-export type WeddingTab = 'detail' | 'timeline' | 'motif' | 'entourage' | 'faq';
+export type WeddingTab =
+  'detail' | 'timeline' | 'motif' | 'entourage' | 'faq' | 'note';
 
 const TABS: { id: WeddingTab; label: string }[] = [
   { id: 'detail', label: 'DETAIL' },
@@ -10,6 +11,7 @@ const TABS: { id: WeddingTab; label: string }[] = [
   { id: 'motif', label: 'MOTIF' },
   { id: 'entourage', label: 'ENTOURAGE' },
   { id: 'faq', label: 'FAQ' },
+  { id: 'note', label: 'FINAL NOTE' },
 ];
 
 type TabBarProps = {
@@ -29,8 +31,11 @@ export function TabBar({ activeTab, onSelectTab }: TabBarProps) {
   useLayoutEffect(() => {
     const row = rowRef.current;
     function measure() {
-      const active = row?.querySelector<HTMLButtonElement>(`[data-tab="${activeTab}"]`);
-      if (active) setIndicator({ left: active.offsetLeft, width: active.offsetWidth });
+      const active = row?.querySelector<HTMLButtonElement>(
+        `[data-tab="${activeTab}"]`,
+      );
+      if (active)
+        setIndicator({ left: active.offsetLeft, width: active.offsetWidth });
     }
     measure();
     window.addEventListener('resize', measure);
@@ -43,7 +48,10 @@ export function TabBar({ activeTab, onSelectTab }: TabBarProps) {
         <div
           aria-hidden="true"
           className="wedding-tab-indicator"
-          style={{ transform: `translateX(${indicator.left}px)`, width: indicator.width }}
+          style={{
+            transform: `translateX(${indicator.left}px)`,
+            width: indicator.width,
+          }}
         />
         {TABS.map((tab) => (
           <button
@@ -52,7 +60,9 @@ export function TabBar({ activeTab, onSelectTab }: TabBarProps) {
             data-tab={tab.id}
             onClick={() => onSelectTab(tab.id)}
             className={`relative whitespace-nowrap px-px py-0.5 text-[clamp(8.5px,1.1vh,12px)] tracking-[.14em] text-[#14180d] transition-opacity duration-[.28s] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--green)] focus-visible:outline-offset-[3px] max-[768px]:text-[8px] max-[768px]:tracking-[.09em] ${
-              activeTab === tab.id ? 'font-semibold opacity-100' : 'opacity-40 hover:opacity-[.72]'
+              activeTab === tab.id
+                ? 'font-semibold opacity-100'
+                : 'opacity-40 hover:opacity-[.72]'
             }`}
           >
             {tab.label}
