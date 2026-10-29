@@ -1244,8 +1244,8 @@
   const canScroll = (el, dir) => !!el && el.scrollHeight > el.clientHeight + 1 &&
     (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 4 : el.scrollTop > 0);  // 4px: phones round fractional heights
 
-  // a chapter's photo, big: tap a photo in the journey card; swipe sideways (or the arrows, or
-  // ← →) for the chapter's other photos; tap outside or × to close. While it is open the story
+  // a chapter's film or photo, big: tap it in the journey card; swipe sideways (or the arrows, or
+  // ← →) for the chapter's other files (the film first, then the photos); tap outside or × to close. While it is open the story
   // ignores swipes, the wheel and keys.
   let lightbox = null;
   function openLightbox(srcs, index) {
@@ -1255,13 +1255,18 @@
     el.className = 'lightbox';
     el.setAttribute('role', 'dialog');
     el.setAttribute('aria-modal', 'true');
-    el.innerHTML = `<img alt=""><button class="lb-close" type="button" aria-label="Close photo">×</button>
+    el.innerHTML = `<img alt=""><video muted loop playsinline controls hidden></video><button class="lb-close" type="button" aria-label="Close photo">×</button>
       <button class="lb-prev" type="button" aria-label="Previous photo">‹</button>
       <button class="lb-next" type="button" aria-label="Next photo">›</button><p class="lb-count"></p>`;
     const img = $('img', el);
+    const vid = $('video', el);
     const show = n => {
       i = (n + srcs.length) % srcs.length;
-      img.src = srcs[i];
+      const isFilm = /\.mp4$/.test(srcs[i]);
+      img.hidden = isFilm;
+      vid.hidden = !isFilm;
+      if (isFilm) { vid.src = srcs[i]; vid.play().catch(() => {}); }
+      else { vid.pause(); vid.removeAttribute('src'); img.src = srcs[i]; }
       $('.lb-count', el).textContent = `${i + 1} / ${srcs.length}`;
     };
     const many = srcs.length > 1;
@@ -1271,6 +1276,7 @@
     $('.lb-next', el).addEventListener('click', e => { e.stopPropagation(); show(i + 1); });
     $('.lb-close', el).addEventListener('click', e => { e.stopPropagation(); closeLightbox(); });
     img.addEventListener('click', e => e.stopPropagation());
+    vid.addEventListener('click', e => e.stopPropagation());
     el.addEventListener('click', closeLightbox);
     let sx = null;
     el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
@@ -1297,11 +1303,12 @@
     lightbox = null;
   }
   panes4.addEventListener('click', e => {
-    const img = e.target.closest && e.target.closest('.photos img');
-    if (!img) return;
+    const hit = e.target.closest && e.target.closest('.photos img, video.film');
+    if (!hit) return;
     e.stopPropagation();
-    const imgs = $$('img', img.parentElement);
-    openLightbox(imgs.map(m => m.currentSrc || m.src), imgs.indexOf(img));
+    const pane = hit.closest('.pane');
+    const items = $$('video.film, .photos img', pane);
+    openLightbox(items.map(m => m.currentSrc || m.src), items.indexOf(hit));
   });
 
   // touch: one swipe = one step

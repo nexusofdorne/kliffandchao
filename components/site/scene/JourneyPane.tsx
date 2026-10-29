@@ -18,8 +18,8 @@ import { PhotoLightbox } from './PhotoLightbox';
 // the left at full height, then its photos in order, with the words sharing the space with them
 // (a narrow column of words before the photos, or the words beside the last photo under the
 // others), whichever leaves the least empty space (lib/journey/gallery). Sizes are in mockup
-// pixels (--px), so the window keeps its proportions at any screen size. A photo opens big in
-// PhotoLightbox when clicked.
+// pixels (--px), so the window keeps its proportions at any screen size. The film and the photos
+// open big in PhotoLightbox when clicked.
 
 const PLATE = plateBox(journeyWindow);
 const PLATE_W =
@@ -120,9 +120,12 @@ function Rows({
 }
 
 function Words({ chapter, width }: { chapter: JourneyChapter; width: number }) {
+  // the chapters are stacked in the same window: only the one showing may take the pointer
+  // (to scroll its words), or a hidden chapter's words would sit over this one's photos
+  const showing = useContext(OpenPhoto) !== null;
   return (
     <div
-      className="pointer-events-auto min-h-0 flex-none overflow-y-auto text-[#14160f] [scrollbar-width:none]"
+      className={`min-h-0 flex-none overflow-y-auto text-[#14160f] [scrollbar-width:none] ${showing ? 'pointer-events-auto' : ''}`}
       data-scene-scroll=""
       style={{
         width: px(width),
@@ -213,7 +216,10 @@ export function JourneyPane({
 }) {
   const { filmW, rightW, plan } = layoutFor(chapter, media);
   const [viewing, setViewing] = useState<number | null>(null);
-  const open = (photo: MediaItem) => setViewing(media.photos.indexOf(photo));
+  // the viewer steps through the chapter's files in order: its film, then its photos
+  const items = media.film ? [media.film, ...media.photos] : media.photos;
+  const open = (item: MediaItem) => setViewing(items.indexOf(item));
+  const film = media.film;
   return (
     <OpenPhoto.Provider value={active ? open : null}>
       <section
@@ -230,13 +236,23 @@ export function JourneyPane({
           gap: px(PAD),
         }}
       >
-        {media.film ? (
+        {film ? (
           <div
-            className="relative flex-none overflow-hidden bg-[#343434]"
+            role="button"
+            tabIndex={active ? 0 : -1}
+            aria-label="Watch this film bigger"
+            onClick={() => active && open(film)}
+            onKeyDown={(event) => {
+              if (!active || (event.key !== 'Enter' && event.key !== ' '))
+                return;
+              event.preventDefault();
+              open(film);
+            }}
+            className={`relative flex-none overflow-hidden bg-[#343434] ${active ? 'pointer-events-auto cursor-zoom-in' : ''}`}
             style={{ width: px(filmW), borderRadius: px(28) }}
           >
             <video
-              src={media.film.src}
+              src={film.src}
               muted
               loop
               playsInline
@@ -257,7 +273,7 @@ export function JourneyPane({
       </section>
       {active && viewing !== null ? (
         <PhotoLightbox
-          photos={media.photos}
+          photos={items}
           index={viewing}
           onIndex={setViewing}
           onClose={() => setViewing(null)}

@@ -497,6 +497,9 @@ details p { margin: 2.4cqw 0 0; font-size: 3.2cqw; }
   position: fixed; inset: 0; z-index: 100; display: grid; place-items: center;
   background: rgba(10,12,8,.88); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
 }
+.lightbox video { max-width: 94vw; max-height: 82vh; border-radius: 14px; background: #000; }
+.lightbox [hidden] { display: none; }
+.pane video.film { cursor: zoom-in; }
 .lightbox img { max-width: 94vw; max-height: 82vh; border-radius: 14px; object-fit: contain; box-shadow: 0 16px 50px rgba(0,0,0,.5); }
 .lightbox button {
   position: absolute; display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 50%;
