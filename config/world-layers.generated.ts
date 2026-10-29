@@ -2,13 +2,13 @@
 export const worldLayers = {
   "journey": {
     "vp": {
-      "x": 50.260416666666664,
-      "y": 68.98148148148148
+      "x": 58.75,
+      "y": 49.074074074074076
     },
     "layers": [
       {
         "kind": "sky",
-        "src": "/img/world/j_sky.webp",
+        "src": "/img/world/j_sky-v4.webp",
         "pad": [
           160,
           160
@@ -24,7 +24,7 @@ export const worldLayers = {
       },
       {
         "kind": "far",
-        "src": "/img/world/j_far.webp",
+        "src": "/img/world/j_far-v4.webp",
         "pad": [
           150,
           150
@@ -40,7 +40,7 @@ export const worldLayers = {
       },
       {
         "kind": "mid",
-        "src": "/img/world/j_mid.webp",
+        "src": "/img/world/j_mid-v4.webp",
         "pad": [
           260,
           200
@@ -56,7 +56,7 @@ export const worldLayers = {
       },
       {
         "kind": "near",
-        "src": "/img/world/j_near.webp",
+        "src": "/img/world/j_near-v4.webp",
         "pad": [
           0,
           150
@@ -72,7 +72,7 @@ export const worldLayers = {
       },
       {
         "kind": "fore",
-        "src": "/img/world/j_fore.webp",
+        "src": "/img/world/j_fore-v4.webp",
         "pad": [
           0,
           150
@@ -90,13 +90,13 @@ export const worldLayers = {
   },
   "wedding": {
     "vp": {
-      "x": 49.739583333333336,
-      "y": 61.574074074074076
+      "x": 49.791666666666664,
+      "y": 51.851851851851855
     },
     "layers": [
       {
         "kind": "sky",
-        "src": "/img/world/w_sky.webp",
+        "src": "/img/world/w_sky-v4.webp",
         "pad": [
           160,
           160
@@ -112,7 +112,7 @@ export const worldLayers = {
       },
       {
         "kind": "far",
-        "src": "/img/world/w_far.webp",
+        "src": "/img/world/w_far-v4.webp",
         "pad": [
           150,
           150
@@ -128,7 +128,7 @@ export const worldLayers = {
       },
       {
         "kind": "mid",
-        "src": "/img/world/w_mid.webp",
+        "src": "/img/world/w_mid-v4.webp",
         "pad": [
           260,
           200
@@ -144,7 +144,7 @@ export const worldLayers = {
       },
       {
         "kind": "near",
-        "src": "/img/world/w_near.webp",
+        "src": "/img/world/w_near-v4.webp",
         "pad": [
           0,
           150
@@ -160,7 +160,7 @@ export const worldLayers = {
       },
       {
         "kind": "fore",
-        "src": "/img/world/w_fore.webp",
+        "src": "/img/world/w_fore-v4.webp",
         "pad": [
           0,
           150
@@ -176,19 +176,19 @@ export const worldLayers = {
       },
       {
         "kind": "glint",
-        "src": "/img/world/w_glint.webp",
+        "src": "/img/world/w_glint-v4.webp",
         "pad": [
           0,
           0
         ],
         "px": [
-          1026,
-          398
+          1294,
+          364
         ],
-        "x": 24.479166666666668,
-        "y": 63.148148148148145,
-        "w": 53.4375,
-        "h": 36.851851851851855
+        "x": 17.65625,
+        "y": 66.29629629629629,
+        "w": 67.39583333333333,
+        "h": 33.7037037037037
       }
     ]
   }

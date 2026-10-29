@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useImperativeHandle, useRef, type CSSProperties, type Ref } from 'react';
+import {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  type CSSProperties,
+  type Ref,
+} from 'react';
 import { worldLayers } from '@/config/world-layers.generated';
 import {
   NEARNESS,
@@ -66,12 +72,17 @@ const ORDER: readonly (readonly [WorldSceneId, WorldKind])[] = [
 
 // How far each layer's plants sway (a slow, small tilt about the bottom of the frame),
 // and how long a sway takes. The nearer, the more; the delays keep the layers out of step.
-const SWAY: Partial<Record<WorldKind, { deg: number; x: number; secs: number }>> = {
+const SWAY: Partial<
+  Record<WorldKind, { deg: number; x: number; secs: number }>
+> = {
   mid: { deg: 0.12, x: 1, secs: 12 },
   near: { deg: 0.22, x: 2, secs: 9 },
   fore: { deg: 0.34, x: 3, secs: 7.5 },
 };
-const swayStyle = (scene: WorldSceneId, kind: WorldKind): CSSProperties | undefined => {
+const swayStyle = (
+  scene: WorldSceneId,
+  kind: WorldKind,
+): CSSProperties | undefined => {
   const s = SWAY[kind];
   if (!s) return undefined;
   const delay = scene === 'journey' ? -2.5 : -6;
@@ -86,8 +97,17 @@ const swayStyle = (scene: WorldSceneId, kind: WorldKind): CSSProperties | undefi
 const key = (scene: WorldSceneId, kind: WorldKind) => `${scene}-${kind}`;
 // a layer this big has long since passed the lens
 const GONE = 14;
-/** The river's water, for the WebGL ripples (scripts/design/build_water_mask.py). */
-const WATER_MASK = '/img/world/w_water.png';
+/** Each painting's water, for the WebGL ripples (scripts/design/build_water_mask.py). */
+const WATER_MASK = {
+  journey: '/img/world/j_water-v4.png',
+  wedding: '/img/world/w_water-v4.png',
+};
+/** The soap bubble in the journey's sky (centre at 420, 160 and radius 40 in the 1920 x 1080 painting). */
+const JOURNEY_BUBBLE = {
+  x: (420 / 1920) * 100,
+  y: (160 / 1080) * 100,
+  r: (40 / 1080) * 100,
+};
 const REST: WorldPose = { camera: { journey: 0, wedding: 0 }, show: [] };
 
 export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
@@ -98,15 +118,24 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
   const last = useRef<WorldPose>(REST);
   const calm = useRef(false);
 
-  function domPose({ camera, show, backdrop = 1, front = 1, meadow = 1 }: WorldPose) {
+  function domPose({
+    camera,
+    show,
+    backdrop = 1,
+    front = 1,
+    meadow = 1,
+  }: WorldPose) {
     for (const [scene, kind] of ORDER) {
       const el = els.current.get(key(scene, kind));
       if (!el) continue;
       const scale = perspectiveScale(NEARNESS[kind], camera[scene]);
       let opacity = 1;
-      if (scene === 'journey' && (kind === 'sky' || kind === 'far')) opacity = backdrop;
-      if (scene === 'wedding' && kind !== 'sky' && kind !== 'far') opacity = front;
-      if (scene === 'journey' && kind !== 'sky' && kind !== 'far') opacity = meadow;
+      if (scene === 'journey' && (kind === 'sky' || kind === 'far'))
+        opacity = backdrop;
+      if (scene === 'wedding' && kind !== 'sky' && kind !== 'far')
+        opacity = front;
+      if (scene === 'journey' && kind !== 'sky' && kind !== 'far')
+        opacity = meadow;
       const on = show.includes(scene) && opacity > 0.002 && scale < GONE;
       el.style.visibility = on ? 'visible' : 'hidden';
       if (!on) continue;
@@ -118,7 +147,9 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
   function pose(pose: WorldPose) {
     // the calm version: the camera stays where it is and the scenes dissolve into each other
     // through the mist and the light
-    const p = calm.current ? { ...pose, camera: { journey: 0, wedding: 0 }, mistLag: 0 } : pose;
+    const p = calm.current
+      ? { ...pose, camera: { journey: 0, wedding: 0 }, mistLag: 0 }
+      : pose;
     last.current = p;
     if (gl.current) gl.current.pose(p);
     else domPose(p);
@@ -130,14 +161,28 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
     calm.current = calmMotion();
     const renderer = createWorldGL(canvas, {
       scenes: {
-        journey: { vp: worldLayers.journey.vp, layers: worldLayers.journey.layers },
-        wedding: { vp: worldLayers.wedding.vp, layers: worldLayers.wedding.layers, water: WATER_MASK },
+        journey: {
+          vp: worldLayers.journey.vp,
+          layers: worldLayers.journey.layers,
+          water: WATER_MASK.journey,
+          bubble: JOURNEY_BUBBLE,
+        },
+        wedding: {
+          vp: worldLayers.wedding.vp,
+          layers: worldLayers.wedding.layers,
+          water: WATER_MASK.wedding,
+        },
       },
       stageRect: () => {
         const s = measureRef.current?.getBoundingClientRect();
         const c = canvas.getBoundingClientRect();
         return s
-          ? { left: s.left - c.left, top: s.top - c.top, width: s.width, height: s.height }
+          ? {
+              left: s.left - c.left,
+              top: s.top - c.top,
+              width: s.width,
+              height: s.height,
+            }
           : { left: 0, top: 0, width: c.width, height: c.height };
       },
       maxDpr: 1.5,
@@ -173,7 +218,8 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
 
   useImperativeHandle(ref, () => ({
     pose,
-    rest: (scene) => pose({ camera: { journey: 0, wedding: 0 }, show: scene ? [scene] : [] }),
+    rest: (scene) =>
+      pose({ camera: { journey: 0, wedding: 0 }, show: scene ? [scene] : [] }),
   }));
 
   return (
@@ -217,7 +263,12 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
           );
         })}
       </Stage>
-      <canvas ref={canvasRef} aria-hidden="true" className="world-gl" style={{ visibility: 'hidden' }} />
+      <canvas
+        ref={canvasRef}
+        aria-hidden="true"
+        className="world-gl"
+        style={{ visibility: 'hidden' }}
+      />
     </>
   );
 }

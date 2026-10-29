@@ -28,17 +28,43 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "public", "img", "world")
 W, H = 1920, 1080
 
+def _pts(*xy):
+    return [(round(x), round(y)) for x, y in xy]
+
+
+# The 3.0 paintings (October 2026): the path to the white building (journey) and the hall with the
+# round window (wedding). Points are read off the 1920 x 1080 painting.
 SCENES = {
-    "j": dict(name="journey", src="public/img/scenes/journey/j00_bg.jpg", hy=745, vp=(965, 745)),
+    "j": dict(
+        name="journey",
+        src="public/img/scenes/journey/j00_bg-v4.jpg",
+        hy=560,
+        vp=(1128, 530),
+        # the white building: lifted from the far hills to the middle distance, so it grows as
+        # the camera walks up the path (its round arch, with the valley through it, stays far)
+        building=dict(box=(590, 268, 1830, 566), arch=((1128, 414), 98)),
+        # the two streams beside the path
+        water=[
+            _pts((1002, 702), (1138, 738), (1138, 768), (1044, 840), (948, 948), (864, 1044), (828, 1080),
+                 (516, 1080), (564, 1020), (672, 960), (780, 888), (840, 828), (936, 768), (984, 732)),
+            _pts((1458, 768), (1548, 720), (1608, 768), (1560, 840), (1440, 960), (1332, 1080), (1272, 1080),
+                 (1380, 960), (1440, 840)),
+        ],
+    ),
     "w": dict(
         name="wedding",
-        src="public/img/scenes/wedding/j05_bg.jpg",
-        hy=650,
-        vp=(955, 665),
-        # the river's outline, read off the painting (the colour test below trims it to the water)
-        water=[(575, 715), (780, 700), (1070, 700), (1180, 740), (1200, 800), (1390, 830), (1480, 900),
-               (1460, 1000), (1420, 1080), (480, 1080), (520, 1010), (640, 950), (740, 935), (780, 900),
-               (650, 860), (580, 790)],
+        src="public/img/scenes/wedding/j05_bg-v4.jpg",
+        hy=846,
+        vp=(956, 560),
+        # the round window: the sky and the lake beyond it are the far distance
+        window=((956, 504), 346),
+        glint=True,
+        # the pool in the floor, and the lake seen through the window
+        water=[
+            _pts((708, 890), (1212, 890), (1180, 930), (1110, 960), (1200, 1010), (1500, 1060), (1700, 1080),
+                 (330, 1080), (450, 1030), (600, 980), (700, 945), (720, 915)),
+            _pts((640, 735), (1272, 735), (1250, 800), (1180, 846), (956, 850), (730, 846), (660, 800)),
+        ],
     ),
 }
 # where each layer starts in the depth map, and how far past the frame it is extended
@@ -52,6 +78,8 @@ KINDS = [
 DETAIL_GAIN = {"far": 0.3, "mid": 0.8, "near": 0.9, "fore": 0.0}
 BAND = 0.05
 SKY_PAD = (160, 160)
+# a changed picture needs a new name: media is cached for a week as immutable (vercel.json)
+REV = "-v4"
 
 
 def fill_for(orig, valid, detail_gain):
@@ -78,11 +106,22 @@ def pad_reflect(rgba, pad, soften=6.0):
     return p * (1 - m) + soft * m
 
 
+def scene_depth(a, cfg):
+    """Depth, sky and the plants standing against the sky, for one painting."""
+    if cfg.get("window"):
+        d, sky = wm.room_depth(a, cfg["window"], cfg["hy"])
+        return d, sky, np.zeros_like(sky)
+    d, sky, _, plants_on_sky = wm.depth_map(a, cfg["hy"])
+    if cfg.get("building"):
+        d = wm.lift_building(d, sky, **cfg["building"])
+    return d, sky, plants_on_sky
+
+
 def build_scene(key, cfg):
     img = Image.open(os.path.join(ROOT, cfg["src"])).convert("RGB")
     assert img.size == (W, H), img.size
     a = np.asarray(img).astype(np.float32) / 255
-    d, sky, _, plants_on_sky = wm.depth_map(a, cfg["hy"])
+    d, sky, plants_on_sky = scene_depth(a, cfg)
     sky_soft = ndi.gaussian_filter(sky.astype(np.float32), 1.2)
     # behind a plant that stands against the sky there is sky, not hills: the layers behind
     # the plant get a hole there so the sky layer shows through
@@ -117,7 +156,7 @@ def build_scene(key, cfg):
     for kind in ["sky"] + [k[0] for k in KINDS]:
         arr, pad = layers[kind]
         im = Image.fromarray((np.clip(arr, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
-        name = f"{key}_{kind}.webp"
+        name = f"{key}_{kind}{REV}.webp"
         path = os.path.join(OUT, name)
         if kind == "sky":
             im.convert("RGB").save(path, quality=82, method=6)
@@ -127,7 +166,7 @@ def build_scene(key, cfg):
         meta.append(dict(kind=kind, src=f"/img/world/{name}", pad=list(pad), px=[w, h],
                          x=-100 * pad[0] / W, y=-100 * pad[1] / H, w=100 * w / W, h=100 * h / H))
         print(f"  wrote {name} {w}x{h} {os.path.getsize(path) // 1024} KB")
-    if cfg.get("water"):
+    if cfg.get("glint"):
         glint_meta, glint_alpha = build_glint(key, a, d, sky, cfg["water"])
         meta.append(glint_meta)
         layers["glint"] = (glint_alpha, (0, 0))
@@ -139,7 +178,8 @@ def build_glint(key, a, d, sky, outline):
     breathes (a still picture of moving water). The painting's own ripples, picked
     out along the water, cropped to the river."""
     pm = Image.new("L", (W, H), 0)
-    ImageDraw.Draw(pm).polygon(outline, fill=255)
+    for poly in outline:
+        ImageDraw.Draw(pm).polygon(poly, fill=255)
     inside = np.asarray(pm) > 0
     r, g, b = a[..., 0], a[..., 1], a[..., 2]
     greenish = (g > b + 0.03) & (g > r + 0.02)
@@ -155,7 +195,7 @@ def build_glint(key, a, d, sky, outline):
     rgba = np.zeros((y1 - y0, x1 - x0, 4), np.uint8)
     rgba[..., :3] = 255
     rgba[..., 3] = (alpha[y0:y1, x0:x1] * 255 + 0.5).astype(np.uint8)
-    name = f"{key}_glint.webp"
+    name = f"{key}_glint{REV}.webp"
     path = os.path.join(OUT, name)
     Image.fromarray(rgba, "RGBA").save(path, quality=80, alpha_quality=90, method=6)
     print(f"  wrote {name} {x1 - x0}x{y1 - y0} {os.path.getsize(path) // 1024} KB")
@@ -196,7 +236,7 @@ def export_portrait(key, cfg, layers):
             cy0, cy1, cx0, cx1 = int(ys.min()), int(ys.max()) + 1, int(xs.min()), int(xs.max()) + 1
             crop, top, cxo = crop[cy0:cy1, cx0:cx1], cy0, cx0
         im = Image.fromarray((np.clip(crop, 0, 1) * 255 + 0.5).astype(np.uint8), "RGBA")
-        name = f"{key}_{kind}.webp"
+        name = f"{key}_{kind}{REV}.webp"
         path = os.path.join(PORTRAIT_DIR, name)
         if kind == "sky":
             im.convert("RGB").save(path, quality=80, method=6)

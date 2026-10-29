@@ -1,4 +1,4 @@
-"""Depth estimate and sky mask for the two meadow / river paintings (used by build_world.py).
+"""Depth estimate and sky mask for the journey and wedding paintings (used by build_world.py).
 
 The paintings are single pictures, so depth is a rule of thumb that suits them:
   * sky: smooth, bright, not green, connected to the top edge;
@@ -85,6 +85,54 @@ def depth_map(a, horizon_y, edge_boost=0.3):
     d[sky] = 0
     d = np.where(sky, 0, ndi.gaussian_filter(d, 2.0))
     return d, sky, detail, plant_core
+
+
+def lift_building(d, sky, box, arch):
+    """The building at the end of the path stands in the middle distance, in front of the hills:
+    everything in its box that is neither sky nor nearer already is lifted to just inside the mid
+    layer. The round opening through it stays with the hills."""
+    H, W = d.shape
+    x0, y0, x1, y1 = box
+    yy, xx = np.mgrid[0:H, 0:W]
+    (cx, cy), r = arch
+    in_box = (xx >= x0) & (xx < x1) & (yy >= y0) & (yy < y1)
+    opening = (xx - cx) ** 2 + (yy - cy) ** 2 < r ** 2
+    lift = ndi.gaussian_filter((in_box & ~opening & ~sky).astype(np.float32), 3)
+    out = np.maximum(d, 0.24 * lift)
+    out[sky] = 0
+    return out
+
+
+def room_depth(a, window, floor_y):
+    """Depth for a room seen through to a round window (the wedding hall).
+
+    The view through the window is the far distance (its bright, smooth top is sky); the walls,
+    balconies and plants get nearer the further they are from the window, and the floor gets
+    nearer the lower it is.
+    """
+    H, W = a.shape[:2]
+    (cx, cy), r = window
+    yy, xx = np.mgrid[0:H, 0:W].astype(np.float32)
+    dist = np.sqrt((xx - cx) ** 2 + (yy - cy) ** 2)
+    inside = dist < r - 2
+    detail = detail_energy(a)
+    L = a.mean(2)
+    sky = inside & (yy < cy + 0.45 * r) & (detail < 0.2) & (L > 0.6) & (a[..., 2] >= a[..., 0] - 0.04)
+    sky = ndi.binary_opening(sky, iterations=2)
+    lab, _ = ndi.label(sky)
+    top = np.unique(lab[int(cy - r * 0.8): int(cy - r * 0.6), int(cx - 20): int(cx + 20)])
+    sky = ndi.binary_fill_holes(np.isin(lab, top[top > 0]))
+
+    walls = 0.26 + 0.42 * smoothstep(r, r + 900, dist)
+    floor = 0.42 + 0.5 * np.clip((yy - floor_y) / (H - floor_y), 0, 1) ** 0.8
+    d = np.where(yy > floor_y, np.maximum(walls, floor), walls)
+    # the plants and chrome pieces at the sides stand in front of the wall behind them
+    d = np.maximum(d, np.where(~inside, 0.2 + 0.55 * smoothstep(0.3, 0.9, detail) * smoothstep(r, r + 500, dist), 0))
+    soft_inside = ndi.gaussian_filter(inside.astype(np.float32), 2.0)
+    d = d * (1 - soft_inside) + 0.1 * soft_inside
+    d = ndi.gaussian_filter(d, 2.0)
+    d[sky] = 0
+    return np.clip(d, 0, 1), sky
 
 
 def sky_fill_rows(a, valid):

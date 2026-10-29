@@ -42,10 +42,12 @@ void main() {
  * (st: 0..1 across the stage), so the effects stay put on the scenery while the camera
  * scales the layer.
  * - wind: plants sway (more towards their tips, higher up the frame) in gusts that travel
- *   across the scene, with a finer flutter on top; never on the water
+ *   across the scene, with a finer flutter on top; only what is green moves (the path, the
+ *   building and the hall's walls stay put), and never the water
  * - waves: light rolls across the grass as the wind bends it (only on green, below the horizon)
  * - shadow: cloud shadows drift over the ground, in perspective
  * - drift: the sky creeps sideways and its clouds slowly change shape
+ * - bubble: a soap bubble painted into the sky floats up and down (u_bubble: centre, radius, on)
  * - water: the river ripples (perspective-correct, flowing towards the viewer) and sparkles
  */
 export const LAYER_FS = `${PRECISION}
@@ -66,6 +68,7 @@ uniform float u_hasWater;
 uniform float u_paintFade;
 uniform vec4 u_paint;
 uniform float u_cutout;
+uniform vec4 u_bubble;
 
 void main() {
   vec2 st = u_box.xy + v_uv * u_box.zw;
@@ -95,8 +98,21 @@ void main() {
     off += u_drift * 0.35 * (vec2(fbm2(st * vec2(24.0, 40.0) + t * 0.06), fbm2(st * vec2(24.0, 40.0) - t * 0.05 + 40.0)) - 0.5);
   }
 
+  if (u_bubble.z > 0.0 && u_bubble.w > 0.0) {
+    // the bubble and a little sky around it shift together, so it bobs without a seam
+    // st runs 0..1 across a 16:9 stage; distances are in stage heights, like the radius
+    vec2 bd = (st - u_bubble.xy) * vec2(16.0 / 9.0, 1.0);
+    float bm = smoothstep(u_bubble.z * 1.6, u_bubble.z * 1.05, length(bd));
+    off -= bm * u_bubble.z * vec2(0.18 * sin(t * 0.53 + 1.0), 0.32 * sin(t * 0.81)) * vec2(9.0 / 16.0, 1.0);
+  }
+
   if (u_wind > 0.0) {
-    float h = mix(1.0, smoothstep(1.02, 0.12, st.y), u_windTop);
+    // how leafy this spot is, read off the painting a little blurred (so a leaf's edge and the
+    // stone behind it move together rather than tearing apart)
+    vec4 here = texture2D(u_tex, 1.0 - abs(1.0 - abs(v_uv)), 2.0);
+    vec3 hc = here.a > 0.0 ? here.rgb / here.a : here.rgb;
+    float leafy = smoothstep(0.0, 0.06, hc.g - max(hc.r, hc.b) * 0.92) * smoothstep(0.05, 0.3, here.a);
+    float h = mix(1.0, smoothstep(1.02, 0.12, st.y), u_windTop) * leafy;
     float gust = 0.55 + 0.45 * sin(t * 0.43 + st.x * 2.3) * sin(t * 0.17 + 1.3);
     float wave = sin(st.x * 9.0 - t * 1.25 + fbm2(st * vec2(30.0, 18.0) + t * 0.12) * 4.0);
     float flutter = fbm2(st * vec2(140.0, 90.0) + vec2(t * 1.6, t * 0.5)) - 0.5;

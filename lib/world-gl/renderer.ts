@@ -23,9 +23,17 @@ export type SceneDef = {
   /** Where the painting itself is, in % of the stage (outside it the layers' padding is a mirror
    *  image). The whole stage unless the stage is a crop of a wider painting (the phone). */
   paint?: Box;
+  /** A soap bubble painted into the sky, which bobs: its centre and radius in % of the stage
+   *  height, as { x, y } in % of the stage and r in % of its height. */
+  bubble?: { x: number; y: number; r: number };
 };
 /** Where the stage sits, in CSS px relative to the canvas. */
-export type StageRect = { left: number; top: number; width: number; height: number };
+export type StageRect = {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+};
 
 export type WorldGLPose = {
   camera: Record<SceneId, number>;
@@ -90,14 +98,27 @@ const ORDER: readonly Item[] = [
   ['journey', 'fog3'],
   ['journey', 'fore'],
 ];
-const FOG_NEARNESS: Record<FogKind, number> = { fog1: 0.4, fog2: 0.74, fog3: 0.86 };
+const FOG_NEARNESS: Record<FogKind, number> = {
+  fog1: 0.4,
+  fog2: 0.74,
+  fog3: 0.86,
+};
 const FOG_SEED: Record<FogKind, number> = { fog1: 11, fog2: 47, fog3: 83 };
 // a sheet of mist overhangs the stage, so its soft edge stays out of sight as it scales
 const FOG_BOX: Box = { x: -30, y: -30, w: 160, h: 160 };
 
 // how much each depth is moved by the wind, the light rolling over the grass, cloud
 // shadows and the sky's drift (wind and drift in stage widths)
-const EFFECTS: Record<Kind, { wind: number; windTop: number; waves: number; shadow: number; drift: number }> = {
+const EFFECTS: Record<
+  Kind,
+  {
+    wind: number;
+    windTop: number;
+    waves: number;
+    shadow: number;
+    drift: number;
+  }
+> = {
   sky: { wind: 0, windTop: 0, waves: 0, shadow: 0, drift: 0.006 },
   far: { wind: 0, windTop: 0, waves: 0, shadow: 0.06, drift: 0 },
   mid: { wind: 0.0006, windTop: 0, waves: 0.05, shadow: 0.08, drift: 0 },
@@ -111,7 +132,11 @@ const GRAIN = 0.022;
 
 const clamp01 = (n: number) => Math.min(1, Math.max(0, n));
 
-function compile(gl: WebGLRenderingContext, vs: string, fs: string): WebGLProgram | null {
+function compile(
+  gl: WebGLRenderingContext,
+  vs: string,
+  fs: string,
+): WebGLProgram | null {
   const program = gl.createProgram();
   if (!program) return null;
   for (const [type, src] of [
@@ -137,11 +162,14 @@ function compile(gl: WebGLRenderingContext, vs: string, fs: string): WebGLProgra
   return program;
 }
 
-function uniforms(gl: WebGLRenderingContext, program: WebGLProgram, names: readonly string[]) {
-  return Object.fromEntries(names.map((n) => [n, gl.getUniformLocation(program, n)])) as Record<
-    string,
-    WebGLUniformLocation | null
-  >;
+function uniforms(
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  names: readonly string[],
+) {
+  return Object.fromEntries(
+    names.map((n) => [n, gl.getUniformLocation(program, n)]),
+  ) as Record<string, WebGLUniformLocation | null>;
 }
 
 function loadImage(src: string): Promise<HTMLImageElement> {
@@ -154,7 +182,10 @@ function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
-export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions): WorldGL | null {
+export function createWorldGL(
+  canvas: HTMLCanvasElement,
+  options: WorldGLOptions,
+): WorldGL | null {
   const attrs: WebGLContextAttributes = {
     alpha: true,
     premultipliedAlpha: true,
@@ -163,8 +194,12 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
     stencil: false,
     powerPreference: options.lite ? 'low-power' : 'high-performance',
   };
-  const gl2 = canvas.getContext('webgl2', attrs) as WebGL2RenderingContext | null;
-  const gl = (gl2 ?? canvas.getContext('webgl', attrs)) as WebGLRenderingContext | null;
+  const gl2 = canvas.getContext(
+    'webgl2',
+    attrs,
+  ) as WebGL2RenderingContext | null;
+  const gl = (gl2 ??
+    canvas.getContext('webgl', attrs)) as WebGLRenderingContext | null;
   if (!gl) return null;
   const isGL2 = !!gl2;
 
@@ -173,19 +208,61 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
   const postProgram = compile(gl, POST_VS, POST_FS);
   if (!layerProgram || !fogProgram || !postProgram) return null;
   const lu = uniforms(gl, layerProgram, [
-    'u_rect', 'u_uv', 'u_canvas', 'u_tex', 'u_water', 'u_noise', 'u_box', 'u_vp', 'u_time', 'u_opacity',
-    'u_wind', 'u_windTop', 'u_waves', 'u_shadow', 'u_drift', 'u_hasWater', 'u_paintFade', 'u_paint', 'u_cutout',
+    'u_rect',
+    'u_uv',
+    'u_canvas',
+    'u_tex',
+    'u_water',
+    'u_noise',
+    'u_box',
+    'u_vp',
+    'u_time',
+    'u_opacity',
+    'u_wind',
+    'u_windTop',
+    'u_waves',
+    'u_shadow',
+    'u_drift',
+    'u_hasWater',
+    'u_paintFade',
+    'u_paint',
+    'u_cutout',
+    'u_bubble',
   ]);
   const fu = uniforms(gl, fogProgram, [
-    'u_rect', 'u_uv', 'u_canvas', 'u_noise', 'u_box', 'u_vp', 'u_time', 'u_ambient', 'u_fog', 'u_seed', 'u_opacity', 'u_color',
+    'u_rect',
+    'u_uv',
+    'u_canvas',
+    'u_noise',
+    'u_box',
+    'u_vp',
+    'u_time',
+    'u_ambient',
+    'u_fog',
+    'u_seed',
+    'u_opacity',
+    'u_color',
   ]);
   const pu = uniforms(gl, postProgram, [
-    'u_scene', 'u_vp', 'u_sun', 'u_aspect', 'u_blur', 'u_light', 'u_grain', 'u_time', 'u_res', 'u_noise',
+    'u_scene',
+    'u_vp',
+    'u_sun',
+    'u_aspect',
+    'u_blur',
+    'u_light',
+    'u_grain',
+    'u_time',
+    'u_res',
+    'u_noise',
   ]);
 
   const quad = gl.createBuffer();
   gl.bindBuffer(gl.ARRAY_BUFFER, quad);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]), gl.STATIC_DRAW);
+  gl.bufferData(
+    gl.ARRAY_BUFFER,
+    new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]),
+    gl.STATIC_DRAW,
+  );
   gl.enableVertexAttribArray(0);
   gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
@@ -196,25 +273,49 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
     const data = new Uint8Array(size * size * 4);
     for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 256) | 0;
     gl.bindTexture(gl.TEXTURE_2D, noise);
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, size, size, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+    gl.texImage2D(
+      gl.TEXTURE_2D,
+      0,
+      gl.RGBA,
+      size,
+      size,
+      0,
+      gl.RGBA,
+      gl.UNSIGNED_BYTE,
+      data,
+    );
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
   }
 
-  function upload(img: HTMLImageElement, mipmaps: boolean): WebGLTexture | null {
+  function upload(
+    img: HTMLImageElement,
+    mipmaps: boolean,
+  ): WebGLTexture | null {
     const tex = gl!.createTexture();
     gl!.bindTexture(gl!.TEXTURE_2D, tex);
     gl!.pixelStorei(gl!.UNPACK_PREMULTIPLY_ALPHA_WEBGL, true);
-    gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, gl!.RGBA, gl!.UNSIGNED_BYTE, img);
+    gl!.texImage2D(
+      gl!.TEXTURE_2D,
+      0,
+      gl!.RGBA,
+      gl!.RGBA,
+      gl!.UNSIGNED_BYTE,
+      img,
+    );
     gl!.pixelStorei(gl!.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
     gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
     gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
     if (mipmaps && isGL2) {
       gl!.generateMipmap(gl!.TEXTURE_2D);
-      gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR_MIPMAP_LINEAR);
+      gl!.texParameteri(
+        gl!.TEXTURE_2D,
+        gl!.TEXTURE_MIN_FILTER,
+        gl!.LINEAR_MIPMAP_LINEAR,
+      );
     } else {
       gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
     }
@@ -229,10 +330,19 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
     const def = options.scenes[scene];
     for (const layer of def.layers) {
       if (!(layer.kind in EFFECTS)) continue;
-      jobs.push(loadImage(layer.src).then((img) => void textures.set(`${scene}-${layer.kind}`, upload(img, true))));
+      jobs.push(
+        loadImage(layer.src).then(
+          (img) =>
+            void textures.set(`${scene}-${layer.kind}`, upload(img, true)),
+        ),
+      );
     }
     if (def.water) {
-      jobs.push(loadImage(def.water).then((img) => void (water[scene] = upload(img, false))));
+      jobs.push(
+        loadImage(def.water).then(
+          (img) => void (water[scene] = upload(img, false)),
+        ),
+      );
     }
   });
 
@@ -249,14 +359,30 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
     if (fbo) gl!.deleteFramebuffer(fbo);
     fboTex = gl!.createTexture();
     gl!.bindTexture(gl!.TEXTURE_2D, fboTex);
-    gl!.texImage2D(gl!.TEXTURE_2D, 0, gl!.RGBA, w, h, 0, gl!.RGBA, gl!.UNSIGNED_BYTE, null);
+    gl!.texImage2D(
+      gl!.TEXTURE_2D,
+      0,
+      gl!.RGBA,
+      w,
+      h,
+      0,
+      gl!.RGBA,
+      gl!.UNSIGNED_BYTE,
+      null,
+    );
     gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MIN_FILTER, gl!.LINEAR);
     gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_MAG_FILTER, gl!.LINEAR);
     gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_S, gl!.CLAMP_TO_EDGE);
     gl!.texParameteri(gl!.TEXTURE_2D, gl!.TEXTURE_WRAP_T, gl!.CLAMP_TO_EDGE);
     fbo = gl!.createFramebuffer();
     gl!.bindFramebuffer(gl!.FRAMEBUFFER, fbo);
-    gl!.framebufferTexture2D(gl!.FRAMEBUFFER, gl!.COLOR_ATTACHMENT0, gl!.TEXTURE_2D, fboTex, 0);
+    gl!.framebufferTexture2D(
+      gl!.FRAMEBUFFER,
+      gl!.COLOR_ATTACHMENT0,
+      gl!.TEXTURE_2D,
+      fboTex,
+      0,
+    );
     gl!.bindFramebuffer(gl!.FRAMEBUFFER, null);
   }
 
@@ -306,7 +432,9 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
     const stp = S.top * dpr;
     const sw = S.width * dpr;
     const sh = S.height * dpr;
-    const t = options.still ? stillTime : (((now - t0) / 1000) * (options.calm ? 0.5 : 1)) % 3600;
+    const t = options.still
+      ? stillTime
+      : (((now - t0) / 1000) * (options.calm ? 0.5 : 1)) % 3600;
 
     // the camera's speed eases off when the poses stop coming
     if (now - lastPoseAt > 120) speed = 0;
@@ -324,13 +452,34 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
       if (!current.show.includes(scene)) continue;
       const def = options.scenes[scene];
       const isFog = kind.startsWith('fog');
-      const nearness = isFog ? FOG_NEARNESS[kind as FogKind] : NEARNESS[kind as Kind];
-      const scale = perspectiveScale(nearness, current.camera[scene] - (isFog ? current.mistLag : 0));
+      const nearness = isFog
+        ? FOG_NEARNESS[kind as FogKind]
+        : NEARNESS[kind as Kind];
+      const scale = perspectiveScale(
+        nearness,
+        current.camera[scene] - (isFog ? current.mistLag : 0),
+      );
       if (scale >= GONE) continue;
       let opacity = 1;
-      if (scene === 'journey' && (kind === 'sky' || kind === 'far' || kind === 'fog1')) opacity = current.backdrop;
-      if (scene === 'wedding' && kind !== 'sky' && kind !== 'far' && kind !== 'fog1') opacity = current.front;
-      if (scene === 'journey' && kind !== 'sky' && kind !== 'far' && kind !== 'fog1') opacity = current.meadow;
+      if (
+        scene === 'journey' &&
+        (kind === 'sky' || kind === 'far' || kind === 'fog1')
+      )
+        opacity = current.backdrop;
+      if (
+        scene === 'wedding' &&
+        kind !== 'sky' &&
+        kind !== 'far' &&
+        kind !== 'fog1'
+      )
+        opacity = current.front;
+      if (
+        scene === 'journey' &&
+        kind !== 'sky' &&
+        kind !== 'far' &&
+        kind !== 'fog1'
+      )
+        opacity = current.meadow;
       if (opacity <= 0.002) continue;
 
       const layer = isFog ? FOG_BOX : def.layers.find((l) => l.kind === kind);
@@ -338,7 +487,12 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
       // a layer's quad overhangs it (mirrored in the shader), so a layer that shrinks a little
       // (the camera a step back) or sways never shows its edge
       const mx = isFog ? 0 : OVERHANG;
-      const box = { x: layer.x - layer.w * mx, y: layer.y - layer.h * mx, w: layer.w * (1 + 2 * mx), h: layer.h * (1 + 2 * mx) };
+      const box = {
+        x: layer.x - layer.w * mx,
+        y: layer.y - layer.h * mx,
+        w: layer.w * (1 + 2 * mx),
+        h: layer.h * (1 + 2 * mx),
+      };
       const vx = sl + (sw * def.vp.x) / 100;
       const vy = stp + (sh * def.vp.y) / 100;
       const x0 = vx + (sl + (sw * box.x) / 100 - vx) * scale;
@@ -358,7 +512,13 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
         gl!.activeTexture(gl!.TEXTURE1);
         gl!.bindTexture(gl!.TEXTURE_2D, noise);
         gl!.uniform1i(fu.u_noise, 1);
-        gl!.uniform4f(fu.u_box, box.x / 100, box.y / 100, box.w / 100, box.h / 100);
+        gl!.uniform4f(
+          fu.u_box,
+          box.x / 100,
+          box.y / 100,
+          box.w / 100,
+          box.h / 100,
+        );
         gl!.uniform2f(fu.u_vp, def.vp.x / 100, def.vp.y / 100);
         gl!.uniform1f(fu.u_time, t);
         gl!.uniform1f(fu.u_ambient, ambient);
@@ -387,7 +547,13 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
         gl!.bindTexture(gl!.TEXTURE_2D, w ?? noise);
         gl!.uniform1i(lu.u_water, 2);
         gl!.uniform1f(lu.u_hasWater, w && kind !== 'sky' ? 1 : 0);
-        gl!.uniform4f(lu.u_box, layer.x / 100, layer.y / 100, layer.w / 100, layer.h / 100);
+        gl!.uniform4f(
+          lu.u_box,
+          layer.x / 100,
+          layer.y / 100,
+          layer.w / 100,
+          layer.h / 100,
+        );
         gl!.uniform2f(lu.u_vp, def.vp.x / 100, def.vp.y / 100);
         gl!.uniform1f(lu.u_time, t);
         gl!.uniform1f(lu.u_opacity, opacity);
@@ -396,10 +562,27 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
         gl!.uniform1f(lu.u_waves, fx.waves * motion);
         gl!.uniform1f(lu.u_shadow, fx.shadow);
         gl!.uniform1f(lu.u_drift, fx.drift * motion);
-        gl!.uniform1f(lu.u_paintFade, kind === 'near' || kind === 'fore' ? 1 : 0);
+        gl!.uniform1f(
+          lu.u_paintFade,
+          kind === 'near' || kind === 'fore' ? 1 : 0,
+        );
         gl!.uniform1f(lu.u_cutout, kind === 'sky' || !isGL2 ? 0 : 1);
+        const bubble = def.bubble;
+        gl!.uniform4f(
+          lu.u_bubble,
+          (bubble?.x ?? 0) / 100,
+          (bubble?.y ?? 0) / 100,
+          (bubble?.r ?? 0) / 100,
+          motion,
+        );
         const paint = def.paint ?? { x: 0, y: 0, w: 100, h: 100 };
-        gl!.uniform4f(lu.u_paint, paint.x / 100, paint.y / 100, (paint.x + paint.w) / 100, (paint.y + paint.h) / 100);
+        gl!.uniform4f(
+          lu.u_paint,
+          paint.x / 100,
+          paint.y / 100,
+          (paint.x + paint.w) / 100,
+          (paint.y + paint.h) / 100,
+        );
       }
       gl!.drawArrays(gl!.TRIANGLE_STRIP, 0, 4);
     }
@@ -413,7 +596,12 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
     gl!.enable(gl!.SCISSOR_TEST);
     const sx0 = Math.max(0, Math.floor(sl));
     const sy0 = Math.max(0, Math.floor(H - (stp + sh)));
-    gl!.scissor(sx0, sy0, Math.min(W, Math.ceil(sl + sw)) - sx0, Math.min(H, Math.ceil(H - stp)) - sy0);
+    gl!.scissor(
+      sx0,
+      sy0,
+      Math.min(W, Math.ceil(sl + sw)) - sx0,
+      Math.min(H, Math.ceil(H - stp)) - sy0,
+    );
     gl!.useProgram(postProgram);
     gl!.activeTexture(gl!.TEXTURE0);
     gl!.bindTexture(gl!.TEXTURE_2D, fboTex);
@@ -421,9 +609,16 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
     gl!.activeTexture(gl!.TEXTURE1);
     gl!.bindTexture(gl!.TEXTURE_2D, noise);
     gl!.uniform1i(pu.u_noise, 1);
-    const lead = current.show.includes('wedding') && current.front > 0.5 ? 'wedding' : (current.show[0] ?? 'journey');
+    const lead =
+      current.show.includes('wedding') && current.front > 0.5
+        ? 'wedding'
+        : (current.show[0] ?? 'journey');
     const vp = options.scenes[lead].vp;
-    gl!.uniform2f(pu.u_vp, (sl + (sw * vp.x) / 100) / W, 1 - (stp + (sh * vp.y) / 100) / H);
+    gl!.uniform2f(
+      pu.u_vp,
+      (sl + (sw * vp.x) / 100) / W,
+      1 - (stp + (sh * vp.y) / 100) / H,
+    );
     gl!.uniform2f(pu.u_sun, (sl + sw * 0.5) / W, 1 - (stp + sh * 0.18) / H);
     gl!.uniform1f(pu.u_aspect, W / H);
     gl!.uniform1f(pu.u_blur, options.still || options.calm ? 0 : blur);
@@ -439,7 +634,8 @@ export function createWorldGL(canvas: HTMLCanvasElement, options: WorldGLOptions
   function loop(now: number) {
     raf = 0;
     if (lost) return;
-    const visible = document.visibilityState === 'visible' && current.show.length > 0;
+    const visible =
+      document.visibilityState === 'visible' && current.show.length > 0;
     if (!visible) return;
     // every frame while the camera moves; at rest the scenery's slow motion needs only 30 a second
     // (fewer on a phone)

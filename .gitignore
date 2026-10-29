@@ -23,3 +23,6 @@ prototype/video/intro2.mp4
 # Misc
 *.tsbuildinfo
 next-env.d.ts
+
+# The 3.0 source media (about 900 MB); the pipeline scripts read it, the site ships only their output
+/3.0/

@@ -1,5 +1,5 @@
 """
-Slices the v3 mockups into animatable layers (docs/REDESIGN_PLAN.md, step 1).
+Slices the v3 mockups and the 3.0 backgrounds into animatable layers (docs/REDESIGN_PLAN.md, step 1).
 
     python scripts/design/prepare_assets.py [--out DIR]
 
@@ -20,6 +20,12 @@ plate (01-plate-clean.jpg, registered 1:1 with the mockup); on 04/05 the baked-i
 logo, nav pill, RSVP and folder are painted out, because the site renders those as
 real elements. Expect small seams up close.
 
+Since the 3.0 assets (October 2026) the backgrounds come from docs/design/v4/: screen 01's plate
+and screen 02's bezel are the same frames as v3 at a higher resolution, and screens 04/05 are the
+new journey path and wedding hall, which are clean (nothing to paint out); their folder and cursor
+come from the designer's transparent overlays. Changed pictures get a new name (-v4), because
+media is cached for a week as immutable (vercel.json).
+
 Coordinates below were measured on the mockups:
   01-03 -> 3288 x 1850 space, 04/05 -> 1920 x 1080 space.
 """
@@ -34,6 +40,7 @@ from scipy import ndimage as ndi
 
 REPO = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 ROOT = os.path.join(REPO, "docs", "design", "v3")
+V4 = os.path.join(REPO, "docs", "design", "v4")
 _args = argparse.ArgumentParser(description=__doc__.splitlines()[1])
 _args.add_argument("--out", help="write flat into DIR instead of the site's public/ tree")
 _out_arg = _args.parse_args().out
@@ -63,8 +70,8 @@ manifest = {}
 
 
 # ---------------------------------------------------------------- helpers
-def load(name, width):
-    im = Image.open(os.path.join(ROOT, name)).convert("RGB")
+def load(name, width, root=ROOT):
+    im = Image.open(os.path.join(root, name)).convert("RGB")
     h = round(im.height * width / im.width)
     return np.asarray(im.resize((width, h), Image.Resampling.LANCZOS)).astype(np.float32)
 
@@ -191,7 +198,7 @@ def bubble_sprite(img, bg, cx, cy, r, name, key, W, H, exclude=None):
 # ---------------------------------------------------------------- screen 01
 print("screen 01 ...")
 mock = load("01-password.jpg", W_HI)            # has the heading, pill, logo and the couple on the screen
-img = load("01-plate-clean.jpg", W_HI)          # Chao's plate: same frame, no text, no pill, no logo
+img = load("01-password-plate.jpg", W_HI, V4)   # the 3.0 plate: same frame, no text, no pill, no logo
 assert img.shape == mock.shape, "plate and mockup must share one frame"
 H, W = img.shape[:2]
 sh = (H, W)
@@ -204,15 +211,9 @@ for cx, cy, r in bub01:
 bg = inpaint(img, holes)
 
 for i, (cx, cy, r) in enumerate(bub01):
-    bubble_sprite(img, bg, cx, cy, r, f"s01_bubble{i}.webp", f"s01_bubble{i}", W, H)
+    bubble_sprite(img, bg, cx, cy, r, f"s01_bubble{i}-v4.webp", f"s01_bubble{i}", W, H)
 
-# the wordmark exists only in the mockup; its alpha is how much brighter it is than the plate's sky
-logo_box = s(1520, 125, 1777, 350)
-holes_logo = rect(sh, *logo_box)
-la = np.clip((lum(mock) - lum(img)) / np.maximum(255 - lum(img), 1) * 1.35, 0, 1) * holes_logo
-la[la < 0.06] = 0
-box = save_rgba(np.full_like(img, 255), la, "s01_logo.webp", crop=logo_box)
-place("s01_logo", "s01_logo.webp", box, W, H)
+# (the wordmark is drawn by the page now: components/site/chrome/Wordmark.tsx, from the 3.0 logo)
 
 clean = bg  # bubbles removed; the heading, subtitle and pill were never in the plate
 
@@ -237,16 +238,16 @@ fg_alpha = feather(ground, 1.2)
 # the monitor on its own, so it can stay in focus while the meadow blurs during the zoom.
 # It is cut from the mockup so it matches the couple-on-screen crop laid over it.
 mon_mask = ndi.binary_dilation(polygon(sh, [(x * K, y * K) for x, y in mon]), iterations=2)
-box = save_rgba(mock, feather(mon_mask, 1.0), "s01_monitor.webp")
-place("s01_monitor", "s01_monitor.webp", box, W, H)
-box = save_rgba(clean, fg_alpha, "s01_fg.webp", crop=(0, 0, W, H))
-place("s01_fg", "s01_fg.webp", box, W, H)
+box = save_rgba(mock, feather(mon_mask, 1.0), "s01_monitor-v4.webp")
+place("s01_monitor", "s01_monitor-v4.webp", box, W, H)
+box = save_rgba(clean, fg_alpha, "s01_fg-v4.webp", crop=(0, 0, W, H))
+place("s01_fg", "s01_fg-v4.webp", box, W, H)
 
 sky = inpaint(clean, ndi.binary_dilation(ground, iterations=8), iters=30)
 pad = round(W * 0.06)  # mirrored margin so the clouds can drift sideways
 sky = np.pad(sky, ((0, 0), (pad, pad), (0, 0)), mode="reflect")
-save_rgb(sky, "s01_sky.jpg", 84)
-manifest["s01_sky"] = dict(src=target("s01_sky.jpg")[1], px=[sky.shape[1], sky.shape[0]],
+save_rgb(sky, "s01_sky-v4.jpg", 84)
+manifest["s01_sky"] = dict(src=target("s01_sky-v4.jpg")[1], px=[sky.shape[1], sky.shape[0]],
                            x=-100 * pad / W, y=0, w=100 + 200 * pad / W, h=100)
 
 orig = Image.open(os.path.join(ROOT, "01-password.jpg")).convert("RGB")
@@ -254,16 +255,17 @@ scr = (1514, 616, 1684, 752)
 orig.crop(scr).save(target("s01_screen.jpg")[0], quality=90)
 place("s01_screen", "s01_screen.jpg", scr, 3288, 1850)
 manifest["s01_screen"]["px"] = [scr[2] - scr[0], scr[3] - scr[1]]
-# where the live password pill and the heading sit (% of the stage), measured on the mockup
-manifest["s01_input"] = dict(x=100 * 646 / 1600, y=100 * 533 / 900, w=100 * 294 / 1600, h=100 * 75 / 900)
-manifest["s01_heading"] = dict(cx=100 * 986 / 1998, cy=100 * 590 / 1125, size=100 * 45 / 1998)
-manifest["s01_subtitle"] = dict(cx=100 * 986 / 1998, cy=100 * 639 / 1125, size=100 * 14.5 / 1998)
+# where the live password pill and the heading sit (% of the stage), measured on the 3.0
+# reference (3.0/reference screenshots/01 - password.png, 1920 x 1080)
+manifest["s01_input"] = dict(x=100 * 732 / 1920, y=100 * 683 / 1080, w=100 * 440 / 1920, h=100 * 45 / 1080)
+manifest["s01_heading"] = dict(cx=100 * 958 / 1920, cy=100 * 589 / 1080, size=100 * 55 / 1920)
+manifest["s01_subtitle"] = dict(cx=100 * 960 / 1920, cy=100 * 646 / 1080, size=100 * 15.5 / 1920)
 
 # ---------------------------------------------------------------- screen 02
 print("screen 02 ...")
-_s02 = load("02-splash-login-1.jpg", W_HI)
-save_rgb(_s02, "s02_bg.jpg", 86)
-full("s02_bg", "s02_bg.jpg", _s02)
+_s02 = load("02-splash-login-1.jpg", W_HI, V4)
+save_rgb(_s02, "s02_bg-v4.jpg", 86)
+full("s02_bg", "s02_bg-v4.jpg", _s02)
 manifest["s02_screen"] = dict(x=100 * 152 / 3288, y=100 * 73 / 1850, w=100 * 2977 / 3288, h=100 * 1723 / 1850)
 
 # ---------------------------------------------------------------- screens 04 / 05
@@ -271,103 +273,34 @@ print("screens 04 / 05 ...")
 W, H = 1920, 1080
 sh = (H, W)
 
-# What the mockups bake in but the site renders for real: the wordmark, the nav pill, RSVP.
-CHROME = [(45, 30, 160, 130), (580, 36, 1326, 120), (1722, 36, 1882, 120)]
-chrome = np.zeros(sh, bool)
-for b in CHROME:
-    chrome |= rect(sh, *b)
+# The 3.0 journey path and wedding hall are clean paintings; the folder (icon and label) and the
+# cursor come from the designer's transparent overlays, drawn on the same 1920 x 1080 frame.
+FOLDER_ICON = {"j00": (1114, 803, 1208, 873), "j05": (920, 486, 1014, 556)}
+CURSOR = {"j00": (1224, 884, 1260, 934), "j05": (1035, 539, 1070, 589)}
 
 
-def matte(im, bg, region):
-    """Alpha for a pixel-art sprite sitting on `bg`: solid inside, soft at the edge."""
-    d = np.abs(im - bg).max(2)
-    solid = ndi.binary_fill_holes((d > 45) & region)
-    a = np.maximum(np.clip((d - 14) / 36.0, 0, 1) * region, feather(solid, 0.6))
-    F = np.where(a[..., None] > 0.9, im, bg + (im - bg) / np.maximum(a, 0.08)[..., None])
-    return F, a
-
-
-# (mockup, name, folder icon + label box, cursor box, area to paint out)
-for src, out, fold_box, cur_box, hole_box in [
-    ("04-journey-00.jpg", "j00", (905, 480, 1010, 598), (1004, 536, 1064, 616), (895, 474, 1075, 625)),
-    ("05-new-chapter.jpg", "j05", (900, 480, 1012, 598), (1014, 519, 1072, 599), (895, 474, 1080, 625)),
-]:
-    im = load(src, W)
-    bg = inpaint(im, chrome | rect(sh, *hole_box))
-    save_rgb(bg, out + "_bg.jpg", 88)
-    full(out + "_bg", out + "_bg.jpg", bg)
-    cur = rect(sh, *cur_box)
-    F, a = matte(im, bg, rect(sh, *fold_box) & ~cur)
-    a[560:, :] = 0  # below the icon is the painted label; the scenes draw it as text now
-    # -v2: images are cached for a week as immutable (vercel.json), so a changed picture needs a new name
-    box = save_rgba(F, a, out + "_folder-v2.webp")
-    place(out + "_folder", out + "_folder-v2.webp", box, W, H)
-    if out == "j00":
-        F, a = matte(im, bg, cur)
-        box = save_rgba(F, a, "cursor.webp", crop=cur_box)
-        place("cursor", "cursor.webp", box, W, H)
-
-manifest["j05_cursor"] = dict(x=100 * 1016 / W, y=100 * 524 / H)
-
-# --- the journey mockups, used below for the stand-in photos. (The glass window itself is
-# CSS now: components/site/scene/GlassWindow.tsx, measured in config/glass-windows.ts.)
-win_box = (194, 244, 1716, 962)
-wins = [load(f"04-journey-{n}.jpg", W) for n in range(6)]
-
-
-# --- stand-in chapter photos, cropped from the mockups until the originals arrive.
-# Boxes were read off the mockups (+-5 px), then snapped to the strongest edge nearby.
-def sheet(c, tx=0, ty=0):
-    return tuple(round(v) for v in (210 + (c[0] - tx) / 0.6, 340 + (c[1] - ty) / 0.6,
-                                    210 + (c[2] - tx) / 0.6, 340 + (c[3] - ty) / 0.6))
-
-
-APPROX = {
-    1: [(885, 412, 1181, 628), (1226, 412, 1598, 628), (1398, 656, 1633, 871)],
-    2: [sheet(c) for c in [(317, 49, 429, 201), (461, 49, 538, 201), (570, 49, 827, 192), (655, 203, 842, 328)]],
-    3: [sheet(c, 894, 0) for c in [(1430, 29, 1575, 221), (1610, 31, 1724, 173), (1486, 237, 1557, 331), (1588, 198, 1761, 339)]],
-    4: [sheet(c, 0, 363) for c in [(281, 400, 461, 496), (471, 402, 561, 496), (570, 402, 755, 497), (765, 415, 877, 496),
-                                   (281, 516, 371, 611), (384, 519, 608, 611), (621, 517, 732, 609), (743, 517, 868, 607),
-                                   (739, 624, 872, 692)]],
-    5: [sheet(c, 894, 363) for c in [(1442, 427, 1612, 659), (1628, 427, 1708, 511), (1628, 522, 1748, 659)]],
-}
-VIDEO_BOX = (260, 388, 840, 871)  # the dark placeholder, the same on every tab (measured on tab 1)
-
-
-def snap(L, box, reach=10):
-    """Move each side of `box` to the strongest brightness edge within `reach` px."""
+def sprite(overlay, box, name, key):
     x0, y0, x1, y1 = box
-    mx, my = (x1 - x0) // 5, (y1 - y0) // 5
-    gx = np.abs(np.diff(L, axis=1))
-    gy = np.abs(np.diff(L, axis=0))
-
-    def best(prof, c):
-        lo = max(0, c - reach)
-        return lo + int(np.argmax(prof[lo : c + reach + 1]))
-
-    px_ = gx[y0 + my : y1 - my, :].mean(0)
-    py_ = gy[:, x0 + mx : x1 - mx].mean(1)
-    return best(px_, x0), best(py_, y0), best(px_, x1) + 1, best(py_, y1) + 1
+    crop = overlay.crop((x0 - 2, y0 - 2, x1 + 2, y1 + 2))
+    crop.save(target(name)[0], quality=92, alpha_quality=100, method=6)
+    place(key, name, (x0 - 2, y0 - 2, x1 + 2, y1 + 2), W, H)
 
 
-manifest["chapters"] = {}
-INSET = 3
-ww, wh = win_box[2] - win_box[0], win_box[3] - win_box[1]
-for ch, boxes in APPROX.items():
-    L = lum(wins[ch])
-    items = []
-    for k, bx in enumerate(boxes, 1):
-        x0, y0, x1, y1 = snap(L, bx)
-        x0, y0, x1, y1 = x0 + INSET, y0 + INSET, x1 - INSET, y1 - INSET
-        name = f"ch{ch}_{k}.jpg"
-        Image.fromarray(np.clip(wins[ch][y0:y1, x0:x1], 0, 255).astype(np.uint8)).save(target(name)[0], quality=90)
-        items.append(dict(src=target(name)[1], px=[x1 - x0, y1 - y0],
-                          x=100 * (x0 - win_box[0]) / ww, y=100 * (y0 - win_box[1]) / wh,
-                          w=100 * (x1 - x0) / ww, h=100 * (y1 - y0) / wh))
-    manifest["chapters"][str(ch)] = items
-manifest["window_video_slot"] = dict(
-    x=100 * (VIDEO_BOX[0] - win_box[0]) / ww, y=100 * (VIDEO_BOX[1] - win_box[1]) / wh,
-    w=100 * (VIDEO_BOX[2] - VIDEO_BOX[0]) / ww, h=100 * (VIDEO_BOX[3] - VIDEO_BOX[1]) / wh)
+for src, overlay_src, out in [
+    ("03-journey.jpg", "03-journey-folder-overlay.png", "j00"),
+    ("04-wedding.jpg", "04-wedding-folder-overlay.png", "j05"),
+]:
+    bg = load(src, W, V4)
+    save_rgb(bg, out + "_bg-v4.jpg", 88)
+    full(out + "_bg", out + "_bg-v4.jpg", bg)
+    overlay = Image.open(os.path.join(V4, overlay_src)).convert("RGBA")
+    assert overlay.size == (W, H), overlay.size
+    sprite(overlay, FOLDER_ICON[out], out + "_folder-v4.webp", out + "_folder")
+    if out == "j00":
+        sprite(overlay, CURSOR[out], "cursor-v4.webp", "cursor")
+
+# where the wedding's cursor comes to rest (the journey's rests where its sprite was cut)
+manifest["j05_cursor"] = dict(x=100 * (CURSOR["j05"][0] - 2) / W, y=100 * (CURSOR["j05"][1] - 2) / H)
 
 # --- manifest
 if SITE:
