@@ -1,6 +1,53 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 26 October 2026 (night): the phone design is on the site
+## Latest update — 29 October 2026: the 3.0 assets and copy (local, not committed)
+
+The couple's `3.0/` folder (`3.0/instructions.txt`, references in `3.0/reference screenshots/`) is
+applied in the working tree. **Nothing is committed** (the owner asked to review first). `3.0/`
+itself is ~900 MB and is now in `.gitignore`; `docs/design/v4/README.md` lists what was taken from it.
+
+- **Backgrounds:** journey = the path to the white building, wedding = the hall with the round
+  window (`docs/design/v4/`, then `prepare_assets.py` and `build_world.py`). The depth cut for the hall
+  is new (`world_maps.room_depth`); the path lifts the building to the middle distance
+  (`lift_building`) so it grows on the way in. Water masks for both (`build_water_mask.py`: streams,
+  pool, lake). Gate and splash plates are the same frames at a higher resolution.
+- **Motion:** wind now moves only green pixels (the path and walls stay still); the journey's sky
+  bubble bobs (`u_bubble`); the gate's sky and bubbles follow the pointer; the gate monitor plays
+  the couple's clip. Changed media got new names (`-v4`, `-v2`) because of the week-long cache.
+- **Splash:** progress bar first, then "LOGIN SUCCESSFUL" in its place. The couple's sounds
+  (`3.0/audio`, peak-normalised into `public/audio/sfx/`, listed in `siteConfig.terminalSounds`) loop
+  while a line types, while the bar fills and while the screen tears; desktop and phone.
+- **Journey:** new copy and titles (`content/chapters.ts`); the window is the 3.0 size; each chapter
+  is its film, then its photos in order, with the words in a narrow column or beside the last
+  photo, whichever fills the space best (`JourneyPane`, `planGallery` in `lib/journey/gallery.ts`).
+- **Wedding timeline:** one horizontal line of glass beads in the desktop window (`TimelineTab
+  layout="line"`), as in the 3.0 reference; the stacked phone layout keeps its vertical spine.
+- **Phone testing:** `next.config.ts` allows `192.168.1.11` (dev server only), so a phone on the
+  Wi-Fi can open `http://192.168.1.11:3001`. Change it if the PC's address changes.
+- **Wedding:** six tabs (Final Note added, `content/final-note.ts`), the FAQ is the couple's copy,
+  the motif tab follows the 3.0 layout (`content/motif.ts`, `prepare_motif.py`).
+- **Brand and type:** the 3.0 wordmark and monogram (`Wordmark.tsx`; the desktop header uses the
+  wordmark), Inter self-hosted.
+- **Owner's second pass (30 Oct):** gate pill, heading and subtitle at the 3.0 reference's sizes
+  (`prepare_assets.py` numbers); a folder steps away once its window is open (`.stage-folder.is-away`)
+  and comes back if the window is closed; on desktop, scrolling up in the wedding no longer flies
+  back to the journey (`stepPlan`, the nav still does); RSVP asks "Are you …?" before loading a
+  party (`IdentityCheck`); journey photos open big (`PhotoLightbox`, and `openLightbox` on the
+  phone), and the scene ignores input while it is open (`data-scene-modal`); a permanent "tap to see
+  more verses" note under the verse (desktop and phone).
+- **Screenshots without the preview pane:** the pane crops desktop sizes on this PC; the session used
+  headless Chrome over DevTools at 1920 x 1080 instead.
+- **Phone:** same content and backdrops; republished to `public/m/` (`prepare_portrait.py --world-only`,
+  then `publish-phone.ts`).
+- **Checked:** typecheck, lint, 229 tests; desktop walk-through in the preview at 1440 x 810 (gate,
+  splash, intro, journey tabs 1/4/5, the flight to the wedding, all six wedding tabs); phone journey
+  card at 390 x 844. **Not checked:** a real phone, motion smoothness (stills only), the production build.
+- **Open:** the intro film is the ungraded ("uncolored") cut; the sounds' volume against the song is
+  unheard (set by ear later, `LEVEL` in `lib/audio/typing.ts`); "MOTIFF" in the
+  reference is kept as "MOTIF"; the phone's full `prepare_portrait.py` run needs screen 03's old
+  layers (only `--world-only` works).
+
+## Earlier update — 26 October 2026 (night): the phone design is on the site
 
 - **Phones now get the new design.** It is the phone prototype, published by
   `npx tsx scripts/design/publish-phone.ts` from `prototype-mobile/` into `public/m/` (commit both;
