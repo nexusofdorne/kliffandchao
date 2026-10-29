@@ -4,14 +4,20 @@ import gsap from 'gsap';
 import { useEffect, useImperativeHandle, useRef, type Ref } from 'react';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { terminalCopy } from '@/content/terminal';
-import { typingTick } from '@/lib/audio/typing';
+import { siteConfig } from '@/config/site';
+import {
+  loadTerminalSounds,
+  startTerminalSound,
+  stopTerminalSound,
+  typingTick,
+} from '@/lib/audio/typing';
 import { finishPercent, rampPercent } from '@/lib/scene/terminal';
 import { Stage, StageFill, boxStyle } from './Stage';
 import { calmMotion, rand, sleep } from './timing';
 
 // Screen 02 (prototype-v3 "02 · terminal"): the monitor's screen types its
-// boot lines, "LOGIN SUCCESSFUL", a progress bar, a greeting and a running
-// dinosaur; then the picture tears like a dying analog TV and is wiped, which
+// boot lines, fills a progress bar, which gives way to "LOGIN SUCCESSFUL" at 100%,
+// then types a greeting and a running dinosaur; then the picture tears like a dying analog TV and is wiped, which
 // is where the intro scene takes over (breakUp).
 
 export type TerminalHandle = {
@@ -47,8 +53,18 @@ const DINO = [
   '...########.........',
 ];
 const LEGS = [
-  ['....###..##.........', '....##....#.........', '....#.....##........', '....##..............'],
-  ['....###..##.........', '....#....##.........', '....##....#.........', '..........##........'],
+  [
+    '....###..##.........',
+    '....##....#.........',
+    '....#.....##........',
+    '....##..............',
+  ],
+  [
+    '....###..##.........',
+    '....#....##.........',
+    '....##....#.........',
+    '..........##........',
+  ],
 ];
 const dinoPath = (rows: string[]) =>
   rows
@@ -70,7 +86,8 @@ function drawNoise(canvas: HTMLCanvasElement, streak: number) {
   const d = img.data;
   let row = 0;
   for (let i = 0; i < d.length; i += 4) {
-    if ((i / 4) % w === 0) row = Math.random() < 0.3 ? Math.random() * 255 : row * 0.6;
+    if ((i / 4) % w === 0)
+      row = Math.random() < 0.3 ? Math.random() * 255 : row * 0.6;
     const v = (Math.random() * 255 * (1 - streak) + row * streak) | 0;
     d[i] = d[i + 1] = d[i + 2] = v;
     d[i + 3] = 255;
@@ -126,15 +143,25 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
     if (noiseRef.current) noiseRef.current.style.opacity = '0';
   }
 
-  async function type(p: HTMLElement, text: string, speed: number, signal: AbortSignal) {
+  async function type(
+    p: HTMLElement,
+    text: string,
+    speed: number,
+    signal: AbortSignal,
+  ) {
     const node = document.createTextNode('');
     p.textContent = '';
     p.append(node);
     if (caret.current) p.append(caret.current);
-    for (const ch of text) {
-      node.data += ch;
-      typingTick(ch);
-      await sleep(speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0), signal);
+    startTerminalSound('keys');
+    try {
+      for (const ch of text) {
+        node.data += ch;
+        typingTick(ch);
+        await sleep(speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0), signal);
+      }
+    } finally {
+      stopTerminalSound('keys');
     }
   }
 
@@ -169,12 +196,21 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
     }, 170);
   }
 
-  const fade = (target: Element | null, frames: gsap.TweenVars[], duration: number, signal: AbortSignal) =>
+  const fade = (
+    target: Element | null,
+    frames: gsap.TweenVars[],
+    duration: number,
+    signal: AbortSignal,
+  ) =>
     new Promise<void>((resolve, reject) => {
       if (!target) return resolve();
       const tl = gsap.timeline();
       frames.forEach((vars, i) =>
-        tl.to(target, { ...vars, duration: duration / frames.length, ease: 'none' }, i ? '>' : 0),
+        tl.to(
+          target,
+          { ...vars, duration: duration / frames.length, ease: 'none' },
+          i ? '>' : 0,
+        ),
       );
       const timer = setTimeout(() => tl.progress(1), duration + 300);
       tl.eventCallback('onComplete', () => {
@@ -190,6 +226,7 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
 
   async function run(ready: Promise<unknown>, signal: AbortSignal) {
     reset();
+    void loadTerminalSounds(siteConfig.terminalSounds);
     await sleep(700, signal);
     const boot = lines(bootRef.current);
     for (const [i, p] of boot.entries()) {
@@ -197,12 +234,24 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
       await sleep(240, signal);
     }
     await sleep(380, signal);
-    await fade(loginRef.current, [{ opacity: 1 }, { opacity: 0.15 }, { opacity: 1 }], 420, signal);
-    await sleep(250, signal);
     await fade(progressRef.current, [{ opacity: 1 }], 220, signal);
     progressRef.current?.classList.add('is-loading');
-    await loadBar(ready, signal);
-    progressRef.current?.classList.remove('is-loading');
+    startTerminalSound('progress');
+    try {
+      await loadBar(ready, signal);
+    } finally {
+      stopTerminalSound('progress');
+      progressRef.current?.classList.remove('is-loading');
+    }
+    await sleep(350, signal);
+    // the bar gives way to the login line in the same place
+    await fade(progressRef.current, [{ opacity: 0 }], 220, signal);
+    await fade(
+      loginRef.current,
+      [{ opacity: 1 }, { opacity: 0.15 }, { opacity: 1 }],
+      420,
+      signal,
+    );
     await sleep(450, signal);
     const hello = lines(helloRef.current);
     for (const [i, p] of hello.entries()) {
@@ -220,7 +269,12 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
   }
 
   // analog-TV breakup: torn bands, rgb split, vertical-hold slips and snow
-  async function glitch(dur: number, k0: number, k1: number, signal: AbortSignal) {
+  async function glitch(
+    dur: number,
+    k0: number,
+    k1: number,
+    signal: AbortSignal,
+  ) {
     const crt = crtRef.current;
     const term = termRef.current;
     const cv = noiseRef.current;
@@ -238,7 +292,11 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
       const p = Math.min(1, (performance.now() - t0) / dur);
       const k = k0 + (k1 - k0) * p;
       drawNoise(cv, 0.75 - 0.5 * p);
-      cv.style.opacity = (0.08 + Math.random() * 0.3 * k + (Math.random() < 0.07 ? 0.4 : 0)).toFixed(2);
+      cv.style.opacity = (
+        0.08 +
+        Math.random() * 0.3 * k +
+        (Math.random() < 0.07 ? 0.4 : 0)
+      ).toFixed(2);
       const slip = Math.random() < 0.12 * k ? rand(-7, 7) : 0;
       term.style.transform = `translate(${rand(-0.5, 0.5) * k}cqw, ${slip}cqh) skewX(${rand(-3, 3) * k}deg)`;
       term.style.opacity = Math.random() < 0.06 ? '0.25' : '1';
@@ -249,7 +307,10 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
         t.style.transform = `translateX(${rand(-4, 4) * k}cqw)`;
         t.style.opacity = Math.random() < 0.75 ? '1' : '0';
       });
-      crt.style.filter = Math.random() < 0.1 * k ? `brightness(${rand(1.4, 2.2)}) contrast(1.4)` : '';
+      crt.style.filter =
+        Math.random() < 0.1 * k
+          ? `brightness(${rand(1.4, 2.2)}) contrast(1.4)`
+          : '';
     };
     gsap.ticker.add(frame);
     const cleanup = () => {
@@ -275,7 +336,11 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
       .map((p) => p.firstChild as Text | null)
       .filter((n): n is Text => !!n);
     [loginRef.current, progressRef.current, dinoRef.current].forEach((el) =>
-      gsap.to(el, { keyframes: [{ opacity: 0 }, { opacity: 0.7 }, { opacity: 0 }], duration: 0.42, ease: 'none' }),
+      gsap.to(el, {
+        keyframes: [{ opacity: 0 }, { opacity: 0.7 }, { opacity: 0 }],
+        duration: 0.42,
+        ease: 'none',
+      }),
     );
     while (nodes.some((n) => n.data.length)) {
       nodes.forEach((n) => {
@@ -300,7 +365,12 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
       delay: 0.35,
       ease: 'power1.in',
     });
-    await glitch(2900, 0.15, 0.85, signal);
+    startTerminalSound('glitch');
+    try {
+      await glitch(2900, 0.15, 0.85, signal);
+    } finally {
+      stopTerminalSound('glitch');
+    }
     await erase(signal);
     if (noiseRef.current) {
       gsap.to(noiseRef.current, { opacity: 0, duration: 0.3 });
@@ -328,9 +398,6 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
                 <p key={line} />
               ))}
             </div>
-            <h1 ref={loginRef} className="crt-login">
-              {terminalCopy.login}
-            </h1>
             <div ref={progressRef} className="crt-progress">
               <div className="crt-bar">
                 <i ref={barRef} />
@@ -342,6 +409,9 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
                 <path d="M0 0h9v1.5H0zM0 10.5h9V12H0zM1 1.5h7v1l-2.5 3 2.5 3v2H1v-2l2.5-3L1 2.5z" />
               </svg>
             </div>
+            <h1 ref={loginRef} className="crt-login">
+              {terminalCopy.login}
+            </h1>
             <div ref={helloRef} className="crt-hello">
               {terminalCopy.hello.map((line) => (
                 <p key={line} />
@@ -354,7 +424,12 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
               <i className="crt-ground" />
             </div>
           </div>
-          <canvas ref={noiseRef} className="crt-noise" width={192} height={108} />
+          <canvas
+            ref={noiseRef}
+            className="crt-noise"
+            width={192}
+            height={108}
+          />
           <div className="crt-roll" />
           <div className="crt-scan" />
         </div>

@@ -27,7 +27,7 @@ export function TopBar() {
         type="button"
         onClick={() => jump(0)}
         aria-label="Back to the intro"
-        className={`pointer-events-auto block w-[clamp(34px,5vh,52px)] flex-none ${
+        className={`pointer-events-auto block w-[clamp(68px,9.5vh,108px)] flex-none ${
           isLight ? '' : 'drop-shadow-[0_1px_6px_rgba(0,0,0,.35)]'
         }`}
       >

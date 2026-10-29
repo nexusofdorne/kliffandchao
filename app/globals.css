@@ -7,8 +7,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans:
-    var(--font-general-sans), var(--font-montserrat), system-ui, sans-serif;
+  --font-sans: var(--font-inter), var(--font-montserrat), system-ui, sans-serif;
   --font-mono: ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
@@ -439,10 +438,101 @@
 
 /* Desktop lays all five motif groups out as a grid — no scroll, no wasted
    space. Mobile turns it back into a single column. */
-.motif-grid {
+/* the wedding window's timeline: glass beads on one olive line (3.0 "04 - wedding 2") */
+.timeline-line {
+  position: relative;
   display: grid;
-  gap: 1vh clamp(16px, 2.4vw, 38px);
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(6, 1fr);
+  width: min(100%, 980px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.timeline-line::before {
+  content: '';
+  position: absolute;
+  top: clamp(11px, 1.6vh, 17px);
+  left: calc(100% / 12);
+  right: calc(100% / 12);
+  height: 2px;
+  background: #7a7a3a;
+}
+.timeline-line li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3vh;
+  text-align: center;
+  font-size: clamp(9px, 1.25vh, 13px);
+  letter-spacing: 0.02em;
+  color: #14180d;
+}
+.timeline-line b {
+  margin-top: 1.4vh;
+  font-weight: 600;
+}
+.timeline-bead {
+  width: clamp(22px, 3.2vh, 34px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 35% 30%,
+    rgba(255, 255, 255, 0.95),
+    rgba(225, 228, 222, 0.75) 60%,
+    rgba(190, 194, 184, 0.8)
+  );
+  box-shadow:
+    inset 0 -2px 4px rgba(90, 100, 80, 0.2),
+    0 2px 6px rgba(40, 50, 30, 0.2);
+}
+/* the motif tab: sponsors on the left, guests on the right (3.0 "04 - wedding 3") */
+.motif-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr);
+  gap: 2vh clamp(16px, 3vw, 48px);
+  align-items: start;
+}
+.motif-title {
+  margin: 0;
+  font-size: clamp(10px, 1.45vh, 15px);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #14180d;
+}
+.motif-swatches {
+  display: flex;
+  gap: clamp(6px, 0.9vw, 14px);
+  margin: 0;
+  padding: clamp(8px, 1.1vh, 14px) clamp(12px, 1.6vw, 24px);
+  list-style: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 0 0 1.5px rgba(255, 255, 255, 0.6),
+    0 6px 18px rgba(40, 50, 30, 0.12);
+}
+.motif-swatches li {
+  width: clamp(28px, 4.6vh, 52px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(30, 30, 20, 0.25);
+}
+.motif-figures {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(2px, 0.4vw, 8px);
+  width: 100%;
+  height: clamp(120px, 24vh, 260px);
+}
+/* each outfit takes an equal share of the row and keeps its shape inside it */
+.motif-figures img {
+  flex: 1 1 0;
+  min-width: 0;
+  object-fit: contain;
+  object-position: bottom;
 }
 
 @media (max-width: 768px) {
@@ -470,9 +560,16 @@
     overflow: visible;
     width: 100%;
   }
-  .motif-grid {
+  .motif-layout {
     grid-template-columns: 1fr;
-    gap: 9px;
+    gap: 4vh;
+  }
+  .motif-figures {
+    flex-wrap: wrap;
+    height: auto;
+  }
+  .motif-figures img {
+    height: 22vh;
   }
 }
 
@@ -884,8 +981,15 @@
   height: 100%;
   max-width: none;
 }
-.gate-monitor > img {
+.gate-monitor > img,
+.gate-monitor__film {
   object-fit: cover;
+}
+.gate-monitor__film {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
 }
 .gate-monitor__ghost {
   background-position: center;
@@ -960,7 +1064,12 @@
   z-index: 9;
   pointer-events: none;
   opacity: 0;
-  background: radial-gradient(120% 95% at 50% 42%, #fffdf7 0%, #fbf7ec 45%, #f1ebde 100%);
+  background: radial-gradient(
+    120% 95% at 50% 42%,
+    #fffdf7 0%,
+    #fbf7ec 45%,
+    #f1ebde 100%
+  );
 }
 
 /* The meadow and the river are alive, slowly. Plants sway as a tilt about the bottom of
@@ -978,7 +1087,8 @@
 @keyframes world-sway {
   0%,
   100% {
-    transform: rotate(calc(var(--sway) * -1)) translateX(calc(var(--sway-x) * -1));
+    transform: rotate(calc(var(--sway) * -1))
+      translateX(calc(var(--sway-x) * -1));
   }
   50% {
     transform: rotate(var(--sway)) translateX(var(--sway-x));
@@ -1111,7 +1221,7 @@
   caret-color: #fff;
   text-align: center;
   font-weight: 500;
-  font-size: 1.25cqw;
+  font-size: 0.95cqw;
   letter-spacing: 0.35em;
   text-shadow: 0 1px 6px rgba(0, 0, 0, 0.25);
 }
@@ -1140,12 +1250,12 @@
 }
 .gate-go {
   position: absolute;
-  right: 0.55cqw;
+  right: 1.1cqw;
   top: 50%;
   display: grid;
   place-items: center;
-  width: 2.6cqw;
-  height: 2.6cqw;
+  width: 1.35cqw;
+  height: 1.35cqw;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.92);
   color: #1a2410;
@@ -1226,7 +1336,7 @@
 .crt-login {
   position: absolute;
   left: 25.2cqh;
-  top: 36.5cqh;
+  top: 49.6cqh;
   margin: 0;
   font:
     500 3.7cqh/1 var(--font-orbitron),
@@ -1235,10 +1345,11 @@
   letter-spacing: 0.03em;
   opacity: 0;
 }
+/* the bar comes first and the login line takes its place at 100% */
 .crt-progress {
   position: absolute;
   left: 23.1cqh;
-  top: 45.6cqh;
+  top: 45.2cqh;
   width: 55.7cqh;
   height: 7.4cqh;
   opacity: 0;
@@ -1317,7 +1428,13 @@
     transparent 3.2cqh 4.6cqh
   );
   box-shadow: 0 0 0.6cqh var(--term-glow);
-  mask-image: linear-gradient(to right, transparent, #000 15%, #000 70%, transparent);
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    #000 15%,
+    #000 70%,
+    transparent
+  );
   animation: crt-ground 0.9s linear infinite;
 }
 @keyframes crt-ground {
@@ -1376,7 +1493,11 @@
       rgba(0, 0, 0, 0.32) 0 0.14cqh,
       transparent 0.14cqh 0.42cqh
     ),
-    radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.55) 100%);
+    radial-gradient(
+      ellipse at center,
+      transparent 58%,
+      rgba(0, 0, 0, 0.55) 100%
+    );
   animation: scene-flicker 0.12s steps(2) infinite;
 }
 .crt.is-glitching .crt-term {
@@ -1410,6 +1531,15 @@ html[data-scenes] .topbar {
 }
 
 /* The journey's pixel-art folder inverts while it is "clicked" */
+/* once its window is open the folder steps away (it comes back if the window is closed);
+   !important beats the opacity the scene transitions write inline */
+.stage-folder.is-away {
+  opacity: 0 !important;
+  visibility: hidden;
+  transition:
+    opacity 0.4s ease,
+    visibility 0s linear 0.4s;
+}
 .stage-folder img {
   transition: filter 0.12s;
 }
@@ -1531,12 +1661,12 @@ html[data-scenes] .topbar {
 .gw-tab {
   display: flex;
   align-items: center;
-  gap: calc(var(--px) * 14);
-  padding: 0 0 0 calc(var(--px) * 29);
+  gap: calc(var(--px) * 10);
+  padding: 0 calc(var(--px) * 8) 0 calc(var(--px) * 22);
   border: 0;
   text-align: left;
   font: inherit;
-  font-size: calc(var(--px) * 12);
+  font-size: calc(var(--px) * 11);
   font-weight: 600;
   line-height: 1.25;
   letter-spacing: 0.02em;
@@ -1551,7 +1681,11 @@ html[data-scenes] .topbar {
 .gw-tab:hover {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2)),
-    linear-gradient(180deg, rgba(231, 235, 237, 0.77), rgba(218, 223, 226, 0.79));
+    linear-gradient(
+      180deg,
+      rgba(231, 235, 237, 0.77),
+      rgba(218, 223, 226, 0.79)
+    );
 }
 /* the raised tab is the body's material and runs down into it */
 .gw-tab[aria-selected='true'] {
@@ -1579,8 +1713,8 @@ html[data-scenes] .topbar {
 }
 .gw-label {
   display: block;
-  max-width: calc(var(--px) * 154);
-  white-space: pre-line;
+  /* lines break only where the label has a line break, as in the designs */
+  white-space: pre;
 }
 .gw-seg--lights {
   z-index: 3;
@@ -1612,6 +1746,12 @@ button.gw-light {
 }
 .gw-light--g {
   background: #b6cb87;
+}
+/* a journey chapter's photos in justified rows (components/site/scene/JourneyPane.tsx): the
+   spacer takes the last row's spare width, so that row keeps its height instead of stretching */
+.journey-gallery::after {
+  content: '';
+  flex: 1000000 1 0;
 }
 /* the wedding tabs' content sits on the plate and scrolls inside it */
 .gw-pane {

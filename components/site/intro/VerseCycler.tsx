@@ -5,8 +5,7 @@ import { verses } from '@/content/verses';
 
 const CROSSFADE_MS = 340;
 const HINT_FADE_IN_DELAY_MS = 1400;
-const HINT_FADE_OUT_DELAY_MS = 7000;
-const HINT_OPACITY = 0.5;
+const HINT_OPACITY = 0.6;
 
 // Bottom-right, right-aligned on desktop; centred and a size up on mobile —
 // docs/PLAN.md "Placement". A real <button>, not a div, so it's keyboard-
@@ -18,22 +17,20 @@ export function VerseCycler() {
   const [hintOpacity, setHintOpacity] = useState(0);
   const busyRef = useRef(false);
 
-  // Self-dismissing affordance: the verse doesn't look tappable otherwise.
-  // Cancelled early if the guest taps before either timer fires.
+  // The verse doesn't look tappable otherwise, so a note stays under it (it comes up a moment
+  // after the verse).
   useEffect(() => {
-    const fadeIn = setTimeout(() => setHintOpacity(HINT_OPACITY), HINT_FADE_IN_DELAY_MS);
-    const fadeOut = setTimeout(() => setHintOpacity(0), HINT_FADE_OUT_DELAY_MS);
-    return () => {
-      clearTimeout(fadeIn);
-      clearTimeout(fadeOut);
-    };
+    const fadeIn = setTimeout(
+      () => setHintOpacity(HINT_OPACITY),
+      HINT_FADE_IN_DELAY_MS,
+    );
+    return () => clearTimeout(fadeIn);
   }, []);
 
   function handleClick() {
     if (busyRef.current) return; // ignore mashing mid-fade
     busyRef.current = true;
     setFaded(true);
-    setHintOpacity(0); // the affordance has done its job
     setTimeout(() => {
       setIndex((i) => (i + 1) % verses.length);
       setFaded(false);
@@ -64,7 +61,7 @@ export function VerseCycler() {
         style={{ opacity: hintOpacity }}
         className="pointer-events-none text-right text-[8.5px] tracking-[.14em] text-white transition-opacity duration-[600ms] ease-in-out max-[768px]:text-center"
       >
-        TAP THE VERSE FOR ANOTHER
+        TAP TO SEE MORE VERSES
       </div>
     </div>
   );

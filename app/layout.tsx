@@ -5,13 +5,22 @@ import { AudioProvider } from '@/components/site/AudioProvider';
 import { siteConfig } from '@/config/site';
 import './globals.css';
 
-// General Sans is the primary face (docs/PLAN.md Typography); Montserrat is
-// the declared CSS fallback, so both are self-hosted to avoid a CDN request
-// and layout shift if either font fails to load.
-const generalSans = localFont({
-  src: '../public/fonts/general-sans/GeneralSans-Variable.woff2',
-  variable: '--font-general-sans',
-  weight: '300 700',
+// Inter is the primary face (the 3.0 design); Montserrat is the declared CSS fallback,
+// so both are self-hosted to avoid a CDN request and layout shift if either fails to load.
+const inter = localFont({
+  src: [
+    {
+      path: '../public/fonts/inter/Inter-Variable.woff2',
+      weight: '100 900',
+      style: 'normal',
+    },
+    {
+      path: '../public/fonts/inter/Inter-Italic-Variable.woff2',
+      weight: '100 900',
+      style: 'italic',
+    },
+  ],
+  variable: '--font-inter',
   display: 'swap',
 });
 
@@ -55,7 +64,7 @@ export default function RootLayout({ children }: LayoutProps<'/'>) {
   return (
     <html
       lang="en"
-      className={`${generalSans.variable} ${montserrat.variable} ${courierPrime.variable} ${orbitron.variable} h-full antialiased`}
+      className={`${inter.variable} ${montserrat.variable} ${courierPrime.variable} ${orbitron.variable} h-full antialiased`}
     >
       {/* No className here — deliberately. `min-h-full flex flex-col` was
           generic scaffolding from Phase 0 with nothing in the site relying

@@ -10,11 +10,15 @@ import {
   boxStyle,
 } from '@/components/site/scene/Stage';
 import { calmMotion, playToEnd } from '@/components/site/scene/timing';
+import { Monogram, Wordmark } from '@/components/site/chrome/Wordmark';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { frameTransform, ridingFrame, zoomFrame } from '@/lib/scene/camera';
 import type { GateFormProps } from './MobileGate';
 
 const DIVE_SECONDS = 3.2;
+const GATE_SCREEN_FILM = '/video/gate-screen.mp4';
+/** How far (% of the stage) the sky and the bubbles drift against the hill as the pointer moves. */
+const PARALLAX = { sky: 0.6, bubbles: 1.4 };
 const REDUCED_FADE_SECONDS = 0.4;
 
 const centre = (box: { x: number; y: number; w: number; h: number }) => ({
@@ -46,7 +50,37 @@ export function DesktopGate({
   const rideStageRef = useRef<HTMLDivElement>(null);
   const rideFillRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const skyRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const bubblesRef = useRef<HTMLDivElement>(null);
   const onDivedRef = useRef(onDived);
+
+  // parallax: the sky and the bubbles drift against the hill with the pointer, the nearer
+  // bubbles more, so the scene has depth before the camera ever moves
+  useEffect(() => {
+    if (calmMotion()) return;
+    const sky = skyRef.current;
+    const floaters = bubblesRef.current;
+    if (!sky || !floaters) return;
+    const toSky = {
+      x: gsap.quickTo(sky, 'xPercent', { duration: 1.4, ease: 'power3' }),
+      y: gsap.quickTo(sky, 'yPercent', { duration: 1.4, ease: 'power3' }),
+    };
+    const toBubbles = {
+      x: gsap.quickTo(floaters, 'xPercent', { duration: 1.1, ease: 'power3' }),
+      y: gsap.quickTo(floaters, 'yPercent', { duration: 1.1, ease: 'power3' }),
+    };
+    const move = (event: PointerEvent) => {
+      const nx = event.clientX / window.innerWidth - 0.5;
+      const ny = event.clientY / window.innerHeight - 0.5;
+      toSky.x(-nx * PARALLAX.sky);
+      toSky.y(-ny * PARALLAX.sky * 0.5);
+      toBubbles.x(-nx * PARALLAX.bubbles);
+      toBubbles.y(-ny * PARALLAX.bubbles * 0.6);
+    };
+    window.addEventListener('pointermove', move);
+    return () => window.removeEventListener('pointermove', move);
+  }, []);
 
   useEffect(() => {
     onDivedRef.current = onDived;
@@ -61,7 +95,15 @@ export function DesktopGate({
     const rideStage = rideStageRef.current;
     const rideFill = rideFillRef.current;
     const form = formRef.current;
-    if (!stage || !world || !dark || !ride || !rideStage || !rideFill || !form) {
+    if (
+      !stage ||
+      !world ||
+      !dark ||
+      !ride ||
+      !rideStage ||
+      !rideFill ||
+      !form
+    ) {
       return;
     }
 
@@ -83,7 +125,8 @@ export function DesktopGate({
         const outer = zoomFrame(proxy.t, from, to, 1 / ratio);
         const inner = ridingFrame(proxy.t, from, to, ratio);
         stage.style.transform = frameTransform(outer);
-        world.style.filter = outer.blur > 0.01 ? `blur(${outer.blur}px)` : 'none';
+        world.style.filter =
+          outer.blur > 0.01 ? `blur(${outer.blur}px)` : 'none';
         rideStage.style.transform = frameTransform(inner);
       };
       frame();
@@ -91,10 +134,25 @@ export function DesktopGate({
         .to(form, { opacity: 0, duration: 0.3, ease: 'none' }, 0)
         .to(proxy, { t: 1, duration: D, ease: 'none', onUpdate: frame }, 0)
         // the monitor's screen goes dark, then the terminal rides in on it
-        .fromTo(dark, { opacity: 0 }, { opacity: 1, duration: D * 0.14, ease: 'none' }, D * 0.22)
-        .fromTo(ride, { opacity: 0 }, { opacity: 1, duration: D * 0.06, ease: 'none' }, D * 0.34)
+        .fromTo(
+          dark,
+          { opacity: 0 },
+          { opacity: 1, duration: D * 0.14, ease: 'none' },
+          D * 0.22,
+        )
+        .fromTo(
+          ride,
+          { opacity: 0 },
+          { opacity: 1, duration: D * 0.06, ease: 'none' },
+          D * 0.34,
+        )
         // the bezel image takes over once the camera is nearly there
-        .fromTo(rideFill, { opacity: 0 }, { opacity: 1, duration: D * 0.22, ease: 'none' }, D * 0.78);
+        .fromTo(
+          rideFill,
+          { opacity: 0 },
+          { opacity: 1, duration: D * 0.22, ease: 'none' },
+          D * 0.78,
+        );
     }
 
     let cancelled = false;
@@ -113,7 +171,9 @@ export function DesktopGate({
       <div
         aria-hidden
         className="scene-ambient"
-        style={{ '--amb-top': '#83a6b3', '--amb-bottom': '#5e5d29' } as CSSProperties}
+        style={
+          { '--amb-top': '#83a6b3', '--amb-bottom': '#5e5d29' } as CSSProperties
+        }
       />
       <Stage>
         {/* the stage itself is what the camera moves; transform-origin 0 0 */}
@@ -131,19 +191,34 @@ export function DesktopGate({
               background: 'linear-gradient(to bottom, #79aed2, #d3e6ee 60%)',
             }}
           >
-            <StageLayer asset={a.s01_sky} className="amb-cloud" />
+            <div
+              ref={skyRef}
+              className="absolute inset-0 will-change-transform"
+            >
+              <StageLayer asset={a.s01_sky} className="amb-cloud" />
+            </div>
             <StageLayer asset={a.s01_fg} />
             <div className="gate-sway gate-sway--far" style={fgUrl} />
             <div className="gate-sway gate-sway--near-l" style={fgUrl} />
             <div className="gate-sway gate-sway--near-r" style={fgUrl} />
-            {bubbles.map((bubble) => (
-              <StageLayer
-                key={bubble.src}
-                asset={bubble}
-                className="amb-bob"
-              />
-            ))}
-            <StageLayer asset={a.s01_logo} alt="Kliff and Chao" />
+            <div
+              ref={bubblesRef}
+              className="absolute inset-0 will-change-transform"
+            >
+              {bubbles.map((bubble) => (
+                <StageLayer
+                  key={bubble.src}
+                  asset={bubble}
+                  className="amb-bob"
+                />
+              ))}
+            </div>
+            {/* the couple's marks (3.0): the wordmark over the hill, the monogram in the corner */}
+            <Wordmark
+              decorative={false}
+              className="absolute left-[46.2%] top-[8.5%] w-[7.6%] text-white drop-shadow-[0_0.1cqw_0.6cqw_rgba(0,0,0,.18)]"
+            />
+            <Monogram className="absolute left-[91.3%] top-[88.9%] w-[6.2%] text-white drop-shadow-[0_0.1cqw_0.6cqw_rgba(0,0,0,.25)]" />
           </div>
           <StageLayer asset={a.s01_monitor} />
 
@@ -155,6 +230,18 @@ export function DesktopGate({
               height={a.s01_screen.px[1]}
               unoptimized
               draggable={false}
+            />
+            {/* the couple on the little screen (3.0 "glitch computer video"); the still is its poster */}
+            <video
+              className="gate-monitor__film"
+              src={GATE_SCREEN_FILM}
+              poster={a.s01_screen.src}
+              muted
+              loop
+              playsInline
+              autoPlay
+              preload="auto"
+              aria-hidden="true"
             />
             <div
               className="gate-monitor__ghost gate-monitor__ghost--r"
@@ -170,7 +257,10 @@ export function DesktopGate({
 
           <div ref={formRef} className="absolute inset-0">
             {/* a soft shade behind the text, so it reads over bright cloud and grass */}
-            <div aria-hidden="true" className="gate-scrim pointer-events-none absolute" />
+            <div
+              aria-hidden="true"
+              className="gate-scrim pointer-events-none absolute"
+            />
             <h1
               className="absolute m-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-medium leading-none text-white [text-shadow:0_0.06cqw_0.2cqw_rgba(0,0,0,.4),0_0.15cqw_1.4cqw_rgba(0,0,0,.4)]"
               style={{
@@ -179,10 +269,10 @@ export function DesktopGate({
                 fontSize: `${a.s01_heading.size}cqw`,
               }}
             >
-              You are invited!
+              You are <em className="font-normal">invited</em>!
             </h1>
             <p
-              className="absolute m-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap tracking-[.14em] font-medium text-white [text-shadow:0_0_0.3cqw_rgba(0,0,0,.6),0_0.1cqw_0.9cqw_rgba(0,0,0,.55)]"
+              className="absolute m-0 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap tracking-[.14em] font-normal text-white [text-shadow:0_0_0.3cqw_rgba(0,0,0,.6),0_0.1cqw_0.9cqw_rgba(0,0,0,.55)]"
               style={{
                 left: `${a.s01_subtitle.cx}%`,
                 top: `${a.s01_subtitle.cy}%`,
@@ -200,6 +290,7 @@ export function DesktopGate({
               style={boxStyle(a.s01_input)}
             >
               <input
+                ref={inputRef}
                 type="password"
                 value={password}
                 onChange={(event) => onPasswordChange(event.target.value)}
@@ -217,26 +308,27 @@ export function DesktopGate({
                 spellCheck={false}
                 autoComplete="current-password"
               />
-              {password.trim() ? (
-                <button
-                  type="button"
-                  className="gate-go"
-                  aria-label="Enter"
-                  onClick={onEnter}
+              {/* always there, as in the 3.0 design; with nothing typed it just focuses the field */}
+              <button
+                type="button"
+                className="gate-go"
+                aria-label="Enter"
+                onClick={() =>
+                  password.trim() ? onEnter() : inputRef.current?.focus()
+                }
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  stroke="currentColor"
+                  fill="none"
+                  strokeWidth={2.1}
+                  aria-hidden="true"
                 >
-                  <svg
-                    viewBox="0 0 24 24"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    stroke="currentColor"
-                    fill="none"
-                    strokeWidth={2.1}
-                    aria-hidden="true"
-                  >
-                    <path d="M5 12h14M13 6l6 6-6 6" />
-                  </svg>
-                </button>
-              ) : null}
+                  <path d="M10 6.5 15.5 12 10 17.5" />
+                </svg>
+              </button>
             </div>
             <p
               role="alert"
