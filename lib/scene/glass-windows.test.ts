@@ -6,7 +6,7 @@ import {
   weddingWindow,
   type GlassWindowSpec,
 } from '../../config/glass-windows';
-import { chapterLayouts } from '../../config/journey-layout';
+import { journeyMedia } from '../../config/journey-media.generated';
 import { journeyChapters } from '../../content/chapters';
 
 const windows: [string, GlassWindowSpec][] = [
@@ -15,9 +15,13 @@ const windows: [string, GlassWindowSpec][] = [
 ];
 
 describe.each(windows)('%s glass window', (_name, spec) => {
-  it('lays the lights, five tabs and the empty segment left to right without overlapping', () => {
-    const spans = [spec.lights, ...spec.tabs, spec.trail];
-    expect(spec.tabs).toHaveLength(5);
+  it('lays the lights, the tabs and any empty segment left to right without overlapping', () => {
+    const spans = [
+      spec.lights,
+      ...spec.tabs,
+      ...(spec.trail ? [spec.trail] : []),
+    ];
+    expect(spec.tabs.length).toBeGreaterThanOrEqual(5);
     spans.forEach(([x0, x1], i) => {
       expect(x1).toBeGreaterThan(x0);
       if (i > 0) expect(x0).toBeGreaterThanOrEqual(spans[i - 1][1]);
@@ -55,10 +59,16 @@ describe.each(windows)('%s glass window', (_name, spec) => {
 });
 
 describe('the journey window', () => {
-  it('has a tab for every chapter, and is the box the chapters were laid out in', () => {
+  it('has a tab and a set of media for every chapter', () => {
     expect(journeyWindow.tabs).toHaveLength(journeyChapters.length);
-    expect(chapterLayouts).toHaveLength(journeyChapters.length);
-    // config/journey-layout.ts measures every chapter against this 1522 x 718 box at (194, 244)
-    expect(journeyWindow.box).toEqual({ x: 194, y: 244, w: 1522, h: 718 });
+    expect(journeyMedia).toHaveLength(journeyChapters.length);
+  });
+});
+
+describe('the wedding window', () => {
+  it('has six tabs, the last one running to the edge', () => {
+    expect(weddingWindow.tabs).toHaveLength(6);
+    expect(weddingWindow.trail).toBeUndefined();
+    expect(weddingWindow.tabs[5][1]).toBe(weddingWindow.body.x1);
   });
 });

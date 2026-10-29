@@ -72,6 +72,9 @@ const IN_SCENE_MS = 450;
 
 const wait = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+/** Something is open over the scene (the photo viewer): it keeps the wheel, swipes and keys. */
+const modalOpen = () => !!document.querySelector('[data-scene-modal]');
+
 /** Typing in a field, or on a control that uses the key itself. */
 function keyBelongsToTarget(event: KeyboardEvent): boolean {
   const target = event.target;
@@ -137,7 +140,11 @@ export function SceneProvider({ children }: { children: ReactNode }) {
       const proxy = { v: sectionOf(from) as number };
       const target = sectionOf(to);
       const apply = () =>
-        setUpdate({ progress: proxy.v / 2, panel: proxy.v, active: proxy.v === target ? undefined : target });
+        setUpdate({
+          progress: proxy.v / 2,
+          panel: proxy.v,
+          active: proxy.v === target ? undefined : target,
+        });
       const d = CROSSFADE_S;
       const tl = gsap.timeline();
       tl.to(proxy, {
@@ -159,9 +166,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
       if (SCENE_CHANGES.includes(move.kind)) {
         await Promise.all([
           glidePanel(from.scene, move.to.scene),
-          custom
-            ? custom(move, from)
-            : crossfade(from.scene, move.to.scene),
+          custom ? custom(move, from) : crossfade(from.scene, move.to.scene),
         ]);
         return;
       }
@@ -245,6 +250,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
       preventDefault: true,
       ignore: '[data-scene-scroll]',
       onWheel: (self) => {
+        if (modalOpen()) return;
         if (busyRef.current) {
           wheelGate.current.reset();
           return;
@@ -261,7 +267,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
         e.target instanceof Element
           ? e.target.closest<HTMLElement>('[data-scene-scroll]')
           : null;
-      if (!pane || busyRef.current || e.deltaY === 0) return;
+      if (!pane || busyRef.current || e.deltaY === 0 || modalOpen()) return;
       const dir: Direction = e.deltaY > 0 ? 1 : -1;
       if (!atScrollEdge(pane, dir)) return;
       const step_ = wheelGate.current.push(e.deltaY, performance.now());
@@ -283,10 +289,10 @@ export function SceneProvider({ children }: { children: ReactNode }) {
       if (touchY === null) return;
       const dir = swipeDirection(touchY, e.changedTouches[0].clientY);
       touchY = null;
-      if (dir && !busyRef.current) step(dir);
+      if (dir && !busyRef.current && !modalOpen()) step(dir);
     };
     const onKeyDown = (e: KeyboardEvent) => {
-      if (keyBelongsToTarget(e)) return;
+      if (keyBelongsToTarget(e) || modalOpen()) return;
       const dir = keyDirection(e.key, {
         ctrl: e.ctrlKey,
         meta: e.metaKey,
@@ -343,7 +349,9 @@ export function SceneProvider({ children }: { children: ReactNode }) {
     ],
   );
 
-  return <SceneContext.Provider value={value}>{children}</SceneContext.Provider>;
+  return (
+    <SceneContext.Provider value={value}>{children}</SceneContext.Provider>
+  );
 }
 
 export function useScene(): SceneContextValue {

@@ -1,7 +1,7 @@
 // The two glass windows (the journey's and the wedding's), drawn in CSS by
 // components/site/scene/GlassWindow.tsx. Every number is a pixel of the 1920 x
-// 1080 mockup, measured on `04 - journey 0.jpg` and the wedding window image
-// (docs/review/), so they stay in proportion at any screen size.
+// 1080 mockup, measured on `04 - journey 0.jpg` and the 3.0 wedding references,
+// so they stay in proportion at any screen size.
 
 export type Span = readonly [number, number];
 
@@ -12,44 +12,46 @@ export type GlassWindowSpec = {
   body: { x0: number; x1: number; y0: number; y1: number };
   /** How far the inset plate sits in from the body's edge. */
   inset: number;
-  /** The traffic-light segment, the tabs, and the empty segment after them (left to right). */
+  /** The traffic-light segment, the tabs, and the empty segment after them, if any (left to right). */
   lights: Span;
   tabs: readonly Span[];
-  trail: Span;
+  trail?: Span;
   /** Where a tab's top edge is when it is raised ("on") and when it is not ("idle"). */
   tabTop: { on: number; idle: number };
 };
 
+// measured on the 3.0 journey references (3.0/reference screenshots/03 - journey 1.png)
 export const journeyWindow: GlassWindowSpec = {
-  box: { x: 194, y: 244, w: 1522, h: 718 },
-  body: { x0: 196, x1: 1710, y0: 325, y1: 953 },
+  box: { x: 348, y: 249, w: 1218, h: 530 },
+  body: { x0: 348, x1: 1566, y0: 312, y1: 778 },
   inset: 13,
-  lights: [196, 322],
+  lights: [348, 458],
   tabs: [
-    [325, 515],
-    [520, 725],
-    [730, 935],
-    [940, 1145],
-    [1150, 1345],
+    [462, 636],
+    [640, 806],
+    [810, 977],
+    [981, 1142],
+    [1146, 1306],
   ],
-  trail: [1355, 1710],
-  tabTop: { on: 254, idle: 267 },
+  trail: [1310, 1566],
+  tabTop: { on: 249, idle: 263 },
 };
 
+// six tabs, the last running to the body's right edge (3.0 "04 - wedding 1.png")
 export const weddingWindow: GlassWindowSpec = {
-  box: { x: 285, y: 255, w: 1355, h: 655 },
-  body: { x0: 285, x1: 1640, y0: 327, y1: 905 },
+  box: { x: 304, y: 250, w: 1312, h: 595 },
+  body: { x0: 304, x1: 1616, y0: 314, y1: 842 },
   inset: 13,
-  lights: [285, 400],
+  lights: [304, 420],
   tabs: [
-    [402, 578],
-    [582, 765],
-    [770, 958],
-    [962, 1145],
-    [1150, 1330],
+    [424, 602],
+    [606, 780],
+    [784, 964],
+    [968, 1144],
+    [1148, 1324],
+    [1328, 1616],
   ],
-  trail: [1335, 1640],
-  tabTop: { on: 262, idle: 273 },
+  tabTop: { on: 250, idle: 262 },
 };
 
 /** The window's box as % of the stage. */

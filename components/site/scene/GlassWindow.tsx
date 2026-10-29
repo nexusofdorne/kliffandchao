@@ -126,11 +126,13 @@ export function GlassWindow({
         ))}
       </div>
 
-      <div
-        aria-hidden="true"
-        className="gw-seg gw-seg--trail"
-        style={place(...spec.trail)}
-      />
+      {spec.trail ? (
+        <div
+          aria-hidden="true"
+          className="gw-seg gw-seg--trail"
+          style={place(...spec.trail)}
+        />
+      ) : null}
 
       <div className="gw-content">{children}</div>
     </div>

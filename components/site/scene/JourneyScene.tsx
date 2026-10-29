@@ -2,22 +2,28 @@
 
 import gsap from 'gsap';
 import Image from 'next/image';
-import { useEffect, useImperativeHandle, useRef, useState, type Ref } from 'react';
+import {
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type Ref,
+} from 'react';
 import { sceneAssets as a } from '@/config/scene-layers.generated';
 import { journeyWindow, stageBox } from '@/config/glass-windows';
-import { chapterLayouts, type WindowBox } from '@/config/journey-layout';
+import { journeyMedia } from '@/config/journey-media.generated';
 import { journeyChapters } from '@/content/chapters';
 import { easings } from './ease';
 import { GlassWindow } from './GlassWindow';
+import { JourneyPane } from './JourneyPane';
 import { Stage, boxStyle } from './Stage';
 import { useScene } from './SceneProvider';
 import { playToEnd, sleep } from './timing';
 
 // Screen 04 (prototype-v3 "04 · journey"): a meadow (WorldScene draws it) with a folder. The cursor
 // glides in, double-clicks it, and a frosted glass window grows out of it with
-// five chapter tabs. Everything in the window is real: the tab labels, the
-// paragraphs, the photos and the (still empty) film slot, and the glass is CSS
-// (GlassWindow).
+// five chapter tabs. Each tab is a chapter's film, photos and words (JourneyPane),
+// and the glass is CSS (GlassWindow).
 
 export type JourneyHandle = {
   parts: () => {
@@ -37,12 +43,6 @@ const TABS = journeyChapters.map((chapter, i) => ({
 
 // the window fades with --win-o (see GlassWindow), never opacity or filter
 const ANIMATED = 'transform,--win-o,visibility,transformOrigin';
-const rel = (box: WindowBox) => ({
-  left: `${box.x}%`,
-  top: `${box.y}%`,
-  width: `${box.w}%`,
-  height: `${box.h}%`,
-});
 
 /** Where the window grows from: the folder's centre, as % of the window. */
 function folderOrigin(folder: { x: number; y: number; w: number; h: number }) {
@@ -75,7 +75,12 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     }
     if (prev === n) return;
     if (prev > 0) gsap.to(panes[prev - 1], { opacity: 0, duration: 0.3 });
-    if (n > 0) gsap.fromTo(panes[n - 1], { opacity: 0 }, { opacity: 1, duration: 0.48, delay: 0.1 });
+    if (n > 0)
+      gsap.fromTo(
+        panes[n - 1],
+        { opacity: 0 },
+        { opacity: 1, duration: 0.48, delay: 0.1 },
+      );
   }
 
   function reset() {
@@ -84,7 +89,7 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     gsap.set(w, { clearProps: ANIMATED });
     gsap.set(w, { visibility: 'hidden' });
     gsap.set(cursorRef.current, { clearProps: ANIMATED });
-    folderRef.current?.classList.remove('is-selected');
+    folderRef.current?.classList.remove('is-selected', 'is-away');
     gsap.set(folderRef.current, { clearProps: 'opacity' });
     setTab(0, true);
   }
@@ -94,7 +99,10 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     if (!w) return;
     setTab(0, true);
     // inherit, not visible: a hidden scene must hide (and stop the clicks of) its window too
-    gsap.set(w, { visibility: 'inherit', transformOrigin: folderOrigin(a.j00_folder) });
+    gsap.set(w, {
+      visibility: 'inherit',
+      transformOrigin: folderOrigin(a.j00_folder),
+    });
     const tl = gsap.timeline();
     tl.fromTo(
       w,
@@ -112,6 +120,8 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     );
     await playToEnd(tl);
     folderRef.current?.classList.remove('is-selected');
+    // the folder has been opened: it steps away until the window is closed again
+    folderRef.current?.classList.add('is-away');
     await sleep(150);
     setTab(tab);
     await sleep(500);
@@ -138,14 +148,16 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     await playToEnd(tl);
     await sleep(380);
     // onto the folder, then a double click
-    const onFolder = { xPercent: -58, yPercent: -16 };
+    const onFolder = { xPercent: -135, yPercent: -70 };
     const move = gsap.timeline();
     move.to(cursor, { ...onFolder, duration: 0.36, ease: 'power1.inOut' });
     await playToEnd(move);
     for (let i = 0; i < 2; i++) {
       folder.classList.add('is-selected');
       const click = gsap.timeline();
-      click.to(cursor, { scale: 0.84, duration: 0.075 }).to(cursor, { scale: 1, duration: 0.075 });
+      click
+        .to(cursor, { scale: 0.84, duration: 0.075 })
+        .to(cursor, { scale: 1, duration: 0.075 });
       await playToEnd(click);
       await sleep(60);
     }
@@ -157,9 +169,14 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
     if (!w) return;
     gsap.set(w, { transformOrigin: folderOrigin(a.j00_folder) });
     const tl = gsap.timeline();
-    tl.fromTo(w, { scale: 1, '--win-o': 1 }, { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink });
+    tl.fromTo(
+      w,
+      { scale: 1, '--win-o': 1 },
+      { scale: 0.06, '--win-o': 0, duration: 0.52, ease: easings.shrink },
+    );
     await playToEnd(tl);
     gsap.set(w, { visibility: 'hidden', clearProps: 'transform,--win-o' });
+    folderRef.current?.classList.remove('is-away');
     shown.current = 0;
     setTab(0, true);
   }
@@ -231,61 +248,14 @@ export function JourneyScene({ ref }: { ref?: Ref<JourneyHandle> }) {
           onSelect={(i) => goToTab(i + 1)}
           onClose={() => setWindowOpen(false)}
         >
-          {journeyChapters.map((chapter, i) => {
-            const layout = chapterLayouts[i];
-            const photos = a.chapters[String(i + 1) as keyof typeof a.chapters];
-            return (
-              <section
-                key={chapter.title}
-                data-pane=""
-                aria-hidden={!active(open, state.journeyTab, i)}
-                className="pointer-events-none absolute inset-0 z-[4] opacity-0"
-              >
-                <div
-                  className="absolute grid place-items-center overflow-hidden rounded-[2.1cqw] bg-[#343434]"
-                  style={rel(layout.video)}
-                >
-                  {chapter.video ? (
-                    <video
-                      src={chapter.video}
-                      muted
-                      loop
-                      playsInline
-                      autoPlay
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                  ) : (
-                    <span className="text-[0.62cqw] uppercase tracking-[0.3em] text-white/30">
-                      Film coming soon
-                    </span>
-                  )}
-                </div>
-                {photos.map((photo) => (
-                  <Image
-                    key={photo.src}
-                    src={photo.src}
-                    alt=""
-                    width={photo.px[0]}
-                    height={photo.px[1]}
-                    unoptimized
-                    draggable={false}
-                    className="absolute max-w-none rounded-[1.15cqw] object-cover"
-                    style={rel(photo)}
-                  />
-                ))}
-                <div
-                  className="pointer-events-auto absolute text-[0.8cqw] leading-[1.55] text-[#14160f]"
-                  style={rel(layout.text)}
-                >
-                  {chapter.paragraphs.map((paragraph) => (
-                    <p key={paragraph} className="m-0 mb-[0.85cqw]">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
+          {journeyChapters.map((chapter, i) => (
+            <JourneyPane
+              key={chapter.title}
+              chapter={chapter}
+              media={journeyMedia[i]}
+              active={active(open, state.journeyTab, i)}
+            />
+          ))}
         </GlassWindow>
 
         <div

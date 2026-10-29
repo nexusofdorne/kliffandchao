@@ -2,6 +2,7 @@ import { existsSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { sceneAssets } from '../../config/scene-layers.generated';
+import { journeyMedia } from '../../config/journey-media.generated';
 import { worldLayers } from '../../config/world-layers.generated';
 import { isInsideStage, type SceneLayer } from './layers';
 
@@ -26,7 +27,7 @@ function allSources(): string[] {
 describe('scene layer manifest', () => {
   it('only names files that exist under public/', () => {
     const sources = allSources();
-    expect(sources.length).toBeGreaterThan(30);
+    expect(sources.length).toBeGreaterThan(10);
     for (const src of sources) {
       const file = join(publicDir, src);
       expect(existsSync(file), src).toBe(true);
@@ -45,10 +46,17 @@ describe('scene layer manifest', () => {
     }
   });
 
-  it('has a stand-in photo set for each of the five chapters', () => {
-    const chapters = sceneAssets.chapters;
-    expect(Object.keys(chapters)).toEqual(['1', '2', '3', '4', '5']);
-    expect(chapters['4']).toHaveLength(9);
+  it('has the films and photos of the five chapters on disk, in order', () => {
+    expect(journeyMedia).toHaveLength(5);
+    expect(journeyMedia[3].photos).toHaveLength(9);
+    for (const chapter of journeyMedia) {
+      const files = [
+        ...(chapter.film ? [chapter.film] : []),
+        ...chapter.photos,
+      ];
+      for (const item of files)
+        expect(existsSync(join(publicDir, item.src)), item.src).toBe(true);
+    }
   });
 });
 
@@ -57,7 +65,10 @@ describe('world layers', () => {
     const depth = ['sky', 'far', 'mid', 'near', 'fore'];
     expect(worldLayers.journey.layers.map((l) => l.kind)).toEqual(depth);
     // the river also has its ripple highlights
-    expect(worldLayers.wedding.layers.map((l) => l.kind)).toEqual([...depth, 'glint']);
+    expect(worldLayers.wedding.layers.map((l) => l.kind)).toEqual([
+      ...depth,
+      'glint',
+    ]);
     for (const scene of [worldLayers.journey, worldLayers.wedding]) {
       for (const layer of scene.layers) {
         const file = join(publicDir, layer.src);
