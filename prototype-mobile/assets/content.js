@@ -3,8 +3,8 @@ window.CONTENT = {
  "siteConfig": {
   "backgrounds": {
    "gate": "/img/intro.jpg",
-   "introVideo": "/video/intro-web.mp4",
-   "introPoster": "/img/intro-poster.jpg",
+   "introVideo": "/video/intro-v2.mp4",
+   "introPoster": "/img/intro-poster-v2.jpg",
    "journey": "/img/p1_Im0.jpg",
    "wedding": "/img/p1_Im0.jpg",
    "rsvp": "/img/p1_Im0.jpg"
@@ -19,7 +19,12 @@ window.CONTENT = {
    "lat": 10.282,
    "lng": 123.996444
   },
-  "audioSrc": "/audio/the-blessing.mp3",
+  "audioSrc": "/audio/the-blessing-v2.mp3",
+  "terminalSounds": {
+   "keys": "/audio/sfx/typing.mp3",
+   "progress": "/audio/sfx/progress.mp3",
+   "glitch": "/audio/sfx/glitch.mp3"
+  },
   "audioTitle": "The Blessing",
   "chaodesignUrl": "https://www.instagram.com/chaodesign.ph/?utm_source=kliffandchao&utm_medium=wedding-site"
  },
@@ -61,33 +66,33 @@ window.CONTENT = {
  "journeyChapters": [
   {
    "title": "It started with a wedding",
+   "tabLabel": "It started\nwith a wedding",
    "paragraphs": [
-    "They met at a wedding.",
-    "There to celebrate someone else's love story, with no idea that their own would begin that day.",
-    "Neither of them saw it coming.",
-    "But looking back, it's quite a fitting place for their story to start."
+    "They met at a wedding. There to celebrate someone else's love story, with no idea that their own would begin that day.",
+    "Neither of them saw it coming. But looking back, it's quite a fitting place for their story to start."
    ]
   },
   {
    "title": "It shouldn't have happened",
+   "tabLabel": "It shouldn't\nhave happened",
    "paragraphs": [
     "There were more reasons why it wouldn't work than reasons why it would.",
     "They came from different places, held different beliefs, and saw certain things in completely different ways.",
-    "There were questions, doubts, and things neither of them knew how to navigate.",
-    "By all accounts, this wasn't supposed to go anywhere."
+    "There were questions, doubts, and things neither of them knew how to navigate. From where they stood, it was hard to imagine a future where things could actually work out."
    ]
   },
   {
    "title": "But it did",
    "paragraphs": [
     "Then came Favor Conference.",
-    "Not every question was answered, and not everything suddenly made sense. But something began to change.",
-    "What they once thought was impossible started to look a little different.",
-    "And slowly, they began to understand that this was never just their story."
+    "Not every question was answered, and not everything suddenly made sense.",
+    "But something began to change.",
+    "What they once thought was impossible started to look a little different. And slowly, they began to understand that this was never just their story."
    ]
   },
   {
-   "title": "Meet family & friends",
+   "title": "Meet the family & friends",
+   "tabLabel": "Meet the family\n& friends",
    "paragraphs": [
     "What started between two people slowly became part of the lives of those closest to them.",
     "There were families to meet, friends to get to know, and two different worlds beginning to come together.",
@@ -95,280 +100,241 @@ window.CONTENT = {
    ]
   },
   {
-   "title": "We're engaged!",
+   "title": "She said YES!",
    "paragraphs": [
     "Little did Chao know, Kliff had been planning this for quite some time.",
-    "He'd had the ring for months and had already asked her parents for permission a month before the proposal.",
-    "And a little detail that makes it even more special is the ring was a gift from Kliff's mom.",
-    "So when the moment finally came, he asked. And she said yes!!"
+    "He'd had the ring for months and had already asked her parents for permission before proposing.",
+    "And a little detail that makes it even more special? The ring was a gift from Kliff's mom.",
+    "So when the moment finally came, he asked. And she said yes."
    ]
   }
  ],
- "photos": {
-  "1": [
-   {
-    "src": "/img/scenes/journey/standin/ch1_1.jpg",
+ "journeyMedia": [
+  {
+   "film": {
+    "src": "/video/journey/ch1.mp4",
     "px": [
-     291,
-     211
-    ],
-    "x": 45.532194480946124,
-    "y": 23.676880222841227,
-    "w": 19.11957950065703,
-    "h": 29.38718662952646
+     768,
+     960
+    ]
    },
-   {
-    "src": "/img/scenes/journey/standin/ch1_2.jpg",
+   "photos": [
+    {
+     "src": "/img/journey/ch1_1.jpg",
+     "px": [
+      1200,
+      800
+     ]
+    },
+    {
+     "src": "/img/journey/ch1_2.jpg",
+     "px": [
+      1200,
+      800
+     ]
+    },
+    {
+     "src": "/img/journey/ch1_3.jpg",
+     "px": [
+      1200,
+      900
+     ]
+    }
+   ]
+  },
+  {
+   "film": {
+    "src": "/video/journey/ch2.mp4",
     "px": [
-     369,
-     213
-    ],
-    "x": 67.8712220762155,
-    "y": 23.676880222841227,
-    "w": 24.244415243101184,
-    "h": 29.66573816155989
+     768,
+     960
+    ]
    },
-   {
-    "src": "/img/scenes/journey/standin/ch1_3.jpg",
+   "photos": [
+    {
+     "src": "/img/journey/ch2_1.jpg",
+     "px": [
+      1200,
+      715
+     ]
+    },
+    {
+     "src": "/img/journey/ch2_2.jpg",
+     "px": [
+      681,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch2_3.jpg",
+     "px": [
+      679,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch2_4.jpg",
+     "px": [
+      675,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch2_5.jpg",
+     "px": [
+      675,
+      1200
+     ]
+    }
+   ]
+  },
+  {
+   "film": {
+    "src": "/video/journey/ch3.mp4",
     "px": [
-     230,
-     211
-    ],
-    "x": 79.23784494086728,
-    "y": 57.66016713091922,
-    "w": 15.111695137976348,
-    "h": 29.38718662952646
-   }
-  ],
-  "2": [
-   {
-    "src": "/img/scenes/journey/standin/ch2_1.jpg",
-    "px": [
-     182,
-     250
-    ],
-    "x": 35.873850197109064,
-    "y": 25.069637883008358,
-    "w": 11.957950065703022,
-    "h": 34.81894150417827
+     768,
+     960
+    ]
    },
-   {
-    "src": "/img/scenes/journey/standin/ch2_2.jpg",
+   "photos": [
+    {
+     "src": "/img/journey/ch3_1.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch3_2.jpg",
+     "px": [
+      960,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch3_3.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch3_4.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch3_5.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    }
+   ]
+  },
+  {
+   "film": {
+    "src": "/video/journey/ch4.mp4",
     "px": [
-     124,
-     250
-    ],
-    "x": 51.64257555847569,
-    "y": 25.069637883008358,
-    "w": 8.147174770039422,
-    "h": 34.81894150417827
+     768,
+     960
+    ]
    },
-   {
-    "src": "/img/scenes/journey/standin/ch2_3.jpg",
-    "px": [
-     423,
-     234
-    ],
-    "x": 63.600525624178715,
-    "y": 25.069637883008358,
-    "w": 27.792378449408673,
-    "h": 32.590529247910865
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch2_4.jpg",
-    "px": [
-     307,
-     204
-    ],
-    "x": 72.8646517739816,
-    "y": 60.58495821727019,
-    "w": 20.170827858081473,
-    "h": 28.41225626740947
-   }
-  ],
-  "3": [
-   {
-    "src": "/img/scenes/journey/standin/ch3_1.jpg",
-    "px": [
-     236,
-     316
-    ],
-    "x": 59.92115637319316,
-    "y": 20.33426183844011,
-    "w": 15.505913272010513,
-    "h": 44.01114206128134
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch3_2.jpg",
-    "px": [
-     185,
-     233
-    ],
-    "x": 79.56636005256242,
-    "y": 20.75208913649025,
-    "w": 12.155059132720105,
-    "h": 32.45125348189415
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch3_3.jpg",
-    "px": [
-     112,
-     152
-    ],
-    "x": 66.03153745072274,
-    "y": 68.52367688022284,
-    "w": 7.35873850197109,
-    "h": 21.16991643454039
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch3_4.jpg",
-    "px": [
-     282,
-     231
-    ],
-    "x": 77.20105124835743,
-    "y": 59.610027855153206,
-    "w": 18.528252299605782,
-    "h": 32.17270194986072
-   }
-  ],
-  "4": [
-   {
-    "src": "/img/scenes/journey/standin/ch4_1.jpg",
-    "px": [
-     295,
-     155
-    ],
-    "x": 31.99737187910644,
-    "y": 22.284122562674096,
-    "w": 19.38239159001314,
-    "h": 21.58774373259053
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_2.jpg",
-    "px": [
-     144,
-     146
-    ],
-    "x": 52.75952693823916,
-    "y": 22.701949860724234,
-    "w": 9.461235216819974,
-    "h": 20.33426183844011
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_3.jpg",
-    "px": [
-     305,
-     155
-    ],
-    "x": 63.534822601839686,
-    "y": 22.701949860724234,
-    "w": 20.03942181340342,
-    "h": 21.58774373259053
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_4.jpg",
-    "px": [
-     182,
-     131
-    ],
-    "x": 84.88830486202366,
-    "y": 25.62674094707521,
-    "w": 11.957950065703022,
-    "h": 18.245125348189415
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_5.jpg",
-    "px": [
-     144,
-     153
-    ],
-    "x": 32.06307490144547,
-    "y": 49.30362116991643,
-    "w": 9.461235216819974,
-    "h": 21.309192200557103
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_6.jpg",
-    "px": [
-     370,
-     148
-    ],
-    "x": 43.16688567674113,
-    "y": 50,
-    "w": 24.31011826544021,
-    "h": 20.61281337047354
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_7.jpg",
-    "px": [
-     180,
-     146
-    ],
-    "x": 69.18528252299606,
-    "y": 49.860724233983284,
-    "w": 11.826544021024967,
-    "h": 20.33426183844011
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_8.jpg",
-    "px": [
-     202,
-     146
-    ],
-    "x": 82.58869908015768,
-    "y": 49.30362116991643,
-    "w": 13.272010512483574,
-    "h": 20.33426183844011
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch4_9.jpg",
-    "px": [
-     218,
-     109
-    ],
-    "x": 82.06307490144546,
-    "y": 74.3732590529248,
-    "w": 14.323258869908015,
-    "h": 15.181058495821727
-   }
-  ],
-  "5": [
-   {
-    "src": "/img/scenes/journey/standin/ch5_1.jpg",
-    "px": [
-     280,
-     383
-    ],
-    "x": 61.16951379763469,
-    "y": 28.41225626740947,
-    "w": 18.396846254927727,
-    "h": 53.34261838440111
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch5_2.jpg",
-    "px": [
-     128,
-     135
-    ],
-    "x": 81.53745072273324,
-    "y": 28.41225626740947,
-    "w": 8.409986859395532,
-    "h": 18.802228412256266
-   },
-   {
-    "src": "/img/scenes/journey/standin/ch5_3.jpg",
-    "px": [
-     196,
-     223
-    ],
-    "x": 81.53745072273324,
-    "y": 50.69637883008357,
-    "w": 12.877792378449408,
-    "h": 31.058495821727018
-   }
-  ]
- },
+   "photos": [
+    {
+     "src": "/img/journey/ch4_1.jpg",
+     "px": [
+      1200,
+      675
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_2.jpg",
+     "px": [
+      1200,
+      675
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_3.jpg",
+     "px": [
+      1200,
+      675
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_4.jpg",
+     "px": [
+      1200,
+      735
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_5.jpg",
+     "px": [
+      1200,
+      675
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_6.jpg",
+     "px": [
+      715,
+      541
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_7.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_8.jpg",
+     "px": [
+      675,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch4_9.jpg",
+     "px": [
+      828,
+      416
+     ]
+    }
+   ]
+  },
+  {
+   "film": null,
+   "photos": [
+    {
+     "src": "/img/journey/ch5_1.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch5_2.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    },
+    {
+     "src": "/img/journey/ch5_3.jpg",
+     "px": [
+      900,
+      1200
+     ]
+    }
+   ]
+  }
+ ],
  "daySchedule": [
   {
    "time": "3:30 PM",
@@ -409,196 +375,171 @@ window.CONTENT = {
   "Jpark Island Resort and Waterpark",
   "M.L. Quezon Hwy, Brgy. Maribago, Lapu-Lapu City, Cebu"
  ],
- "motifGroups": [
+ "sponsorGroups": [
   {
-   "name": "FOR THE LADIES",
-   "note": "Long dress in any shade below.",
-   "swatches": [
+   "title": "PRINCIPAL SPONSORS",
+   "fabrics": [
     {
-     "hex": "#6B7F52",
-     "name": "SAGE"
+     "src": "/img/motif/fabric-brown-1.webp",
+     "name": "Mocha"
     },
     {
-     "hex": "#A8B894",
-     "name": "MOSS"
+     "src": "/img/motif/fabric-brown-2.webp",
+     "name": "Taupe"
     },
     {
-     "hex": "#D9D2C2",
-     "name": "SAND"
-    },
-    {
-     "hex": "#F2EFE8",
-     "name": "IVORY"
+     "src": "/img/motif/fabric-brown-3.webp",
+     "name": "Latte"
     }
    ],
-   "samples": [
+   "attire": [
     {
-     "hex": "#6B7F52",
-     "label": "Floor-length, sage"
+     "who": "Ladies",
+     "note": "Long gown any shades of brown"
     },
     {
-     "hex": "#A8B894",
-     "label": "Wrap dress, moss"
-    },
-    {
-     "hex": "#D9D2C2",
-     "label": "Satin slip, sand"
-    },
-    {
-     "hex": "#F2EFE8",
-     "label": "Ivory, sleeved"
-    },
-    {
-     "hex": "#8A9C70",
-     "label": "Chiffon, olive-grey"
-    },
-    {
-     "hex": "#C6D0B2",
-     "label": "Tea length, leaf"
+     "who": "Gentleman",
+     "note": "Black or dark brown suit"
     }
    ]
   },
   {
-   "name": "FOR THE GENTLEMEN",
-   "note": "Barong tagalog or a dark suit; no white.",
-   "swatches": [
+   "title": "SECONDARY SPONSORS",
+   "fabrics": [
     {
-     "hex": "#14180D",
-     "name": "CHARCOAL"
+     "src": "/img/motif/fabric-green-1.webp",
+     "name": "Sage"
     },
     {
-     "hex": "#2A4300",
-     "name": "OLIVE"
+     "src": "/img/motif/fabric-green-2.webp",
+     "name": "Pale sage"
     },
     {
-     "hex": "#4A5B33",
-     "name": "FERN"
+     "src": "/img/motif/fabric-green-3.webp",
+     "name": "Olive"
     }
    ],
-   "samples": [
+   "attire": [
     {
-     "hex": "#E8E3D6",
-     "label": "Piña barong, natural"
+     "who": "Ladies",
+     "note": "Long gown any shades of olive"
     },
     {
-     "hex": "#14180D",
-     "label": "Charcoal suit"
-    },
-    {
-     "hex": "#2A4300",
-     "label": "Olive suit, no tie"
-    },
-    {
-     "hex": "#4A5B33",
-     "label": "Fern, knit tie"
-    },
-    {
-     "hex": "#3A4030",
-     "label": "Dark slacks + barong"
-    },
-    {
-     "hex": "#D9D2C2",
-     "label": "Linen, sand"
-    }
-   ]
-  },
-  {
-   "name": "PRINCIPAL SPONSORS",
-   "note": "Formal — barong tagalog and long gown.",
-   "swatches": [
-    {
-     "hex": "#2A4300",
-     "name": "OLIVE"
-    },
-    {
-     "hex": "#4A5B33",
-     "name": "FERN"
-    },
-    {
-     "hex": "#D9D2C2",
-     "name": "SAND"
-    }
-   ],
-   "samples": [
-    {
-     "hex": "#2A4300",
-     "label": "Long gown, olive"
-    },
-    {
-     "hex": "#E8E3D6",
-     "label": "Formal barong"
-    },
-    {
-     "hex": "#4A5B33",
-     "label": "Gown, fern"
-    }
-   ]
-  },
-  {
-   "name": "SECONDARY SPONSORS",
-   "note": "Formal, one shade lighter than the principals.",
-   "swatches": [
-    {
-     "hex": "#6B7F52",
-     "name": "SAGE"
-    },
-    {
-     "hex": "#A8B894",
-     "name": "MOSS"
-    },
-    {
-     "hex": "#E8E3D6",
-     "name": "LINEN"
-    }
-   ],
-   "samples": [
-    {
-     "hex": "#6B7F52",
-     "label": "Gown, sage"
-    },
-    {
-     "hex": "#E8E3D6",
-     "label": "Barong, linen"
-    },
-    {
-     "hex": "#A8B894",
-     "label": "Gown, moss"
-    }
-   ]
-  },
-  {
-   "name": "BEARERS & FLOWER GIRLS",
-   "note": "Ivory and soft moss; comfort first.",
-   "swatches": [
-    {
-     "hex": "#F2EFE8",
-     "name": "IVORY"
-    },
-    {
-     "hex": "#C6D0B2",
-     "name": "LEAF"
-    },
-    {
-     "hex": "#D9D2C2",
-     "name": "SAND"
-    }
-   ],
-   "samples": [
-    {
-     "hex": "#F2EFE8",
-     "label": "Ivory, tulle"
-    },
-    {
-     "hex": "#C6D0B2",
-     "label": "Leaf sash"
-    },
-    {
-     "hex": "#D9D2C2",
-     "label": "Shorts + suspenders"
+     "who": "Gentleman",
+     "note": "Black or dark brown suit/long sleeve"
     }
    ]
   }
  ],
+ "guestMotif": {
+  "title": "GUESTS",
+  "figures": [
+   {
+    "src": "/img/motif/women-1.webp",
+    "alt": "Sage long dress with puff sleeves",
+    "px": [
+     170,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/women-2.webp",
+    "alt": "Olive satin gown",
+    "px": [
+     202,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/women-3.webp",
+    "alt": "Caramel satin gown",
+    "px": [
+     237,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/women-4.webp",
+    "alt": "Brown tiered dress",
+    "px": [
+     193,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/women-5.webp",
+    "alt": "Olive top and wide trousers",
+    "px": [
+     171,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/women-6.webp",
+    "alt": "Dark brown slip dress",
+    "px": [
+     189,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/men-1.webp",
+    "alt": "Olive suit with a white shirt",
+    "px": [
+     201,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/men-2.webp",
+    "alt": "Black suit with a white shirt",
+    "px": [
+     200,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/men-3.webp",
+    "alt": "Brown shirt and cream trousers",
+    "px": [
+     218,
+     600
+    ]
+   },
+   {
+    "src": "/img/motif/men-4.webp",
+    "alt": "Sage shirt and beige trousers",
+    "px": [
+     194,
+     600
+    ]
+   }
+  ],
+  "fabrics": [
+   {
+    "src": "/img/motif/fabric-green-3.webp",
+    "name": "Olive"
+   },
+   {
+    "src": "/img/motif/fabric-green-1.webp",
+    "name": "Sage"
+   },
+   {
+    "src": "/img/motif/fabric-green-2.webp",
+    "name": "Pale sage"
+   },
+   {
+    "src": "/img/motif/fabric-brown-1.webp",
+    "name": "Mocha"
+   },
+   {
+    "src": "/img/motif/fabric-brown-2.webp",
+    "name": "Taupe"
+   }
+  ],
+  "note": "Muted and elegant tones that complement the palette above",
+  "request": "*We respectfully ask that guests avoid wearing white or ivory."
+ },
  "entourageGroups": [
   {
    "role": "PARENTS OF THE GROOM",
@@ -661,52 +602,104 @@ window.CONTENT = {
  ],
  "faqEntries": [
   {
-   "question": "What should I wear?",
-   "answer": "Formal attire in the motif palette above. Placeholder copy."
-  },
-  {
-   "question": "Can I bring a plus one?",
-   "answer": "Your invitation lists everyone in your party. Placeholder copy."
-  },
-  {
-   "question": "Is the ceremony indoors?",
-   "answer": "Placeholder copy."
-  },
-  {
-   "question": "Where can I park?",
-   "answer": "Placeholder copy."
+   "question": "How early should we arrive?",
+   "answer": [
+    "Our ceremony begins at 4:00 PM sharp, and we'd love for you to be there from the beginning!",
+    "As traffic can get quite heavy around this time, we recommend leaving Cebu City by 2:30 PM and Mactan by 3:00 PM. This should give you some time to park, find your seats, and settle in before the ceremony."
+   ]
   },
   {
    "question": "Until when can I RSVP?",
-   "answer": "Placeholder — the couple still needs to pick a deadline."
+   "answer": [
+    "Please confirm your attendance by February 5 through our wedding website.",
+    "This helps us finalize our guest list, seating arrangements, and all the little details before the big day."
+   ]
   },
   {
-   "question": "Can I bring my children?",
-   "answer": "Placeholder copy."
+   "question": "Can I bring a plus-one?",
+   "answer": [
+    "As much as we'd love to have everyone celebrate with us, we've carefully planned our guest list and seating arrangements. For this reason, we can only accommodate guests whose names are listed on the RSVP.",
+    "If there's someone you'd really need to bring, please reach out to us in advance. We can't guarantee an additional seat, but we'll see what we can arrange.",
+    "Thank you for understanding!"
+   ]
   },
   {
-   "question": "Is there a gift registry?",
-   "answer": "Placeholder copy."
+   "question": "Are children welcome?",
+   "answer": [
+    "Of course! We love your little ones.",
+    "Children included in your invitation are more than welcome. If you'd like to bring a child who isn't listed, please message us first so we can check our seating arrangements."
+   ]
   },
   {
-   "question": "What time should I arrive?",
-   "answer": "Doors open at 3:30 PM; the ceremony starts at 4:00 PM sharp. Placeholder copy."
+   "question": "Will this be a garden wedding?",
+   "answer": [
+    "A little bit of garden, a little bit of ocean, but we'll be celebrating INDOORS!",
+    "Our ceremony will be held inside a pavilion, followed by the reception in a ballroom. So yes, you can wear your favorite heels, and no need to bring your Jisulife fans!"
+   ]
   },
   {
-   "question": "Will there be transportation?",
-   "answer": "Placeholder copy."
+   "question": "Is there parking available?",
+   "answer": [
+    "Yes! Jpark Island Resort has a spacious parking area available for our guests."
+   ]
   },
   {
-   "question": "Are there nearby hotels?",
-   "answer": "Placeholder copy."
+   "question": "Will transportation be provided?",
+   "answer": [
+    "We'll have a coaster available after the reception for guests heading back to Cebu City, with a drop-off at IT Park.",
+    "For those traveling elsewhere or leaving at a different time, Grab is another option and operates 24/7.",
+    "Please arrange your own transportation to the ceremony."
+   ]
   },
   {
-   "question": "Who do I contact on the day?",
-   "answer": "Placeholder copy."
+   "question": "Can I take photos and videos?",
+   "answer": [
+    "Absolutely! We'd love to see the day through your eyes, too.",
+    "Feel free to capture moments throughout the ceremony and reception. We just kindly ask that you remain in your seats during the ceremony and keep the aisle clear so our photographers and videographers can do their thing.",
+    "And don't forget to tag us on Instagram and Facebook. We'd love to see your shots!"
+   ]
   },
   {
-   "question": "Who designed the invitation and this site?",
-   "isDesignCredit": true
+   "question": "Is there a dress code or color motif?",
+   "answer": [
+    "Yes! We've put together a little color guide to help you dress for the occasion. You can find it in the Wedding Motif section.",
+    "We'd also love to keep white reserved for the bride and the groom, so we kindly ask our guests to choose other colors for the celebration."
+   ]
+  },
+  {
+   "question": "Will the ceremony and reception be at the same venue?",
+   "answer": [
+    "Yes! Both will be held at Jpark Island Resort, so there's no need to travel to another location after the ceremony."
+   ]
+  },
+  {
+   "question": "Who should I contact on the wedding day?",
+   "answer": [
+    "We'll probably be a little busy on the day! If you need assistance with directions, parking, or anything on the day itself, please reach out to our wedding coordinator.",
+    "The Centerpiece:\n@Leizl\n@Roderick\n(Number TBD)"
+   ]
+  },
+  {
+   "question": "P.S. Curious who made this website?",
+   "answer": [
+    "We did! A little project by the bride and groom, made with lots of love (and a handful of debugging sessions).",
+    "While you're here, say hi to @chaodesign if you've got something creative coming up haha!"
+   ]
   }
- ]
+ ],
+ "chaodesignHandle": "@chaodesign",
+ "finalNote": {
+  "title": "A Little Note Before We See You",
+  "paragraphs": [
+   "If there's one thing we want you to know before the big day, it's how grateful we are that you're making the effort to be there.",
+   "We know it's not as simple as just showing up. For many of you, it means filing for leave, rearranging schedules, booking flights, making travel plans, and setting aside your time and resources just to celebrate with us.",
+   "And even for those already in Cebu, we know that making time to be there is a choice, too.",
+   "We don't take any of it for granted.",
+   "Through different seasons of our lives, you've each been part of our story in one way or another. And now, as we begin this new chapter, it means so much to have you there with us."
+  ],
+  "thanks": "Thank you for making the time, the effort, and the journey.",
+  "closing": "We can't wait to see you, celebrate with you, and make new memories together.",
+  "signOff": "With love,",
+  "signature": "Kliff & Chao"
+ }
 };

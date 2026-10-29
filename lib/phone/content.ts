@@ -1,11 +1,16 @@
 import { journeyChapters } from '@/content/chapters';
 import { entourageGroups } from '@/content/entourage';
-import { faqEntries } from '@/content/faq';
-import { motifGroups } from '@/content/motif';
+import { CHAODESIGN_HANDLE, faqEntries } from '@/content/faq';
+import { finalNote } from '@/content/final-note';
+import { guestMotif, sponsorGroups } from '@/content/motif';
 import { terminalCopy } from '@/content/terminal';
 import { verses } from '@/content/verses';
-import { daySchedule, timelineIntroLines, venueAddressLines } from '@/content/wedding';
-import { sceneAssets } from '@/config/scene-layers.generated';
+import {
+  daySchedule,
+  timelineIntroLines,
+  venueAddressLines,
+} from '@/content/wedding';
+import { journeyMedia } from '@/config/journey-media.generated';
 import { siteConfig } from '@/config/site';
 
 // The words the phone design (public/m, from prototype-mobile/) shows. The public part ships in
@@ -13,7 +18,10 @@ import { siteConfig } from '@/config/site';
 
 export function phonePublicContent() {
   return {
-    siteConfig: { audioSrc: siteConfig.audioSrc },
+    siteConfig: {
+      audioSrc: siteConfig.audioSrc,
+      terminalSounds: siteConfig.terminalSounds,
+    },
     terminalCopy,
     verses,
   };
@@ -25,12 +33,15 @@ export function phoneContent() {
     terminalCopy,
     verses,
     journeyChapters,
-    photos: sceneAssets.chapters,
+    journeyMedia,
     daySchedule,
     timelineIntroLines,
     venueAddressLines,
-    motifGroups,
+    sponsorGroups,
+    guestMotif,
     entourageGroups,
     faqEntries,
+    chaodesignHandle: CHAODESIGN_HANDLE,
+    finalNote,
   };
 }

@@ -145,16 +145,48 @@
   $('#mute').addEventListener('click', e => { e.stopPropagation(); Music.toggle(); });
 
   // ---------------------------------------------------------------- the terminal's key clicks
-  // A few milliseconds of filtered noise per character (no sound file). The audio context is made
-  // inside the Enter tap; the music button's mute silences it too.
+  // The terminal's sounds, as the site's lib/audio/typing.ts: the recorded ones (siteConfig.
+  // terminalSounds) loop while something happens (keys while a line types, progress while the
+  // bar fills, glitch while the screen tears); with no keys recording, each character gets a few
+  // milliseconds of filtered noise. The audio context is made inside the Enter tap; the music
+  // button's mute silences it too.
   const Typing = (() => {
     let ctx = null;
     let noise = null;
+    const samples = {};
+    const voices = {};
     return {
-      unlock() { try { ctx = ctx || new AudioContext(); ctx.resume(); } catch (e) { ctx = null; } },
+      unlock() {
+        try { ctx = ctx || new AudioContext(); ctx.resume(); } catch (e) { ctx = null; return; }
+        Object.entries((C.siteConfig && C.siteConfig.terminalSounds) || {}).forEach(([name, url]) => {
+          if (!url || samples[name]) return;
+          fetch(site(url)).then(r => r.arrayBuffer()).then(b => ctx.decodeAudioData(b))
+            .then(buf => { samples[name] = buf; }).catch(() => {});
+        });
+      },
+      start(name) {
+        if (!ctx || ctx.state !== 'running' || Music.isMuted() || !samples[name] || voices[name]) return;
+        const src = ctx.createBufferSource();
+        src.buffer = samples[name];
+        src.loop = true;
+        const g = ctx.createGain();
+        g.gain.value = 0.5;
+        src.connect(g).connect(ctx.destination);
+        src.start();
+        voices[name] = { src, g };
+      },
+      stop(name) {
+        const v = voices[name];
+        if (!ctx || !v) return;
+        delete voices[name];
+        const t = ctx.currentTime;
+        v.g.gain.setValueAtTime(v.g.gain.value, t);
+        v.g.gain.linearRampToValueAtTime(0, t + 0.12);
+        v.src.stop(t + 0.14);
+      },
       // a sharp tick over a short low thock, as the site's lib/audio/typing.ts (peaks near -10 dBFS)
       tick(ch) {
-        if (!ctx || ctx.state !== 'running' || Music.isMuted()) return;
+        if (!ctx || ctx.state !== 'running' || Music.isMuted() || samples.keys) return;
         const space = ch === ' ';
         const vary = 0.85 + Math.random() * 0.3;
         const LEVEL = 0.5;
@@ -316,11 +348,13 @@
     const tn = document.createTextNode('');
     p.textContent = '';
     p.append(tn, caret);
+    Typing.start('keys');
     for (const ch of text) {
       tn.data += ch;
       Typing.tick(ch);
       await wait(speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0));
     }
+    Typing.stop('keys');
   }
 
   const video3 = $('.intro-video');
@@ -406,13 +440,17 @@
     await wait(delay);
     for (const [i, p] of bootP.entries()) { await type(p, C.terminalCopy.boot[i], 36); await wait(220); }
     await wait(360);
-    await play($('.t-login', s2), [{ opacity: 0 }, { opacity: 1 }, { opacity: 0.15 }, { opacity: 1 }], { duration: 420, easing: 'linear' });
-    await wait(240);
     const prog = $('.t-progress', s2);
     await play(prog, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
     prog.classList.add('is-loading');
+    Typing.start('progress');
     await loadBar(2800);
+    Typing.stop('progress');
     prog.classList.remove('is-loading');
+    await wait(350);
+    // the bar gives way to the login line in the same place
+    await play(prog, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 });
+    await play($('.t-login', s2), [{ opacity: 0 }, { opacity: 1 }, { opacity: 0.15 }, { opacity: 1 }], { duration: 420, easing: 'linear' });
     await wait(420);
     for (const [i, p] of helloP.entries()) { await type(p, C.terminalCopy.hello[i], 30); await wait(200); }
     await wait(320);
@@ -483,7 +521,9 @@
       { opacity: 0.9, backgroundColor: 'rgb(92,122,120)', offset: 0.85 },
       { opacity: 0.92, backgroundColor: 'rgb(118,146,158)' },
     ], { duration: 2600, delay: 350, easing: 'ease-in' });
+    Typing.start('glitch');
     const cv = await glitch02(2900, 0.15, 0.85);
+    Typing.stop('glitch');
     clearInterval(dinoTimer);
     await erase02();
     await play(cv, [{ opacity: 0.4 }, { opacity: 0 }], { duration: 300 });
@@ -621,8 +661,8 @@
     const paint = nearJ ? { x: nearJ.x, y: 0, w: nearJ.w, h: 100 } : undefined;
     const r = G.createWorldGL(canvas, {
       scenes: {
-        journey: { vp: WORLD.journey.vp, layers: WORLD.journey.layers, paint },
-        wedding: { vp: WORLD.wedding.vp, layers: WORLD.wedding.layers, paint, water: 'assets/world/w_water.png' },
+        journey: { vp: WORLD.journey.vp, layers: WORLD.journey.layers, paint, water: 'assets/world/j_water-v4.png' },
+        wedding: { vp: WORLD.wedding.vp, layers: WORLD.wedding.layers, paint, water: 'assets/world/w_water-v4.png' },
       },
       stageRect: () => {
         const s = stageEl.getBoundingClientRect();
@@ -755,12 +795,20 @@
     chips.append(b);
     const pane = document.createElement('article');
     pane.className = 'pane';
-    const photos = (C.photos[String(i + 1)] || [])
-      .map(p => `<img src="${site(p.src)}" alt="" loading="lazy">`).join('');
+    // the chapter's files in order: its film, then its photos in justified rows (each photo
+    // keeps its shape; see lib/journey/gallery.ts), then the words
+    const media = C.journeyMedia[i] || { film: null, photos: [] };
+    const photos = media.photos.map(p => {
+      const ar = p.px[0] / p.px[1];
+      return `<img src="${site(p.src)}" alt="" loading="lazy" style="flex:${ar} 1 ${(ar * 26).toFixed(2)}cqw;aspect-ratio:${ar}">`;
+    }).join('');
+    const film = media.film
+      ? `<video class="film" src="${site(media.film.src)}" muted loop playsinline preload="metadata" style="aspect-ratio:${media.film.px[0]} / ${media.film.px[1]}"></video>`
+      : '';
     pane.innerHTML = `<h2>${ch.title}</h2>
-      ${ch.video ? `<video class="film" src="${site(ch.video)}" muted loop playsinline autoplay></video>` : '<div class="film">Film coming soon</div>'}
-      ${ch.paragraphs.map(p => `<p>${p}</p>`).join('')}
-      <div class="photos">${photos}</div>`;
+      ${film}
+      <div class="photos">${photos}</div>
+      ${ch.paragraphs.map(p => `<p>${p}</p>`).join('')}`;
     panes4.append(pane);
   });
   chipEls = $$('.chip', chips);
@@ -770,7 +818,14 @@
   function setTab(n) {
     tab = n;
     chipEls.forEach((c, i) => c.setAttribute('aria-selected', String(i + 1 === n)));
-    paneEls.forEach((p, i) => { p.classList.toggle('is-on', i + 1 === n); if (i + 1 === n) p.scrollTop = 0; });
+    paneEls.forEach((p, i) => {
+      const on = i + 1 === n;
+      p.classList.toggle('is-on', on);
+      if (on) p.scrollTop = 0;
+      // only the open chapter's film plays
+      const film = p.querySelector('video');
+      if (film) { if (on) film.play().catch(() => {}); else film.pause(); }
+    });
     const c = chipEls[n - 1];
     if (c) chips.scrollTo({ left: c.offsetLeft - chips.offsetLeft - 24, behavior: 'smooth' });
   }
@@ -956,6 +1011,7 @@
     ['MOTIF', icon('<path d="M6 2.5 3 4.5l1.3 2.3L5.5 6v7.5h5V6l1.2.8L13 4.5l-3-2a2 2 0 0 1-4 0z"/>')],
     ['ENTOURAGE', icon('<circle cx="6" cy="5.5" r="2"/><circle cx="11.5" cy="6.5" r="1.6"/><path d="M2.5 13c0-2.2 1.6-3.8 3.5-3.8s3.5 1.6 3.5 3.8M10 9.6c1.6 0 3 1.2 3 3.2"/>')],
     ['FAQ', icon('<circle cx="8" cy="8" r="5.5"/><path d="M6.3 6.4a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.1"/>')],
+    ['NOTE', icon('<rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><path d="m3 4.5 5 4 5-4"/>')],
   ];
   let tab5Els = [];
   let pane5Els = [];
@@ -971,12 +1027,20 @@
     </div>`,
     `<p>${C.timelineIntroLines.join('<br>')}</p>
      <ul class="tl">${C.daySchedule.map(s => `<li><time>${s.time}</time><span>${s.label}</span></li>`).join('')}</ul>`,
-    C.motifGroups.map(g => `<div class="motif"><h3>${g.name}</h3><p>${g.note || ''}</p>
-      <div class="swatches">${g.swatches.map(s => `<i style="background:${s.hex}" title="${s.name}"></i>`).join('')}</div></div>`).join(''),
+    `${C.sponsorGroups.map(g => `<div class="motif"><h3>${g.title}</h3>
+      <div class="swatches">${g.fabrics.map(f => `<img src="${site(f.src)}" alt="${f.name}" title="${f.name}">`).join('')}</div>
+      ${g.attire.map(a => `<p><b>${a.who}:</b> ${a.note}</p>`).join('')}</div>`).join('')}
+      <div class="motif"><h3>${C.guestMotif.title}</h3>
+      <div class="figures">${C.guestMotif.figures.map(f => `<img src="${site(f.src)}" alt="${f.alt}" loading="lazy">`).join('')}</div>
+      <div class="swatches">${C.guestMotif.fabrics.map(f => `<img src="${site(f.src)}" alt="${f.name}" title="${f.name}">`).join('')}</div>
+      <p><b>${C.guestMotif.note}</b></p><p>${C.guestMotif.request}</p></div>`,
     C.entourageGroups.map(g => `<div class="ent"><h3>${g.role}</h3>${g.names.map(n => `<p>${n}</p>`).join('')}</div>`).join(''),
-    C.faqEntries.map(f => `<details><summary>${f.question}</summary><p>${f.isDesignCredit
-      ? `The invitation and this site were designed by <a href="${sc.chaodesignUrl}" target="_blank" rel="noopener">chaodesign</a>.`
-      : f.answer}</p></details>`).join(''),
+    C.faqEntries.map((f, i) => `<details${i ? '' : ' open'}><summary>${String(i + 1).padStart(2, '0')}. ${f.question}</summary>${f.answer
+      .map(p => `<p>${p.replace(/\n/g, '<br>').split(C.chaodesignHandle)
+        .join(`<a href="${sc.chaodesignUrl}" target="_blank" rel="noopener">${C.chaodesignHandle}</a>`)}</p>`).join('')}</details>`).join(''),
+    `<div class="note"><h3>${C.finalNote.title}</h3>${C.finalNote.paragraphs.map(p => `<p>${p}</p>`).join('')}
+      <p><b>${C.finalNote.thanks}</b></p><p>${C.finalNote.closing}</p>
+      <p>${C.finalNote.signOff}<br><b>${C.finalNote.signature}</b></p></div>`,
   ];
   TABS5.forEach(([label, svg], i) => {
     const b = document.createElement('button');
@@ -1180,9 +1244,70 @@
   const canScroll = (el, dir) => !!el && el.scrollHeight > el.clientHeight + 1 &&
     (dir > 0 ? el.scrollTop + el.clientHeight < el.scrollHeight - 4 : el.scrollTop > 0);  // 4px: phones round fractional heights
 
+  // a chapter's photo, big: tap a photo in the journey card; swipe sideways (or the arrows, or
+  // ← →) for the chapter's other photos; tap outside or × to close. While it is open the story
+  // ignores swipes, the wheel and keys.
+  let lightbox = null;
+  function openLightbox(srcs, index) {
+    closeLightbox();
+    let i = index;
+    const el = document.createElement('div');
+    el.className = 'lightbox';
+    el.setAttribute('role', 'dialog');
+    el.setAttribute('aria-modal', 'true');
+    el.innerHTML = `<img alt=""><button class="lb-close" type="button" aria-label="Close photo">×</button>
+      <button class="lb-prev" type="button" aria-label="Previous photo">‹</button>
+      <button class="lb-next" type="button" aria-label="Next photo">›</button><p class="lb-count"></p>`;
+    const img = $('img', el);
+    const show = n => {
+      i = (n + srcs.length) % srcs.length;
+      img.src = srcs[i];
+      $('.lb-count', el).textContent = `${i + 1} / ${srcs.length}`;
+    };
+    const many = srcs.length > 1;
+    $('.lb-prev', el).hidden = !many;
+    $('.lb-next', el).hidden = !many;
+    $('.lb-prev', el).addEventListener('click', e => { e.stopPropagation(); show(i - 1); });
+    $('.lb-next', el).addEventListener('click', e => { e.stopPropagation(); show(i + 1); });
+    $('.lb-close', el).addEventListener('click', e => { e.stopPropagation(); closeLightbox(); });
+    img.addEventListener('click', e => e.stopPropagation());
+    el.addEventListener('click', closeLightbox);
+    let sx = null;
+    el.addEventListener('touchstart', e => { sx = e.touches[0].clientX; }, { passive: true });
+    el.addEventListener('touchend', e => {
+      if (sx === null || !many) return;
+      const dx = e.changedTouches[0].clientX - sx;
+      sx = null;
+      if (Math.abs(dx) > 40) show(i + (dx < 0 ? 1 : -1));
+    }, { passive: true });
+    const onKey = e => {
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowRight') show(i + 1);
+      else if (e.key === 'ArrowLeft') show(i - 1);
+    };
+    addEventListener('keydown', onKey);
+    lightbox = { el, onKey };
+    document.body.append(el);
+    show(i);
+  }
+  function closeLightbox() {
+    if (!lightbox) return;
+    removeEventListener('keydown', lightbox.onKey);
+    lightbox.el.remove();
+    lightbox = null;
+  }
+  panes4.addEventListener('click', e => {
+    const img = e.target.closest && e.target.closest('.photos img');
+    if (!img) return;
+    e.stopPropagation();
+    const imgs = $$('img', img.parentElement);
+    openLightbox(imgs.map(m => m.currentSrc || m.src), imgs.indexOf(img));
+  });
+
   // touch: one swipe = one step
   let touch = null;
   addEventListener('touchstart', e => {
+    if (lightbox) { touch = null; return; }
     const pane = e.target.closest && e.target.closest('.pane');
     touch = { y: e.touches[0].clientY, x: e.touches[0].clientX, pane,
       up: canScroll(pane, 1), down: canScroll(pane, -1), chips: !!(e.target.closest && e.target.closest('.chips, .icontabs')) };
@@ -1209,6 +1334,7 @@
   let lastWheel = 0;
   let gated = false;
   addEventListener('wheel', e => {
+    if (lightbox) { e.preventDefault(); return; }
     const pane = e.target.closest && e.target.closest('.pane');
     if (pane && canScroll(pane, Math.sign(e.deltaY))) return;  // let the card scroll
     e.preventDefault();
@@ -1227,7 +1353,7 @@
   }, { passive: false });
 
   addEventListener('keydown', e => {
-    if (e.target === pw) return;
+    if (e.target === pw || lightbox) return;
     if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); if (!canScroll(openPane(), 1)) onStep(1); }
     if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); if (!canScroll(openPane(), -1)) onStep(-1); }
   });

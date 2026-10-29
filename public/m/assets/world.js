@@ -3,12 +3,12 @@ window.WORLD = {
  "journey": {
   "vp": {
    "x": 49.953703703703695,
-   "y": 68.98148148148148
+   "y": 49.074074074074076
   },
   "layers": [
    {
     "kind": "sky",
-    "src": "assets/world/j_sky.webp",
+    "src": "assets/world/j_sky-v4.webp",
     "x": -28.086419753086417,
     "y": -14.814814814814813,
     "w": 156.08024691358023,
@@ -16,7 +16,7 @@ window.WORLD = {
    },
    {
     "kind": "far",
-    "src": "assets/world/j_far.webp",
+    "src": "assets/world/j_far-v4.webp",
     "x": -28.086419753086417,
     "y": -13.888888888888888,
     "w": 156.08024691358023,
@@ -24,7 +24,7 @@ window.WORLD = {
    },
    {
     "kind": "mid",
-    "src": "assets/world/j_mid.webp",
+    "src": "assets/world/j_mid-v4.webp",
     "x": -28.086419753086417,
     "y": -18.518518518518515,
     "w": 156.08024691358023,
@@ -32,7 +32,7 @@ window.WORLD = {
    },
    {
     "kind": "near",
-    "src": "assets/world/j_near.webp",
+    "src": "assets/world/j_near-v4.webp",
     "x": -28.086419753086417,
     "y": -13.888888888888888,
     "w": 156.08024691358023,
@@ -40,7 +40,7 @@ window.WORLD = {
    },
    {
     "kind": "fore",
-    "src": "assets/world/j_fore.webp",
+    "src": "assets/world/j_fore-v4.webp",
     "x": -28.086419753086417,
     "y": -13.888888888888888,
     "w": 156.08024691358023,
@@ -51,12 +51,12 @@ window.WORLD = {
  "wedding": {
   "vp": {
    "x": 49.953703703703695,
-   "y": 61.574074074074076
+   "y": 51.851851851851855
   },
   "layers": [
    {
     "kind": "sky",
-    "src": "assets/world/w_sky.webp",
+    "src": "assets/world/w_sky-v4.webp",
     "x": -28.086419753086417,
     "y": -14.814814814814813,
     "w": 156.08024691358023,
@@ -64,7 +64,7 @@ window.WORLD = {
    },
    {
     "kind": "far",
-    "src": "assets/world/w_far.webp",
+    "src": "assets/world/w_far-v4.webp",
     "x": -28.086419753086417,
     "y": -13.888888888888888,
     "w": 156.08024691358023,
@@ -72,7 +72,7 @@ window.WORLD = {
    },
    {
     "kind": "mid",
-    "src": "assets/world/w_mid.webp",
+    "src": "assets/world/w_mid-v4.webp",
     "x": -28.086419753086417,
     "y": -18.518518518518515,
     "w": 156.08024691358023,
@@ -80,7 +80,7 @@ window.WORLD = {
    },
    {
     "kind": "near",
-    "src": "assets/world/w_near.webp",
+    "src": "assets/world/w_near-v4.webp",
     "x": -28.086419753086417,
     "y": -13.888888888888888,
     "w": 156.08024691358023,
@@ -88,7 +88,7 @@ window.WORLD = {
    },
    {
     "kind": "fore",
-    "src": "assets/world/w_fore.webp",
+    "src": "assets/world/w_fore-v4.webp",
     "x": -28.086419753086417,
     "y": -13.888888888888888,
     "w": 156.08024691358023,
@@ -96,11 +96,11 @@ window.WORLD = {
    },
    {
     "kind": "glint",
-    "src": "assets/world/w_glint.webp",
+    "src": "assets/world/w_glint-v4.webp",
     "x": -28.086419753086417,
-    "y": 63.888888888888886,
+    "y": 67.03703703703704,
     "w": 156.08024691358023,
-    "h": 36.111111111111114
+    "h": 32.96296296296296
    }
   ]
  }

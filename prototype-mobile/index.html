@@ -61,13 +61,16 @@
         <div class="crt__wash"></div>
         <div class="term">
           <div class="t-boot"><p></p><p></p><p></p></div>
-          <h1 class="t-login"></h1>
-          <div class="t-progress">
-            <div class="t-bar"><i></i></div>
-            <span class="t-pct">0%</span>
-            <svg class="t-hourglass" viewBox="0 0 9 12" aria-hidden="true">
-              <path d="M0 0h9v1.5H0zM0 10.5h9V12H0zM1 1.5h7v1l-2.5 3 2.5 3v2H1v-2l2.5-3L1 2.5z"/>
-            </svg>
+          <!-- the bar comes first; at 100% the login line takes its place -->
+          <div class="t-slot">
+            <div class="t-progress">
+              <div class="t-bar"><i></i></div>
+              <span class="t-pct">0%</span>
+              <svg class="t-hourglass" viewBox="0 0 9 12" aria-hidden="true">
+                <path d="M0 0h9v1.5H0zM0 10.5h9V12H0zM1 1.5h7v1l-2.5 3 2.5 3v2H1v-2l2.5-3L1 2.5z"/>
+              </svg>
+            </div>
+            <h1 class="t-login"></h1>
           </div>
           <div class="t-hello"><p></p><p></p><p></p></div>
           <div class="t-dino" aria-hidden="true"><svg class="dino" viewBox="0 0 20 20"></svg><i class="t-ground"></i></div>
@@ -83,11 +86,11 @@
   <section class="scene" id="s03" aria-label="Intro">
     <div class="stage">
       <div class="layer full s03-video">
-        <video class="intro-video" muted loop playsinline preload="auto" src="site/video/intro-web.mp4"></video>
+        <video class="intro-video" muted loop playsinline preload="auto" src="site/video/intro-v2.mp4"></video>
         <div class="s03-shade"></div>
       </div>
       <div class="s03-ui">
-        <button class="verse" id="verse" type="button" aria-live="polite"><span class="verse__t"></span><cite></cite></button>
+        <button class="verse" id="verse" type="button" aria-live="polite"><span class="verse__t"></span><cite></cite><span class="verse__hint" aria-hidden="true">Tap to see more verses</span></button>
       </div>
     </div>
   </section>
