@@ -238,8 +238,9 @@ fg_alpha = feather(ground, 1.2)
 # the monitor on its own, so it can stay in focus while the meadow blurs during the zoom.
 # It is cut from the mockup so it matches the couple-on-screen crop laid over it.
 mon_mask = ndi.binary_dilation(polygon(sh, [(x * K, y * K) for x, y in mon]), iterations=2)
-box = save_rgba(mock, feather(mon_mask, 1.0), "s01_monitor-v4.webp")
-place("s01_monitor", "s01_monitor-v4.webp", box, W, H)
+# (from the 3.0 plate, which has the couple's photo on the screen)
+box = save_rgba(img, feather(mon_mask, 1.0), "s01_monitor-v5.webp")
+place("s01_monitor", "s01_monitor-v5.webp", box, W, H)
 box = save_rgba(clean, fg_alpha, "s01_fg-v4.webp", crop=(0, 0, W, H))
 place("s01_fg", "s01_fg-v4.webp", box, W, H)
 
@@ -250,10 +251,10 @@ save_rgb(sky, "s01_sky-v4.jpg", 84)
 manifest["s01_sky"] = dict(src=target("s01_sky-v4.jpg")[1], px=[sky.shape[1], sky.shape[0]],
                            x=-100 * pad / W, y=0, w=100 + 200 * pad / W, h=100)
 
-orig = Image.open(os.path.join(ROOT, "01-password.jpg")).convert("RGB")
+orig = Image.open(os.path.join(V4, "01-password-plate.jpg")).convert("RGB")  # the couple's photo on the screen
 scr = (1514, 616, 1684, 752)
-orig.crop(scr).save(target("s01_screen.jpg")[0], quality=90)
-place("s01_screen", "s01_screen.jpg", scr, 3288, 1850)
+orig.crop(scr).save(target("s01_screen-v5.jpg")[0], quality=90)
+place("s01_screen", "s01_screen-v5.jpg", scr, 3288, 1850)
 manifest["s01_screen"]["px"] = [scr[2] - scr[0], scr[3] - scr[1]]
 # where the live password pill and the heading sit (% of the stage), measured on the 3.0
 # reference (3.0/reference screenshots/01 - password.png, 1920 x 1080)

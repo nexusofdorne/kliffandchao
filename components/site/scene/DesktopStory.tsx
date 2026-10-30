@@ -1,7 +1,7 @@
 'use client';
 
 import gsap from 'gsap';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAudio } from '@/components/site/AudioProvider';
 import { useTrackProgress } from '@/components/site/TrackProgressProvider';
 import { IntroScene, type IntroHandle } from './IntroScene';
@@ -49,6 +49,9 @@ function Story({ arrival }: { arrival: boolean }) {
   const terminal = useRef<TerminalHandle>(null);
   const introRoot = useRef<HTMLElement>(null);
   const arrivalRoot = useRef<HTMLElement>(null);
+  // the splash can be skipped every time it plays: Skip aborts just the terminal's part
+  const skipSplash = useRef<AbortController | null>(null);
+  const [splashShowing, setSplashShowing] = useState(arrival);
 
   // the redesigned scenes keep the white chrome on every scene
   useEffect(() => {
@@ -85,8 +88,17 @@ function Story({ arrival }: { arrival: boolean }) {
 
     const play = async () => {
       if (arrival) {
-        await term.run(introEl.videoReady(), signal);
-        await term.breakUp(signal);
+        const skip = new AbortController();
+        skipSplash.current = skip;
+        signal.addEventListener('abort', () => skip.abort());
+        try {
+          await term.run(introEl.videoReady(), skip.signal);
+          await term.breakUp(skip.signal);
+        } catch (error) {
+          // skipped: straight on to the intro (anything else, or leaving the page, stops here)
+          if (!isAbort(error) || signal.aborted) throw error;
+        }
+        setSplashShowing(false);
         // the intro's monitor is the terminal's own picture and its screen starts in
         // the colour the break-up ends on, so swapping them shows no seam
         gsap.set(introRoot.current, { autoAlpha: 1, zIndex: 6 });
@@ -133,10 +145,31 @@ function Story({ arrival }: { arrival: boolean }) {
       <SceneRoot id="intro" rootRef={introRoot} z={3} ambient={AMBIENT.monitor}>
         <IntroScene ref={intro} startHidden />
       </SceneRoot>
-      <SceneRoot id="arrival" rootRef={arrivalRoot} visible z={5} ambient={AMBIENT.monitor}>
+      <SceneRoot
+        id="arrival"
+        rootRef={arrivalRoot}
+        visible
+        z={5}
+        ambient={AMBIENT.monitor}
+      >
         <Terminal ref={terminal} />
       </SceneRoot>
       <LightVeil ref={veil} />
+      {splashShowing ? (
+        <button
+          type="button"
+          onClick={() => {
+            skipSplash.current?.abort();
+            setSplashShowing(false);
+          }}
+          className="splash-skip"
+        >
+          SKIP
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 6l6 6-6 6" />
+          </svg>
+        </button>
+      ) : null}
     </>
   );
 }

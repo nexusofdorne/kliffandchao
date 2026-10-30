@@ -66,7 +66,11 @@ export function IntroScene({
       // tuning in: bright and soft, then the picture settles
       tl.fromTo(
         filmRef.current,
-        { opacity: 0, filter: 'brightness(2.2) contrast(0.7) blur(10px)', scaleY: 1.03 },
+        {
+          opacity: 0,
+          filter: 'brightness(2.2) contrast(0.7) blur(10px)',
+          scaleY: 1.03,
+        },
         {
           opacity: 1,
           filter: 'brightness(1) contrast(1) blur(0px)',
@@ -77,7 +81,12 @@ export function IntroScene({
         },
         0,
       );
-      tl.fromTo(uiRef.current, { opacity: 0 }, { opacity: 1, duration: 0.8 * k }, 1.4 * k);
+      tl.fromTo(
+        uiRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.8 * k },
+        1.4 * k,
+      );
     }
     // the film starts as it appears
     tl.call(() => void filmRef.current?.play().catch(() => {}), [], 0);
@@ -140,7 +149,7 @@ export function IntroScene({
         >
           <div
             className="pointer-events-auto absolute"
-            style={{ right: '8%', top: '82.5%' }}
+            style={{ right: '8%', bottom: '18%' }}
           >
             <VerseCycler />
           </div>

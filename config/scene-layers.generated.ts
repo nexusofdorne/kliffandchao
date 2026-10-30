@@ -48,7 +48,7 @@ export const sceneAssets = {
     ]
   },
   "s01_monitor": {
-    "src": "/img/scenes/gate/s01_monitor-v4.webp",
+    "src": "/img/scenes/gate/s01_monitor-v5.webp",
     "x": 44.4140625,
     "y": 30.0,
     "w": 10.9375,
@@ -81,7 +81,7 @@ export const sceneAssets = {
     "h": 100
   },
   "s01_screen": {
-    "src": "/img/scenes/gate/s01_screen.jpg",
+    "src": "/img/scenes/gate/s01_screen-v5.jpg",
     "x": 46.04622871046229,
     "y": 33.2972972972973,
     "w": 5.170316301703163,

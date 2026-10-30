@@ -20,15 +20,12 @@ export const siteConfig = {
   // "The Blessing (Cinematic Version)" — Kari Jobe & Cody Carnes, per
   // docs/PLAN.md "Background music". Licensed for this private, gated site.
   audioSrc: '/audio/the-blessing-v2.mp3',
-  // The splash screen's recorded sounds (lib/audio/typing.ts, from 3.0/audio): typing while
-  // a line types, the progress bar while it fills, the glitch while the screen tears. An empty
-  // path falls back to the built-in key click (or silence). A changed file needs a new name:
-  // media is cached for a week.
-  terminalSounds: {
-    keys: '/audio/sfx/typing.mp3',
-    progress: '/audio/sfx/progress.mp3',
-    glitch: '/audio/sfx/glitch.mp3',
-  } as Record<'keys' | 'progress' | 'glitch', string>,
+  // The splash screen's recorded sounds (lib/audio/typing.ts): the couple's typing (3.0/audio).
+  // The progress bar and the glitch have none, so they are made in the browser. A changed file
+  // needs a new name: media is cached for a week.
+  terminalSounds: { keys: '/audio/sfx/typing.mp3' } as Partial<
+    Record<'keys' | 'progress' | 'glitch', string>
+  >,
   audioTitle: 'The Blessing',
   // UTM params are load-bearing, not decoration: vercel.json sets
   // Referrer-Policy: no-referrer, so without them Instagram logs these

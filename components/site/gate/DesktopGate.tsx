@@ -16,7 +16,6 @@ import { frameTransform, ridingFrame, zoomFrame } from '@/lib/scene/camera';
 import type { GateFormProps } from './MobileGate';
 
 const DIVE_SECONDS = 3.2;
-const GATE_SCREEN_FILM = '/video/gate-screen.mp4';
 /** How far (% of the stage) the sky and the bubbles drift against the hill as the pointer moves. */
 const PARALLAX = { sky: 0.6, bubbles: 1.4 };
 const REDUCED_FADE_SECONDS = 0.4;
@@ -213,12 +212,6 @@ export function DesktopGate({
                 />
               ))}
             </div>
-            {/* the couple's marks (3.0): the wordmark over the hill, the monogram in the corner */}
-            <Wordmark
-              decorative={false}
-              className="absolute left-[46.2%] top-[8.5%] w-[7.6%] text-white drop-shadow-[0_0.1cqw_0.6cqw_rgba(0,0,0,.18)]"
-            />
-            <Monogram className="absolute left-[91.3%] top-[88.9%] w-[6.2%] text-white drop-shadow-[0_0.1cqw_0.6cqw_rgba(0,0,0,.25)]" />
           </div>
           <StageLayer asset={a.s01_monitor} />
 
@@ -230,18 +223,6 @@ export function DesktopGate({
               height={a.s01_screen.px[1]}
               unoptimized
               draggable={false}
-            />
-            {/* the couple on the little screen (3.0 "glitch computer video"); the still is its poster */}
-            <video
-              className="gate-monitor__film"
-              src={GATE_SCREEN_FILM}
-              poster={a.s01_screen.src}
-              muted
-              loop
-              playsInline
-              autoPlay
-              preload="auto"
-              aria-hidden="true"
             />
             <div
               className="gate-monitor__ghost gate-monitor__ghost--r"
@@ -360,6 +341,20 @@ export function DesktopGate({
           </div>
         </div>
       </Stage>
+      {/* The couple's marks (3.0): the wordmark over the hill, the monogram in the corner. Placed
+          from the window's edges, not on the 16:9 picture: a window wider than 16:9 crops the
+          picture's top and bottom, which pushed them against the edge. They leave with the form
+          when the camera dives into the monitor. */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[2] transition-opacity duration-300"
+        style={{ opacity: diving ? 0 : 1 }}
+      >
+        <Wordmark
+          decorative={false}
+          className="absolute left-1/2 top-[max(6.5vh,44px)] w-[clamp(110px,7.6vw,180px)] -translate-x-1/2 text-white drop-shadow-[0_2px_10px_rgba(0,0,0,.18)]"
+        />
+        <Monogram className="absolute bottom-[max(4.5vh,30px)] right-[max(3.2vw,28px)] w-[clamp(84px,6.2vw,150px)] text-white drop-shadow-[0_2px_10px_rgba(0,0,0,.25)]" />
+      </div>
     </div>
   );
 }

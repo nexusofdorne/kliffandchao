@@ -41,25 +41,25 @@ export function VerseCycler() {
   const verse = verses[index];
 
   return (
-    <div className="flex max-w-[min(48vw,540px)] flex-col items-end gap-[.9vh] max-[768px]:w-full max-[768px]:max-w-none max-[768px]:items-center">
+    <div className="flex max-w-[min(48vw,640px)] flex-col items-end gap-[.9vh] max-[768px]:w-full max-[768px]:max-w-none max-[768px]:items-center">
       <button
         type="button"
         onClick={handleClick}
         aria-live="polite"
         title="Tap for another verse"
-        className={`w-full cursor-pointer py-[.8vh] text-right text-[clamp(8.5px,1.22vh,13px)] font-semibold uppercase leading-[1.95] tracking-[.115em] text-white [text-shadow:0_2px_14px_rgba(0,0,0,.42)] transition-opacity duration-[340ms] ease-in-out hover:opacity-70 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-[6px] focus-visible:outline-white/55 max-[768px]:text-center max-[768px]:text-[clamp(11px,3.1vw,15px)] max-[768px]:leading-[2.05] max-[768px]:tracking-[.1em] ${
+        className={`w-full cursor-pointer py-[.8vh] text-right text-[clamp(10.5px,1.6vh,17px)] font-semibold uppercase leading-[1.95] tracking-[.115em] text-white [text-shadow:0_2px_14px_rgba(0,0,0,.42)] transition-opacity duration-[340ms] ease-in-out hover:opacity-70 focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-[6px] focus-visible:outline-white/55 max-[768px]:text-center max-[768px]:text-[clamp(11px,3.1vw,15px)] max-[768px]:leading-[2.05] max-[768px]:tracking-[.1em] ${
           faded ? 'opacity-0' : 'opacity-100'
         }`}
       >
         {verse.text}
-        <span className="mt-[1.1vh] block text-[clamp(7.5px,1.02vh,11px)] tracking-[.14em] opacity-80 max-[768px]:text-[clamp(9px,2.5vw,12px)]">
+        <span className="mt-[1.1vh] block text-[clamp(9px,1.3vh,14px)] tracking-[.14em] opacity-80 max-[768px]:text-[clamp(9px,2.5vw,12px)]">
           {verse.ref}
         </span>
       </button>
       <div
         aria-hidden="true"
         style={{ opacity: hintOpacity }}
-        className="pointer-events-none text-right text-[8.5px] tracking-[.14em] text-white transition-opacity duration-[600ms] ease-in-out max-[768px]:text-center"
+        className="pointer-events-none text-right text-[clamp(9px,1.15vh,12px)] tracking-[.14em] text-white transition-opacity duration-[600ms] ease-in-out max-[768px]:text-center"
       >
         TAP TO SEE MORE VERSES
       </div>
