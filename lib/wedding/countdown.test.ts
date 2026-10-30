@@ -43,4 +43,25 @@ describe('computeCountdown', () => {
     expect(result.minutes).toBe(1);
     expect(result.seconds).toBe(1);
   });
+
+  // local-time dates, so these hold in any time zone the tests run in
+  it('counts from a month-end day to the last day of a shorter month', () => {
+    const target = new Date(2027, 2, 5, 16, 0, 0);
+    // Oct 31 + 4 months is Feb 28, then 5 days to Mar 5 (not "Feb 31" = Mar 3 and 2 days)
+    expect(computeCountdown(target, new Date(2026, 9, 31, 16, 0, 0))).toMatchObject({ months: 4, days: 5, hours: 0 });
+    // Oct 30 + 4 months is Feb 28 too
+    expect(computeCountdown(target, new Date(2026, 9, 30, 16, 0, 0))).toMatchObject({ months: 4, days: 5, hours: 0 });
+    expect(computeCountdown(target, new Date(2026, 10, 5, 16, 0, 0))).toMatchObject({ months: 4, days: 0 });
+  });
+
+  it('never goes up as time passes', () => {
+    const target = new Date(2027, 2, 5, 16, 0, 0);
+    const total = (c: ReturnType<typeof computeCountdown>) => c.months * 100 + c.days;
+    let previous = Infinity;
+    for (let t = new Date(2026, 8, 1, 16).getTime(); t < target.getTime(); t += 86400000) {
+      const value = total(computeCountdown(target, new Date(t)));
+      expect(value).toBeLessThanOrEqual(previous);
+      previous = value;
+    }
+  });
 });

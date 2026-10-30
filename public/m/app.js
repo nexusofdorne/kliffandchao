@@ -1192,11 +1192,27 @@
     if (t) tabs5.scrollTo({ left: t.offsetLeft - tabs5.offsetLeft - 24, behavior: 'smooth' });
     pane5Els.forEach((p, j) => { p.classList.toggle('is-on', i === j); if (i === j) p.scrollTop = 0; });
   }
+  // calendar months, as on the website (lib/wedding/countdown.ts): a month from the 31st lands on
+  // the last day of a shorter month, and the rest is days, hours and minutes
+  function addMonths(date, n) {
+    const out = new Date(date);
+    const day = out.getDate();
+    out.setDate(1);
+    out.setMonth(out.getMonth() + n);
+    out.setDate(Math.min(day, new Date(out.getFullYear(), out.getMonth() + 1, 0).getDate()));
+    return out;
+  }
   function countdown() {
-    const ms = new Date(C.siteConfig.weddingDateTime) - Date.now();
-    const d = Math.max(0, ms);
-    const days = Math.floor(d / 864e5);
-    const parts = [['MONTHS', Math.floor(days / 30.44)], ['DAYS', Math.floor(days % 30.44)],
+    const target = new Date(C.siteConfig.weddingDateTime);
+    const now = new Date();
+    let months = 0, d = 0;
+    if (target > now) {
+      months = (target.getFullYear() - now.getFullYear()) * 12 + target.getMonth() - now.getMonth();
+      let anchor = addMonths(now, months);
+      if (anchor > target) anchor = addMonths(now, --months);
+      d = target - anchor;
+    }
+    const parts = [['MONTHS', months], ['DAYS', Math.floor(d / 864e5)],
       ['HOURS', Math.floor(d / 36e5) % 24], ['MINS', Math.floor(d / 6e4) % 60]];
     $('#count').innerHTML = parts.map(([l, v]) => `<div><b>${String(v).padStart(2, '0')}</b><span>${l}</span></div>`).join('');
   }
