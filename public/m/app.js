@@ -512,10 +512,12 @@
   let skipping = false;
   const SKIPPED = {};
   const step = async p => { await p; if (skipping) throw SKIPPED; };
-  $('.skip02', s2).addEventListener('click', e => {
+  const skip02 = $('.skip02');
+  skip02.addEventListener('click', e => {
     e.stopPropagation();
     if (skipping || current !== 2) return;
     skipping = true;
+    skip02.hidden = true;
     ['keys', 'progress', 'glitch'].forEach(n => Typing.stop(n));
     clearInterval(dinoTimer);
     busy = true;
@@ -526,7 +528,7 @@
 
   async function run02(delay = 600) {
     skipping = false;
-    $('.skip02', s2).hidden = false;
+    skip02.hidden = false;
     try {
       await step(wait(delay));
       for (const [i, p] of bootP.entries()) { await step(type(p, C.terminalCopy.boot[i], 36)); await step(wait(220)); }
@@ -551,7 +553,7 @@
       if (e === SKIPPED) return;
       throw e;
     }
-    $('.skip02', s2).hidden = true;  // too late to skip once the screen starts to tear
+    skip02.hidden = true;  // too late to skip once the screen starts to tear
     go23();
   }
 

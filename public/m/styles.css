@@ -99,7 +99,9 @@ img.layer, .bub, .grass, .flowers, .bezel { pointer-events: none; }
 @keyframes sway-a { from { transform: skewX(-.9deg); } to { transform: skewX(.9deg); } }
 @keyframes sway-b { from { transform: skewX(-1.6deg); } to { transform: skewX(1.4deg); } }
 
-.monitor { overflow: hidden; border-radius: 12% / 14%; background: #111; animation: crt-jitter 4.2s steps(1) infinite; }
+.monitor { overflow: hidden; background: #111;
+  /* the screen in the 3.0 photo: a tilted quad with softened corners (as the desktop gate's SCREEN_OUTLINE) */
+  clip-path: polygon(7.2% 9%, 10.3% 6%, 97.4% 0%, 100% 1.5%, 96.1% 90.2%, 93.1% 93.2%, 2.6% 99.7%, 0% 97.2%); animation: crt-jitter 4.2s steps(1) infinite; }
 .monitor__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; display: block; }
 .monitor__ghost { position: absolute; inset: 0; background-size: 100% 100%; mix-blend-mode: screen; opacity: 0; }
 .monitor__ghost--r { filter: sepia(1) saturate(6) hue-rotate(-50deg); animation: ghost-r 4.2s steps(1) infinite; }
@@ -514,13 +516,18 @@ details p { margin: 2.4cqw 0 0; font-size: 3.2cqw; }
 .rsvp-frame { position: fixed; inset: 0; z-index: 90; background: #0a0c07; }
 .rsvp-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
 
-/* the splash's way out (app.js): there every time the splash plays */
+/* the splash's way out (app.js): there every time the splash plays. Fixed to the phone's own
+   frame, well above the home bar, big enough to see and tap */
 .skip02 {
-  position: absolute; right: 6cqw; bottom: calc(5cqh + env(safe-area-inset-bottom, 0px)); z-index: 5;
-  padding: 3cqw 5cqw; border: .3cqw solid rgba(160,255,180,.45); border-radius: 999px;
-  background: rgba(10,20,12,.55); color: #9dffb0; font: 500 3.2cqw/1 Orbitron, 'Courier New', monospace;
-  letter-spacing: .18em; pointer-events: auto;
+  position: fixed; right: 18px; bottom: calc(env(safe-area-inset-bottom, 0px) + 9vh); z-index: 60;
+  min-width: 112px; min-height: 48px; padding: 0 24px;
+  border: 1.5px solid rgba(160,255,180,.75); border-radius: 999px;
+  background: rgba(10,24,14,.78); color: #b6ffc4;
+  font: 600 15px/1 Orbitron, 'Courier New', monospace; letter-spacing: .18em;
+  box-shadow: 0 0 18px rgba(80,255,120,.25);
+  -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px);
 }
+.skip02[hidden] { display: none; }
 
 /* the walk between the path and the hall (app.js walk): the film over the scenery */
 .walk-film { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; }
