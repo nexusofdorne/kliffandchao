@@ -127,6 +127,16 @@
   html {
     @apply font-sans;
   }
+  /* Tailwind v4 leaves buttons with the default arrow; every clickable control shows the hand,
+     so guests can tell what they can click (the nav, the music button, the window's lights...).
+     A class like cursor-zoom-in still wins: utilities sit above this base layer. */
+  button:not(:disabled),
+  [role='button'],
+  [role='tab'],
+  summary,
+  label[for] {
+    cursor: pointer;
+  }
 }
 
 /* ============================================================
