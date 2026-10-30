@@ -3,13 +3,15 @@ import { cookies } from 'next/headers';
 import { NextResponse } from 'next/server';
 import { redirect } from 'next/navigation';
 import { env } from '../env';
+import { getSiteSettings } from '../settings/site-settings';
 import { SESSION_COOKIE_NAME, verifySession } from './session';
 
 async function hasValidSession(): Promise<boolean> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE_NAME)?.value;
   if (!token) return false;
-  return verifySession(token, env.SESSION_SECRET, env.SESSION_EPOCH);
+  const { sessionGeneration } = await getSiteSettings();
+  return verifySession(token, env.SESSION_SECRET, env.SESSION_EPOCH, sessionGeneration);
 }
 
 // For Server Components (gated layouts, pages): redirects unauthenticated

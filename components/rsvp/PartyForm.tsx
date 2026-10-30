@@ -42,7 +42,13 @@ export function PartyForm({ party, guestId, onSubmit, submitting }: PartyFormPro
   const self = party.members.find((member) => member.id === guestId);
   const messageOnly = changed.length === 0 && message.trim() !== '' && picks[guestId] != null;
   const sendable = changed.length > 0 ? changed : messageOnly && self ? [self] : [];
-  const ctaLabel = submitting ? 'SENDING…' : party.hasSubmission ? 'UPDATE OUR RSVP' : 'SEND OUR RSVP';
+  const ctaLabel = party.submissionsClosed
+    ? 'RSVPS ARE CLOSED'
+    : submitting
+      ? 'SENDING…'
+      : party.hasSubmission
+        ? 'UPDATE OUR RSVP'
+        : 'SEND OUR RSVP';
 
   function handlePick(guestId: string, status: AttendanceChoice) {
     setPicks((previous) => ({ ...previous, [guestId]: status }));
@@ -129,12 +135,17 @@ export function PartyForm({ party, guestId, onSubmit, submitting }: PartyFormPro
 
       <button
         type="button"
-        disabled={sendable.length === 0 || !party.editable || submitting}
+        disabled={sendable.length === 0 || !party.editable || submitting || party.submissionsClosed}
         onClick={handleSubmit}
         className="mt-[4.4vh] h-[58px] w-full rounded-full bg-[var(--lime)] font-semibold tracking-[.14em] text-[#1c2610] shadow-[0_8px_26px_rgba(157,203,90,.22)] transition-[background,transform] duration-200 enabled:hover:-translate-y-px enabled:hover:bg-[#aedc68] disabled:cursor-not-allowed disabled:opacity-30 disabled:shadow-none"
       >
         {ctaLabel}
       </button>
+      {party.submissionsClosed && (
+        <p className="mt-[1.8vh] text-center text-[10px] tracking-[.14em] opacity-60">
+          RSVPS ARE CLOSED. THANK YOU FOR CELEBRATING WITH US!
+        </p>
+      )}
     </div>
   );
 }

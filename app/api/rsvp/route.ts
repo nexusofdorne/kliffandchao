@@ -11,6 +11,7 @@ import {
 import { submitRsvp } from '@/lib/rsvp/submit';
 import { env } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/settings/site-settings';
 import { rsvpRequestSchema } from '@/lib/validation';
 
 export const runtime = 'nodejs';
@@ -29,6 +30,11 @@ export async function POST(request: Request) {
   const parsed = rsvpRequestSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: 'invalid_request' }, { status: 400 });
+  }
+
+  // closed from /admin (after the wedding, the portfolio): nothing is saved or sent
+  if ((await getSiteSettings()).rsvpClosed) {
+    return NextResponse.json({ error: 'rsvp_closed' }, { status: 409 });
   }
 
   const deadline = new Date(env.RSVP_DEADLINE);

@@ -15,13 +15,35 @@ import { MobileGate } from './MobileGate';
 // branch matching the screen at submit time is ever started.
 type Phase = 'idle' | 'loader' | 'dive';
 
-export function GateScreen({ next }: { next: string }) {
+/** How long the open gate waits before typing, and the time per dot. */
+const AUTO_TYPE_DELAY_MS = 1400;
+const AUTO_TYPE_STEP_MS = 120;
+/** What the open gate types: only ever shown as dots, and not checked. */
+const AUTO_TYPE_TEXT = 'welcome!';
+
+/** `open`: the gate is open (portfolio, set in /admin): the password types itself in and
+ *  anyone can press Enter; /api/gate doesn't check it. */
+export function GateScreen({ next, open = false }: { next: string; open?: boolean }) {
   const router = useRouter();
   const audio = useAudio();
   const [password, setPassword] = useState('');
   const [error, setError] = useState(false);
   const [phase, setPhase] = useState<Phase>('idle');
   const [viewportHeight, setViewportHeight] = useState<number | null>(null);
+  const [typed, setTyped] = useState(false);
+
+  // the open gate types the dots in one by one, then Enter glows
+  useEffect(() => {
+    if (!open) return;
+    let i = 0;
+    let timer = window.setTimeout(function step() {
+      i += 1;
+      setPassword(AUTO_TYPE_TEXT.slice(0, i));
+      if (i < AUTO_TYPE_TEXT.length) timer = window.setTimeout(step, AUTO_TYPE_STEP_MS);
+      else setTyped(true);
+    }, AUTO_TYPE_DELAY_MS);
+    return () => window.clearTimeout(timer);
+  }, [open]);
 
   // `interactive-widget=resizes-content` (app/layout.tsx) covers most
   // browsers, but Messenger's in-app browser overlays the on-screen keyboard
@@ -81,7 +103,8 @@ export function GateScreen({ next }: { next: string }) {
     if (!response.ok) {
       audio.pause();
       setError(true);
-      setPassword('');
+      // the open gate keeps its dots (it was a network or server problem): Enter again
+      if (!open) setPassword('');
       return;
     }
 
@@ -115,6 +138,7 @@ export function GateScreen({ next }: { next: string }) {
     onPasswordChange: setPassword,
     error,
     onEnter: handleEnter,
+    ready: open && typed,
   };
 
   return (

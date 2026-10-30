@@ -299,6 +299,21 @@
   const pill = $('.pill');
   const err = $('.s01-err');
   pw.addEventListener('input', () => { go.hidden = !pw.value.trim(); err.textContent = ''; });
+  // The open gate (portfolio, switched on in the site's /admin): the password types itself in,
+  // dot by dot, and Enter glows; /api/gate lets anything in. Only on the site, never signed in.
+  let gateOpen = false;
+  function openGate() {
+    gateOpen = true;
+    const text = 'welcome!';
+    let i = 0;
+    const step = () => {
+      if (current !== 1 || busy) return;
+      pw.value = text.slice(0, ++i);
+      if (i < text.length) setTimeout(step, 120);
+      else { go.hidden = false; go.classList.add('is-ready'); }
+    };
+    setTimeout(step, 1400);
+  }
   pw.addEventListener('keydown', e => { if (e.key === 'Enter') enter(); });
   go.addEventListener('click', enter);
   function enter() {
@@ -329,8 +344,7 @@
       .catch(() => {
         busy = false;
         Music.stop();
-        pw.value = '';
-        go.hidden = true;
+        if (!gateOpen) { pw.value = ''; go.hidden = true; }
         pill.classList.remove('is-wrong');
         void pill.offsetWidth;
         pill.classList.add('is-wrong');
@@ -1527,7 +1541,10 @@
   // visitor who is already signed in skips the password; anyone else starts at it.
   const asked = +new URLSearchParams(location.search).get('scene');
   loadContent().then(signedIn => {
-    if (!signedIn) return;
+    if (!signedIn) {
+      if (LIVE) fetch('/api/gate').then(r => r.json()).then(g => { if (g.open) openGate(); }).catch(() => {});
+      return;
+    }
     const jump = asked >= 2 && asked <= 5 ? asked : LIVE ? 3 : 0;
     if (jump) jumpTo(jump);
   });

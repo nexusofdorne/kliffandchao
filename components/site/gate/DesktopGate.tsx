@@ -44,6 +44,7 @@ export function DesktopGate({
   onPasswordChange,
   error,
   onEnter,
+  ready = false,
   diving,
   onDived,
 }: GateFormProps & { diving: boolean; onDived: () => void }) {
@@ -300,7 +301,7 @@ export function DesktopGate({
               {/* always there, as in the 3.0 design; with nothing typed it just focuses the field */}
               <button
                 type="button"
-                className="gate-go"
+                className={`gate-go ${ready ? 'is-ready' : ''}`}
                 aria-label="Enter"
                 onClick={() =>
                   password.trim() ? onEnter() : inputRef.current?.focus()

@@ -170,3 +170,19 @@ model SeatingRoom {
   centerY   Float
   updatedAt DateTime @updatedAt
 }
+
+// One row (id 1): the switches and password the couple change from /admin. With no row, the
+// defaults apply and the password is SITE_PASSWORD_HASH (lib/settings/site-settings.ts).
+model SiteSettings {
+  id                Int      @id @default(1)
+  // scrypt hash (lib/auth/password.ts); null = use SITE_PASSWORD_HASH
+  sitePasswordHash  String?
+  // the gate types the password in by itself and lets anyone in (portfolio)
+  passwordOpen      Boolean  @default(false)
+  // the RSVP form still works but can't be sent
+  rsvpClosed        Boolean  @default(false)
+  // bumped by "Sign everyone out": sessions carry the number they were issued under
+  sessionGeneration Int      @default(0)
+  updatedBy         String?
+  updatedAt         DateTime @updatedAt
+}

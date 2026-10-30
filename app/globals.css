@@ -1283,9 +1283,24 @@
   height: 46%;
 }
 
+/* the open gate (portfolio): once the password has typed itself in, Enter breathes */
+.gate-go.is-ready {
+  animation: gate-go-ready 1.8s ease-in-out infinite;
+}
+@keyframes gate-go-ready {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 0 0.45cqw rgba(255, 255, 255, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .gate-monitor,
-  .gate-monitor__ghost {
+  .gate-monitor__ghost,
+  .gate-go.is-ready {
     animation: none;
   }
   .gate-monitor__ghost {

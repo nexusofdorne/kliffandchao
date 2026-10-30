@@ -121,6 +121,12 @@ export default function RsvpPage() {
     setSubmitting(false);
 
     if (!response.ok) {
+      const body = (await response.json().catch(() => null)) as { error?: string } | null;
+      // closed from /admin after the form was loaded
+      if (body?.error === 'rsvp_closed') {
+        setStage({ kind: 'party', party: { ...party, submissionsClosed: true }, guestId, error: null });
+        return;
+      }
       setStage({
         kind: 'party',
         party,

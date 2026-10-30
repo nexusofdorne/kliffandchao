@@ -37,13 +37,15 @@ export type PartyView = {
   lastRespondedAt: string | null;
   editable: boolean;
   deadlineIso: string;
+  /** RSVPs closed in /admin: the form still works (to look at) but can't be sent. */
+  submissionsClosed: boolean;
 };
 
 // Pure: takes the party's current state and "now", returns exactly what the
 // client renders. docs/PLAN.md "Already-RSVP'd behaviour" — hasSubmission
 // drives the prefill/banner, editable is the server-side deadline check the
 // client flag is never trusted for.
-export function buildParty(input: PartyInput, now: Date, deadline: Date): PartyView {
+export function buildParty(input: PartyInput, now: Date, deadline: Date, submissionsClosed = false): PartyView {
   const respondedTimestamps = input.members
     .map((member) => member.current?.respondedAt)
     .filter((respondedAt): respondedAt is Date => respondedAt != null);
@@ -70,6 +72,7 @@ export function buildParty(input: PartyInput, now: Date, deadline: Date): PartyV
     lastRespondedAt: lastRespondedAt?.toISOString() ?? null,
     editable: now.getTime() < deadline.getTime(),
     deadlineIso: deadline.toISOString(),
+    submissionsClosed,
   };
 }
 
@@ -80,6 +83,7 @@ export async function loadPartyView(
   partyId: string,
   now: Date,
   deadline: Date,
+  submissionsClosed = false,
 ): Promise<PartyView | null> {
   const party = await prisma.party.findUnique({
     where: { id: partyId },
@@ -99,5 +103,6 @@ export async function loadPartyView(
     },
     now,
     deadline,
+    submissionsClosed,
   );
 }

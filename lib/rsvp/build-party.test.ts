@@ -83,4 +83,12 @@ describe('buildParty', () => {
     expect(buildParty(noSubmissionParty, new Date('2026-01-01'), deadline).editable).toBe(true);
     expect(buildParty(noSubmissionParty, new Date('2027-02-01'), deadline).editable).toBe(false);
   });
+
+  it('is open for sending unless RSVPs are closed in admin', () => {
+    expect(buildParty(noSubmissionParty, new Date('2026-01-01'), deadline).submissionsClosed).toBe(false);
+    const closed = buildParty(noSubmissionParty, new Date('2026-01-01'), deadline, true);
+    // still editable, so the form can be filled in to see it; only sending is closed
+    expect(closed.editable).toBe(true);
+    expect(closed.submissionsClosed).toBe(true);
+  });
 });

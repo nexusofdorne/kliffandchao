@@ -23,6 +23,8 @@ export type GateFormProps = {
   onPasswordChange: (value: string) => void;
   error: boolean;
   onEnter: () => void;
+  /** The gate is open (portfolio) and the password has typed itself in: Enter invites a click. */
+  ready?: boolean;
 };
 
 // The phone gate, unchanged by the desktop redesign: a drifting photo, the

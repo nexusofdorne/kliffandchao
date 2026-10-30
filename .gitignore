@@ -26,3 +26,6 @@ next-env.d.ts
 
 # The 3.0 source media (about 900 MB); the pipeline scripts read it, the site ships only their output
 /3.0/
+
+# brainstorming mockups (superpowers visual companion)
+.superpowers/

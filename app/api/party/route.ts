@@ -3,6 +3,7 @@ import { requireGateApi } from '@/lib/auth/require-gate';
 import { loadPartyView } from '@/lib/rsvp/build-party';
 import { env } from '@/lib/env';
 import { prisma } from '@/lib/prisma';
+import { getSiteSettings } from '@/lib/settings/site-settings';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -26,7 +27,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
 
-  const party = await loadPartyView(prisma, guest.partyId, new Date(), new Date(env.RSVP_DEADLINE));
+  const { rsvpClosed } = await getSiteSettings();
+  const party = await loadPartyView(prisma, guest.partyId, new Date(), new Date(env.RSVP_DEADLINE), rsvpClosed);
   if (!party) {
     return NextResponse.json({ error: 'not_found' }, { status: 404 });
   }
