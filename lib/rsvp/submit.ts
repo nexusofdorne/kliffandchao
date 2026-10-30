@@ -1,6 +1,7 @@
 import 'server-only';
 import { Prisma, type PrismaClient } from '../../generated/prisma/client';
 import type { RsvpResponseInput } from '../validation';
+import { releaseSeats } from '../seating/store';
 import { buildRsvpNotification, type RsvpEmailDetails } from './notify';
 
 export type SubmitRsvpInput = {
@@ -76,6 +77,12 @@ export async function submitRsvp(
           },
         });
       }
+
+      // A guest who is no longer coming gives up their chair in the seating plan.
+      await releaseSeats(
+        tx,
+        input.responses.filter((response) => response.status === 'NOT_ATTENDING').map((response) => response.guestId),
+      );
     });
 
     return { outcome: 'submitted' };

@@ -50,10 +50,13 @@ export async function POST() {
   const result = await upsertGuestRows(prisma, parsedRows);
 
   const sheetGuestIds = parsedRows.guests.map((guest) => guest.externalId);
-  const archived = await prisma.guest.updateMany({
-    where: { archivedAt: null, externalId: { notIn: sheetGuestIds } },
-    data: { archivedAt: new Date() },
-  });
+  // Guests leaving the sheet also leave the seating plan: delete their seats before the archive
+  // changes who matches.
+  const toArchive = { archivedAt: null, externalId: { notIn: sheetGuestIds } };
+  const [, archived] = await prisma.$transaction([
+    prisma.seatAssignment.deleteMany({ where: { guest: toArchive } }),
+    prisma.guest.updateMany({ where: toArchive, data: { archivedAt: new Date() } }),
+  ]);
 
   return NextResponse.json({ ...result, archived: archived.count });
 }

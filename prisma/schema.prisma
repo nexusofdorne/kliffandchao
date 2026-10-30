@@ -21,6 +21,11 @@ enum AttendanceStatus {
   NOT_ATTENDING
 }
 
+enum SeatingTableKind {
+  ROUND
+  VIP
+}
+
 enum DeliveryChannel {
   EMAIL
   SHEETS
@@ -45,8 +50,8 @@ model Party {
 }
 
 model Guest {
-  id           String         @id @default(cuid())
-  externalId   String         @unique
+  id           String          @id @default(cuid())
+  externalId   String          @unique
   firstName    String
   lastName     String
   nickname     String?
@@ -55,11 +60,12 @@ model Guest {
   role         String?
   archivedAt   DateTime?
   partyId      String
-  party        Party          @relation(fields: [partyId], references: [id])
+  party        Party           @relation(fields: [partyId], references: [id])
   current      GuestRsvp?
   responses    RsvpResponse[]
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  seat         SeatAssignment?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   @@index([partyId])
 }
@@ -125,4 +131,42 @@ model RsvpDelivery {
 model SheetMirrorCursor {
   sheetId String @id
   nextRow Int
+}
+
+// The seating plan (admin only). VIP tables are number 1 and 2 with no x/y: they sit on the
+// ring around the room's center.
+model SeatingTable {
+  id          String           @id @default(cuid())
+  kind        SeatingTableKind
+  number      Int
+  name        String
+  seats       Int
+  x           Float?
+  y           Float?
+  assignments SeatAssignment[]
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([kind, number])
+}
+
+// One guest per chair, one chair per guest (both enforced by unique indexes).
+model SeatAssignment {
+  id        String       @id @default(cuid())
+  tableId   String
+  table     SeatingTable @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  seat      Int
+  guestId   String       @unique
+  guest     Guest        @relation(fields: [guestId], references: [id], onDelete: Cascade)
+  updatedAt DateTime     @updatedAt
+
+  @@unique([tableId, seat])
+}
+
+// One row (id 1): where the room's center sits on the canvas.
+model SeatingRoom {
+  id        Int      @id @default(1)
+  centerX   Float
+  centerY   Float
+  updatedAt DateTime @updatedAt
 }
