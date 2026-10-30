@@ -21,8 +21,8 @@ export const journeyChapters: readonly JourneyChapter[] = [
     ],
   },
   {
-    title: "It shouldn't have happened",
-    tabLabel: "It shouldn't\nhave happened",
+    title: "It almost didn't work",
+    tabLabel: "It almost\ndidn't work",
     paragraphs: [
       "There were more reasons why it wouldn't work than reasons why it would.",
       'They came from different places, held different beliefs, and saw certain things in completely different ways.',

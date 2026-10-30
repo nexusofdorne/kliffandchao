@@ -1,9 +1,14 @@
 import Image from 'next/image';
-import { Credit } from '@/components/site/chrome/Credit';
+import type { CSSProperties } from 'react';
 import { guestMotif, sponsorGroups, type Fabric } from '@/content/motif';
 
 // The motif as the 3.0 design lays it out: the two sponsor palettes on the left, the guests'
 // outfit ideas and palette on the right. On a narrow window the two halves stack.
+const figureAspectSum = guestMotif.figures.reduce(
+  (sum, f) => sum + f.px[0] / f.px[1],
+  0,
+);
+
 export function MotifTab() {
   return (
     <div className="motif-layout">
@@ -29,7 +34,12 @@ export function MotifTab() {
 
       <section className="flex flex-col items-center gap-[1.8vh]">
         <h3 className="motif-title">{guestMotif.title}</h3>
-        <div className="motif-figures">
+        {/* every outfit is drawn at the same height (each takes width in proportion to its own
+            shape), the women first, then the men; on a narrow window they wrap into those rows */}
+        <div
+          className="motif-figures"
+          style={{ '--fig-aspect': String(figureAspectSum) } as CSSProperties}
+        >
           {guestMotif.figures.map((figure) => (
             <Image
               key={figure.src}
@@ -40,7 +50,15 @@ export function MotifTab() {
               height={figure.px[1]}
               unoptimized
               draggable={false}
-              className="h-full"
+              className={
+                figure.src.includes('/men-')
+                  ? 'motif-figure motif-figure--men'
+                  : 'motif-figure'
+              }
+              style={{
+                flexGrow: figure.px[0] / figure.px[1],
+                aspectRatio: `${figure.px[0]} / ${figure.px[1]}`,
+              }}
             />
           ))}
         </div>
@@ -51,11 +69,6 @@ export function MotifTab() {
         <p className="m-0 -mt-[1vh] text-[clamp(8.5px,1.15vh,12px)] text-[#4a5140]">
           {guestMotif.request}
         </p>
-        {/* guests screenshot the palette to shop for outfits, so the credit sits inside that crop */}
-        <Credit
-          prefix="PALETTE & STATIONERY"
-          className="text-[var(--green)] opacity-70"
-        />
       </section>
     </div>
   );

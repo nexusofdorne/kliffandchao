@@ -523,14 +523,15 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  gap: clamp(2px, 0.4vw, 8px);
   width: 100%;
-  height: clamp(120px, 24vh, 260px);
+  /* as wide as the outfits are at the tallest height they may be (260px) */
+  max-width: calc(min(24vh, 260px) * var(--fig-aspect));
 }
-/* each outfit takes an equal share of the row and keeps its shape inside it */
-.motif-figures img {
-  flex: 1 1 0;
+/* every outfit gets width in proportion to its own shape, so they all come out the same height */
+.motif-figure {
+  flex: 0 1 0%;
   min-width: 0;
+  height: auto;
   object-fit: contain;
   object-position: bottom;
 }
@@ -564,12 +565,24 @@
     grid-template-columns: 1fr;
     gap: 4vh;
   }
+  /* the women on one row, the men on the next, all at one height */
   .motif-figures {
     flex-wrap: wrap;
-    height: auto;
+    row-gap: 2vh;
+    max-width: none;
   }
-  .motif-figures img {
+  .motif-figures::after {
+    content: '';
+    order: 1;
+    flex-basis: 100%;
+  }
+  .motif-figure {
+    flex: 0 1 auto;
+    width: auto;
     height: 22vh;
+  }
+  .motif-figure--men {
+    order: 2;
   }
 }
 
@@ -981,15 +994,8 @@
   height: 100%;
   max-width: none;
 }
-.gate-monitor > img,
-.gate-monitor__film {
+.gate-monitor > img {
   object-fit: cover;
-}
-.gate-monitor__film {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
 }
 .gate-monitor__ghost {
   background-position: center;
@@ -1289,6 +1295,42 @@
   overflow: hidden;
   border-radius: 5% / 8%;
 }
+/* the splash's way out (DesktopStory): there every time the splash plays */
+.splash-skip {
+  position: fixed;
+  right: max(3vw, 24px);
+  bottom: max(4.5vh, 24px);
+  z-index: 60;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 11px 18px 11px 22px;
+  border: 1px solid rgba(160, 255, 180, 0.45);
+  border-radius: 999px;
+  background: rgba(10, 20, 12, 0.55);
+  color: #9dffb0;
+  font:
+    500 12px/1 var(--font-orbitron),
+    'Courier New',
+    monospace;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition:
+    background 0.2s,
+    transform 0.2s;
+}
+.splash-skip:hover {
+  background: rgba(30, 60, 36, 0.7);
+  transform: translateY(-1px);
+}
+.splash-skip svg {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+}
 .crt-term {
   position: absolute;
   inset: 0;
@@ -1546,7 +1588,8 @@ html[data-scenes] .topbar {
 .stage-folder__label {
   position: absolute;
   left: 50%;
-  top: 66%;
+  /* under the icon, not on it */
+  top: calc(100% + 0.3cqw);
   width: max-content;
   max-width: 9.5cqw;
   transform: translateX(-50%);
@@ -1720,8 +1763,10 @@ html[data-scenes] .topbar {
   z-index: 3;
   display: flex;
   align-items: center;
+  /* centred in their tab, clear of its rounded corners */
+  justify-content: center;
   gap: calc(var(--px) * 6);
-  padding-left: calc(var(--px) * 22);
+  padding: 0 calc(var(--px) * 6) 0 0;
 }
 .gw-light {
   display: block;
