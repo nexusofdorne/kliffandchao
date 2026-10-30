@@ -164,25 +164,95 @@
             .then(buf => { samples[name] = buf; }).catch(() => {});
         });
       },
+      // a recording loops; with none, the progress bar and the glitch are made here, as the
+      // site's lib/audio/typing.ts makes them (a patter of data blips; crackling static)
       start(name) {
-        if (!ctx || ctx.state !== 'running' || Music.isMuted() || !samples[name] || voices[name]) return;
-        const src = ctx.createBufferSource();
-        src.buffer = samples[name];
-        src.loop = true;
-        const g = ctx.createGain();
-        g.gain.value = 0.5;
-        src.connect(g).connect(ctx.destination);
-        src.start();
-        voices[name] = { src, g };
+        if (!ctx || ctx.state !== 'running' || Music.isMuted() || voices[name]) return;
+        const out = ctx.createGain();
+        out.gain.value = 0.5;
+        out.connect(ctx.destination);
+        const ends = [];
+        const env = (node, into, peak, len) => {
+          const t = ctx.currentTime + 0.005;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0, t);
+          g.gain.linearRampToValueAtTime(peak, t + 0.004);
+          g.gain.exponentialRampToValueAtTime(0.0005, t + len);
+          node.connect(g).connect(into);
+          node.start(t);
+          node.stop(t + len + 0.02);
+        };
+        if (samples[name]) {
+          const src = ctx.createBufferSource();
+          src.buffer = samples[name];
+          src.loop = true;
+          src.connect(out);
+          src.start();
+          ends.push(at => src.stop(at));
+        } else if (name === 'progress') {
+          const hum = ctx.createOscillator();
+          hum.type = 'triangle';
+          hum.frequency.value = 98;
+          const hg = ctx.createGain();
+          hg.gain.value = 0.05;
+          hum.connect(hg).connect(out);
+          hum.start();
+          const soft = ctx.createBiquadFilter();
+          soft.type = 'lowpass';
+          soft.frequency.value = 2600;
+          soft.connect(out);
+          const notes = [784, 880, 1047, 1175, 1319, 1568, 1760];
+          const timer = setInterval(() => {
+            if (Math.random() < 0.25) return;
+            const o = ctx.createOscillator();
+            o.type = 'square';
+            o.frequency.value = notes[Math.floor(Math.random() * notes.length)];
+            env(o, soft, 0.07, 0.035 + Math.random() * 0.03);
+          }, 70);
+          ends.push(at => { clearInterval(timer); hum.stop(at); });
+        } else if (name === 'glitch') {
+          if (!noise || noise.duration < 0.2) {
+            noise = ctx.createBuffer(1, Math.ceil(ctx.sampleRate * 0.25), ctx.sampleRate);
+            const d = noise.getChannelData(0);
+            for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+          }
+          const buzz = ctx.createOscillator();
+          buzz.type = 'sawtooth';
+          buzz.frequency.value = 55;
+          const lp = ctx.createBiquadFilter();
+          lp.type = 'lowpass';
+          lp.frequency.value = 420;
+          const bg = ctx.createGain();
+          bg.gain.value = 0.08;
+          buzz.connect(lp).connect(bg).connect(out);
+          buzz.start();
+          const timer = setInterval(() => {
+            bg.gain.setTargetAtTime(Math.random() < 0.3 ? 0 : 0.06 + Math.random() * 0.08, ctx.currentTime, 0.01);
+            if (Math.random() < 0.35) return;
+            const n = ctx.createBufferSource();
+            n.buffer = noise;
+            n.playbackRate.value = 0.6 + Math.random() * 0.8;
+            const band = ctx.createBiquadFilter();
+            band.type = 'bandpass';
+            band.frequency.value = 400 + Math.random() * 3600;
+            band.Q.value = 0.7 + Math.random() * 1.5;
+            band.connect(out);
+            env(n, band, 0.25 + Math.random() * 0.35, 0.03 + Math.random() * 0.12);
+          }, 50);
+          ends.push(at => { clearInterval(timer); buzz.stop(at); });
+        } else {
+          return;
+        }
+        voices[name] = { out, ends };
       },
       stop(name) {
         const v = voices[name];
         if (!ctx || !v) return;
         delete voices[name];
         const t = ctx.currentTime;
-        v.g.gain.setValueAtTime(v.g.gain.value, t);
-        v.g.gain.linearRampToValueAtTime(0, t + 0.12);
-        v.src.stop(t + 0.14);
+        v.out.gain.setValueAtTime(v.out.gain.value, t);
+        v.out.gain.linearRampToValueAtTime(0, t + 0.12);
+        v.ends.forEach(end => end(t + 0.14));
       },
       // a sharp tick over a short low thock, as the site's lib/audio/typing.ts (peaks near -10 dBFS)
       tick(ch) {
@@ -350,6 +420,7 @@
     p.append(tn, caret);
     Typing.start('keys');
     for (const ch of text) {
+      if (skipping) break;
       tn.data += ch;
       Typing.tick(ch);
       await wait(speed * rand(0.55, 1.45) + (ch === ' ' ? 18 : 0));
@@ -436,27 +507,51 @@
     clearInterval(dinoTimer);
   }
 
+  // Skip (there every time the splash plays) jumps straight to the intro: the run below checks
+  // `skipping` after every step and stops quietly.
+  let skipping = false;
+  const SKIPPED = {};
+  const step = async p => { await p; if (skipping) throw SKIPPED; };
+  $('.skip02', s2).addEventListener('click', e => {
+    e.stopPropagation();
+    if (skipping || current !== 2) return;
+    skipping = true;
+    ['keys', 'progress', 'glitch'].forEach(n => Typing.stop(n));
+    clearInterval(dinoTimer);
+    busy = true;
+    show(3);
+    hide(2);
+    surface03(0);
+  });
+
   async function run02(delay = 600) {
-    await wait(delay);
-    for (const [i, p] of bootP.entries()) { await type(p, C.terminalCopy.boot[i], 36); await wait(220); }
-    await wait(360);
-    const prog = $('.t-progress', s2);
-    await play(prog, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 });
-    prog.classList.add('is-loading');
-    Typing.start('progress');
-    await loadBar(2800);
-    Typing.stop('progress');
-    prog.classList.remove('is-loading');
-    await wait(350);
-    // the bar gives way to the login line in the same place
-    await play(prog, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 });
-    await play($('.t-login', s2), [{ opacity: 0 }, { opacity: 1 }, { opacity: 0.15 }, { opacity: 1 }], { duration: 420, easing: 'linear' });
-    await wait(420);
-    for (const [i, p] of helloP.entries()) { await type(p, C.terminalCopy.hello[i], 30); await wait(200); }
-    await wait(320);
-    startDino();
-    await play($('.t-dino', s2), [{ opacity: 0, transform: 'translateY(12%)' }, { opacity: 1, transform: 'none' }], { duration: 480, easing: 'steps(6, end)' });
-    await wait(2200);
+    skipping = false;
+    $('.skip02', s2).hidden = false;
+    try {
+      await step(wait(delay));
+      for (const [i, p] of bootP.entries()) { await step(type(p, C.terminalCopy.boot[i], 36)); await step(wait(220)); }
+      await step(wait(360));
+      const prog = $('.t-progress', s2);
+      await step(play(prog, [{ opacity: 0 }, { opacity: 1 }], { duration: 220 }));
+      prog.classList.add('is-loading');
+      Typing.start('progress');
+      await step(loadBar(2800).finally(() => Typing.stop('progress')));
+      prog.classList.remove('is-loading');
+      await step(wait(350));
+      // the bar gives way to the login line in the same place
+      await step(play(prog, [{ opacity: 1 }, { opacity: 0 }], { duration: 220 }));
+      await step(play($('.t-login', s2), [{ opacity: 0 }, { opacity: 1 }, { opacity: 0.15 }, { opacity: 1 }], { duration: 420, easing: 'linear' }));
+      await step(wait(420));
+      for (const [i, p] of helloP.entries()) { await step(type(p, C.terminalCopy.hello[i], 30)); await step(wait(200)); }
+      await step(wait(320));
+      startDino();
+      await step(play($('.t-dino', s2), [{ opacity: 0, transform: 'translateY(12%)' }, { opacity: 1, transform: 'none' }], { duration: 480, easing: 'steps(6, end)' }));
+      await step(wait(2200));
+    } catch (e) {
+      if (e === SKIPPED) return;
+      throw e;
+    }
+    $('.skip02', s2).hidden = true;  // too late to skip once the screen starts to tear
     go23();
   }
 
@@ -661,8 +756,8 @@
     const paint = nearJ ? { x: nearJ.x, y: 0, w: nearJ.w, h: 100 } : undefined;
     const r = G.createWorldGL(canvas, {
       scenes: {
-        journey: { vp: WORLD.journey.vp, layers: WORLD.journey.layers, paint, water: 'assets/world/j_water-v4.png' },
-        wedding: { vp: WORLD.wedding.vp, layers: WORLD.wedding.layers, paint, water: 'assets/world/w_water-v4.png' },
+        journey: { vp: WORLD.journey.vp, layers: WORLD.journey.layers, paint, water: 'assets/world/j_water-v5.png' },
+        wedding: { vp: WORLD.wedding.vp, layers: WORLD.wedding.layers, paint, water: 'assets/world/w_water-v5.png' },
       },
       stageRect: () => {
         const s = stageEl.getBoundingClientRect();
@@ -795,8 +890,8 @@
     chips.append(b);
     const pane = document.createElement('article');
     pane.className = 'pane';
-    // the chapter's files in order: its film, then its photos in justified rows (each photo
-    // keeps its shape; see lib/journey/gallery.ts), then the words
+    // the chapter's film, then its words, then its photos in order in justified rows (each photo
+    // keeps its shape; see lib/journey/gallery.ts)
     const media = C.journeyMedia[i] || { film: null, photos: [] };
     const photos = media.photos.map(p => {
       const ar = p.px[0] / p.px[1];
@@ -807,8 +902,8 @@
       : '';
     pane.innerHTML = `<h2>${ch.title}</h2>
       ${film}
-      <div class="photos">${photos}</div>
-      ${ch.paragraphs.map(p => `<p>${p}</p>`).join('')}`;
+      ${ch.paragraphs.map(p => `<p>${p}</p>`).join('')}
+      <div class="photos">${photos}</div>`;
     panes4.append(pane);
   });
   chipEls = $$('.chip', chips);
@@ -936,31 +1031,73 @@
   // slides away underneath, and the river's valley, water and banks come up behind them; the
   // meadow's sky and hills give way to the river's while the plants are passing. The header
   // stays where it is.
+  // The walk between the path and the hall: the same rendered film as on desktop (its first frame
+  // is the path as painted, its last the hall), full-screen over the scenery. The phone shows a
+  // portrait slice of each painting around its vanishing point, so the film's slice slides from
+  // the path's (x 61.8%) to the hall's (x 49.7%) as it plays, and back on the way down.
+  const WALK = { wedding: { src: '/video/walk-to-wedding.mp4', from: 61.8, to: 49.7 },
+                 journey: { src: '/video/walk-to-journey.mp4', from: 49.7, to: 61.8 } };
+  const walkFilms = {};
+  Object.entries(WALK).forEach(([to, w]) => {
+    const v = document.createElement('video');
+    v.className = 'walk-film';
+    v.muted = true;
+    v.playsInline = true;
+    v.setAttribute('playsinline', '');
+    v.preload = 'auto';
+    v.src = site(w.src);
+    $('.world').append(v);
+    walkFilms[to] = v;
+  });
+  async function walk(to) {
+    const v = walkFilms[to];
+    const w = WALK[to];
+    v.currentTime = 0;
+    v.style.objectPosition = `${w.from}% 50%`;
+    if (v.readyState < 2) {
+      await new Promise(r => { v.addEventListener('loadeddata', r, { once: true }); setTimeout(r, 2500); });
+    }
+    v.style.opacity = 1;
+    let raf = 0;
+    const slide = () => {
+      const k = v.duration ? Math.min(1, v.currentTime / v.duration) : 0;
+      v.style.objectPosition = `${w.from + (w.to - w.from) * k}% 50%`;
+      raf = requestAnimationFrame(slide);
+    };
+    await new Promise(r => {
+      v.addEventListener('ended', r, { once: true });
+      setTimeout(r, 6000);  // a hidden tab or a refused play() must not hang the story
+      v.play().then(() => { raf = requestAnimationFrame(slide); }, r);
+    });
+    cancelAnimationFrame(raf);
+    v.style.objectPosition = `${w.to}% 50%`;
+  }
+  async function hideWalk() {
+    const showing = Object.values(walkFilms).filter(v => v.style.opacity === '1');
+    await Promise.all(showing.map(v => play(v, [{ opacity: 1 }, { opacity: 0 }], { duration: 350 })));
+    showing.forEach(v => { v.pause(); v.style.opacity = 0; });
+  }
+
   async function go45() {
     busy = true;
     await slideNav(2);
     resetStyles(subtree(s5));
     folder5.style.opacity = 0;
-    poseCross(0);
+    const away = [play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 })];
     if (winOpen) {
       win4.style.transformOrigin = '50% 50%';
-      play(win4, [{ transform: 'none', opacity: 1 }, { transform: 'scale(.95)', opacity: 0 }], { duration: 600, easing: 'ease-in' });
+      away.push(play(win4, [{ transform: 'none', opacity: 1 }, { transform: 'scale(.95)', opacity: 0 }], { duration: 500, easing: 'ease-in' }));
     }
-    play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 450 });
-    let river = false;
-    await tween(3800, easeInOut2, q => {
-      poseCross(q);
-      if (!river && q > 0.84) {
-        river = true;
-        show(5);
-        play(folder5, [{ opacity: 0 }, { opacity: 1 }], { duration: 800 });
-      }
-    });
+    await Promise.all(away);
+    restWorld('journey');
+    await walk('wedding');
     show(5);
     hide(4);
     restWorld('wedding');
+    play(folder5, [{ opacity: 0 }, { opacity: 1 }], { duration: 600 });
+    await hideWalk();
     current = 5;
-    await wait(900);
+    await wait(600);
     await autoOpen5();
   }
 
@@ -968,27 +1105,23 @@
   async function go54() {
     busy = true;
     slideNav(1);
-    if (win5Open) play(win5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
-    play(folder5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
-    play(c5, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
+    const away = [play(folder5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 }),
+      play(c5, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 })];
+    if (win5Open) away.push(play(win5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 }));
+    await Promise.all(away);
     folder4.style.opacity = 0;
     if (winOpen) win4.style.opacity = 0;
+    restWorld('wedding');
+    await walk('journey');
     show(4);
-    poseCross(1);
-    let meadow = false;
-    await tween(3400, easeInOut2, q => {
-      poseCross(1 - q);
-      if (!meadow && q > 0.55) {
-        meadow = true;
-        hide(5);
-        play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 700 });
-        if (winOpen) {
-          play(win4, [{ transform: 'scale(.95)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, easing: 'cubic-bezier(.2,.8,.2,1)' })
-            .then(() => settleGlass(win4));
-        }
-      }
-    });
+    hide(5);
     restWorld('journey');
+    play(folder4, [{ opacity: 0 }, { opacity: 1 }], { duration: 600 });
+    if (winOpen) {
+      play(win4, [{ transform: 'scale(.95)', opacity: 0 }, { transform: 'none', opacity: 1 }], { duration: 900, easing: 'cubic-bezier(.2,.8,.2,1)' })
+        .then(() => settleGlass(win4));
+    }
+    await hideWalk();
     win5.classList.remove('is-open');
     resetStyles(win5, c5, folder5);
     win5Open = false;
@@ -1004,15 +1137,8 @@
   const tabs5 = $('#tabs5');
   const panes5 = $('#panes5');
   let win5Open = false;
-  const icon = d => `<svg viewBox="0 0 16 16" aria-hidden="true">${d}</svg>`;
-  const TABS5 = [
-    ['DETAILS', icon('<path d="M8 14s4.5-4.2 4.5-7.5a4.5 4.5 0 0 0-9 0C3.5 9.8 8 14 8 14z"/><circle cx="8" cy="6.5" r="1.6"/>')],
-    ['TIMELINE', icon('<rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 7h11M5.5 2v3M10.5 2v3"/>')],
-    ['MOTIF', icon('<path d="M6 2.5 3 4.5l1.3 2.3L5.5 6v7.5h5V6l1.2.8L13 4.5l-3-2a2 2 0 0 1-4 0z"/>')],
-    ['ENTOURAGE', icon('<circle cx="6" cy="5.5" r="2"/><circle cx="11.5" cy="6.5" r="1.6"/><path d="M2.5 13c0-2.2 1.6-3.8 3.5-3.8s3.5 1.6 3.5 3.8M10 9.6c1.6 0 3 1.2 3 3.2"/>')],
-    ['FAQ', icon('<circle cx="8" cy="8" r="5.5"/><path d="M6.3 6.4a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.1"/>')],
-    ['NOTE', icon('<rect x="2.5" y="3.5" width="11" height="9" rx="1.5"/><path d="m3 4.5 5 4 5-4"/>')],
-  ];
+  // the same tabs as the journey's: a dot and the name, scrolling sideways when they don't fit
+  const TABS5 = ['DETAILS', 'TIMELINE', 'MOTIF', 'ENTOURAGE', 'FAQ', 'FINAL NOTE'];
   let tab5Els = [];
   let pane5Els = [];
   function buildWedding() {
@@ -1031,7 +1157,8 @@
       <div class="swatches">${g.fabrics.map(f => `<img src="${site(f.src)}" alt="${f.name}" title="${f.name}">`).join('')}</div>
       ${g.attire.map(a => `<p><b>${a.who}:</b> ${a.note}</p>`).join('')}</div>`).join('')}
       <div class="motif"><h3>${C.guestMotif.title}</h3>
-      <div class="figures">${C.guestMotif.figures.map(f => `<img src="${site(f.src)}" alt="${f.alt}" loading="lazy">`).join('')}</div>
+      ${[/\/women-/, /\/men-/].map(who => `<div class="figures">${C.guestMotif.figures.filter(f => who.test(f.src))
+        .map(f => `<img src="${site(f.src)}" alt="${f.alt}" loading="lazy">`).join('')}</div>`).join('')}
       <div class="swatches">${C.guestMotif.fabrics.map(f => `<img src="${site(f.src)}" alt="${f.name}" title="${f.name}">`).join('')}</div>
       <p><b>${C.guestMotif.note}</b></p><p>${C.guestMotif.request}</p></div>`,
     C.entourageGroups.map(g => `<div class="ent"><h3>${g.role}</h3>${g.names.map(n => `<p>${n}</p>`).join('')}</div>`).join(''),
@@ -1042,11 +1169,11 @@
       <p><b>${C.finalNote.thanks}</b></p><p>${C.finalNote.closing}</p>
       <p>${C.finalNote.signOff}<br><b>${C.finalNote.signature}</b></p></div>`,
   ];
-  TABS5.forEach(([label, svg], i) => {
+  TABS5.forEach((label, i) => {
     const b = document.createElement('button');
-    b.className = 'itab';
+    b.className = 'chip';
     b.setAttribute('role', 'tab');
-    b.innerHTML = svg + label;
+    b.textContent = label;
     b.addEventListener('click', e => { e.stopPropagation(); setTab5(i); });
     tabs5.append(b);
     const p = document.createElement('article');
@@ -1054,7 +1181,7 @@
     p.innerHTML = content5[i];
     panes5.append(p);
   });
-  tab5Els = $$('.itab', tabs5);
+  tab5Els = $$('.chip', tabs5);
   pane5Els = $$('.pane', panes5);
   setTab5(0);
   countdown();
@@ -1062,6 +1189,8 @@
   }
   function setTab5(i) {
     tab5Els.forEach((t, j) => t.setAttribute('aria-selected', String(i === j)));
+    const t = tab5Els[i];
+    if (t) tabs5.scrollTo({ left: t.offsetLeft - tabs5.offsetLeft - 24, behavior: 'smooth' });
     pane5Els.forEach((p, j) => p.classList.toggle('is-on', i === j));
   }
   function countdown() {
@@ -1336,7 +1465,7 @@
     if (lightbox || rsvpFrame) { touch = null; return; }
     const pane = e.target.closest && e.target.closest('.pane');
     touch = { y: e.touches[0].clientY, x: e.touches[0].clientX, pane,
-      up: canScroll(pane, 1), down: canScroll(pane, -1), chips: !!(e.target.closest && e.target.closest('.chips, .icontabs')) };
+      up: canScroll(pane, 1), down: canScroll(pane, -1), chips: !!(e.target.closest && e.target.closest('.chips')) };
   }, { passive: true });
   // Decided on the move, not on the lift: on a phone the browser takes over a swipe that starts on a
   // scrolling card (it may cancel the touch, and then there is no touchend at all).

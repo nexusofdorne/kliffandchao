@@ -306,7 +306,7 @@ img.layer, .bub, .grass, .flowers, .bezel { pointer-events: none; }
 .folder img { display: block; width: 100%; height: 100%; image-rendering: pixelated; transition: filter .12s; }
 .folder.is-selected img { filter: invert(1) hue-rotate(180deg) brightness(.9); }
 .folder__label {
-  position: absolute; left: 50%; top: 68%; width: max-content; max-width: 28cqw; transform: translateX(-50%);
+  position: absolute; left: 50%; top: calc(100% + 1cqw); width: max-content; max-width: 28cqw; transform: translateX(-50%);  /* under the icon, not on it */
   text-align: center; font-size: 3.4cqw; font-weight: 500; line-height: 1.25; color: #1d1f18;
   text-shadow: 0 0 1.6cqw rgba(255,255,255,.8); pointer-events: none;
 }
@@ -324,13 +324,16 @@ img.layer, .bub, .grass, .flowers, .bezel { pointer-events: none; }
   visibility: hidden;
 }
 /* the password screen's logo stays inside the visible part of the stage too */
-img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(--safe-t) + 4cqw) !important; }
+img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(--safe-t) + 10cqw) !important; }
 .win.is-open { visibility: inherit; }  /* inherit, not visible: a hidden scene must hide it too */
+/* closed, it is out of the layout altogether: iPhone Safari could leave a hidden window's frosted
+   glass showing as a blurred pane over the scene */
+.win:not(.is-open) { display: none; }
 /* The tab strip, as on the desktop window: one row of glass segments that sit on the body -
-   the lights, the tabs, and an empty one filling the rest. The raised tab is the body's own
-   material and runs down into it. */
+   the lights and the tabs (no empty segment after them). The raised tab is the body's own
+   material and runs down into it. The journey and the wedding use the same tabs. */
 .win__bar { position: relative; display: flex; align-items: flex-end; gap: .8cqw; height: 6.4cqh; }
-.lights, .chip, .itab, .chips::after, .icontabs::after {
+.lights, .chip {
   border-radius: 1.6cqw 2.8cqw 0 0;
   background: linear-gradient(180deg, rgba(231,235,237,.77), rgba(218,223,226,.79));
   box-shadow: inset 0 .3cqw 0 rgba(255,255,255,.85), inset .3cqw 0 0 rgba(255,255,255,.35),
@@ -340,7 +343,6 @@ img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(-
 /* the window's outer top corners curve like its bottom ones (4.4cqw): the first segment's left,
    and the strip's right edge (it clips the scrolling chips, so the corner holds while they scroll) */
 .lights { border-top-left-radius: 4.4cqw; }
-.icontabs { border-top-right-radius: 4.4cqw; }
 /* the journey's chips scroll under the corner, and sit 12% below the strip's top (only the raised
    one is full height): round the clip at their top edge, so a chip cut off there is curved too */
 .chips {
@@ -354,19 +356,17 @@ img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(-
     linear-gradient(#000, #000) right bottom / var(--r) calc(100% - var(--top) - var(--r)) no-repeat,
     radial-gradient(circle at 0 100%, #000 calc(var(--r) - .5px), transparent var(--r)) right 0 top var(--top) / var(--r) var(--r) no-repeat;
 }
-.chips::after, .icontabs::after { border-top-right-radius: 4.4cqw; }
 .lights { flex: none; display: flex; align-items: center; gap: 1cqw; height: 88%; padding: 0 2.6cqw; }
 .dot { flex: none; width: 3cqw; height: 3cqw; border-radius: 50%; background: #eedc8e; box-shadow: inset 0 .3cqw .5cqw rgba(255,255,255,.45), 0 .1cqw .4cqw rgba(0,0,0,.12); }
 .dot--close { position: relative; background: #dc7f72; }
 .dot--end { background: #b6cb87; }
 .dot--close::after { content: ""; position: absolute; inset: -150%; }  /* tap target */
-.chips, .icontabs {
+.chips {
   flex: 1; min-width: 0; display: flex; gap: .8cqw; height: 100%; overflow-x: auto; scrollbar-width: none;
   touch-action: pan-x; align-items: flex-end;
 }
-.chips::-webkit-scrollbar, .icontabs::-webkit-scrollbar { display: none; }
-.chips::after, .icontabs::after { content: ""; flex: 1 0 6cqw; height: 88%; }
-.chip, .itab {
+.chips::-webkit-scrollbar { display: none; }
+.chip {
   flex: none; display: flex; align-items: center; gap: 1.8cqw;
   height: 88%; padding: 0 3.8cqw;
   color: #1d1f18; font-size: 2.5cqw; font-weight: 600; letter-spacing: .03em; text-transform: uppercase;
@@ -374,12 +374,7 @@ img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(-
   transition: height .35s var(--ease-out);
 }
 .chip::before { content: ""; width: 1.9cqw; height: 1.9cqw; border-radius: 50%; background: #8a9a4b; }
-.chip[aria-selected="true"], .itab[aria-selected="true"] { height: 100%; background: linear-gradient(180deg, rgba(242,245,245,.9), rgba(240,243,242,.88)); box-shadow: inset 0 .3cqw 0 rgba(255,255,255,.95), inset .3cqw 0 0 rgba(255,255,255,.4); }
-.icontabs { gap: .6cqw; }
-.icontabs .itab { flex: 1 1 0; }  /* the wedding's five tabs share the width equally, as on the desktop */
-.icontabs::after { flex: .35 0 3cqw; }
-.itab { flex-direction: column; justify-content: center; gap: .6cqw; padding: 0 1.5cqw; font-size: 1.75cqw; letter-spacing: .04em; }
-.itab svg { width: 4.4cqw; height: 4.4cqw; fill: none; stroke: currentColor; stroke-width: 1.3; stroke-linecap: round; stroke-linejoin: round; }
+.chip[aria-selected="true"] { height: 100%; background: linear-gradient(180deg, rgba(242,245,245,.9), rgba(240,243,242,.88)); box-shadow: inset 0 .3cqw 0 rgba(255,255,255,.95), inset .3cqw 0 0 rgba(255,255,255,.4); }
 .win__body {
   position: relative; flex: 1; min-height: 0;
   border-radius: 0 0 4.4cqw 4.4cqw;  /* square on top: the tab strip sits on it, as on the desktop */
@@ -424,6 +419,7 @@ img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(-
 .photos img { display: block; min-width: 0; height: auto; object-fit: cover; border-radius: 3cqw; }
 
 /* wedding sheet content */
+#panes5 .pane { text-align: center; }  /* every wedding tab's words centred on the phone */
 .pane--center { text-align: center; }
 .big-date { font-size: 7.4cqw; font-weight: 600; letter-spacing: -.02em; margin: 2cqw 0 4cqw; }
 .count { display: flex; justify-content: center; gap: 2cqw; margin-bottom: 5cqw; }
@@ -433,22 +429,25 @@ img.layer[data-asset="p01_logo"] { top: calc((var(--sh) - var(--ph)) / 2 + var(-
 .map { display: grid; place-items: center; height: 44cqw; border-radius: 4cqw; margin-bottom: 3cqw; background: #cfd8c4 linear-gradient(135deg, #dfe6d6, #b9c7ac); color: #3e4a30; font-size: 2.8cqw; letter-spacing: .14em; }
 .addr { font-size: 3cqw; line-height: 1.6; letter-spacing: .06em; color: #4a5140; margin-bottom: 4cqw; }
 .btn { display: inline-block; padding: 3.4cqw 6cqw; border-radius: 999px; background: #4f7a22; color: #fff; font-size: 2.8cqw; font-weight: 600; letter-spacing: .14em; text-decoration: none; }
-.tl { list-style: none; margin: 0; padding: 0; text-align: left; }
-.tl li { display: flex; gap: 4cqw; padding: 3.2cqw 0; border-bottom: .2cqw solid rgba(20,24,13,.12); font-size: 3.3cqw; }
-.tl time { width: 22cqw; flex: none; font-weight: 600; }
-.motif { margin-bottom: 6cqw; text-align: left; }
+.tl { list-style: none; margin: 0; padding: 0; text-align: center; }
+.tl li { display: flex; flex-direction: column; align-items: center; gap: .8cqw; padding: 3.2cqw 0; border-bottom: .2cqw solid rgba(20,24,13,.12); font-size: 3.3cqw; }
+.tl time { font-weight: 600; }
+.tl span { letter-spacing: .08em; opacity: .8; }
+.motif { margin-bottom: 6cqw; text-align: center; }
 .motif h3, .ent h3 { margin: 0 0 1.6cqw; font-size: 3cqw; letter-spacing: .14em; }
 .motif p { font-size: 3cqw; opacity: .8; }
-.swatches { display: flex; gap: 2.4cqw; flex-wrap: wrap; margin-bottom: 2.4cqw; }
+.swatches { display: flex; justify-content: center; gap: 2.4cqw; flex-wrap: wrap; margin-bottom: 2.4cqw; }
 .swatches img { display: block; width: 11cqw; height: 11cqw; border-radius: 50%; object-fit: cover; border: .3cqw solid rgba(255,255,255,.8); box-shadow: 0 .4cqw 1.4cqw rgba(0,0,0,.12); }
-.figures { display: flex; align-items: flex-end; gap: 1cqw; height: 44cqw; margin-bottom: 3cqw; }
-.figures img { flex: 1 1 0; min-width: 0; height: 100%; object-fit: contain; object-position: bottom; }
-.note { text-align: left; }
+/* the outfits all at one height: the women on one row, the men on the next */
+.figures { display: flex; justify-content: center; align-items: flex-end; gap: 1cqw; margin-bottom: 3cqw; }
+.figures img { flex: none; height: 40cqw; width: auto; }
+.note { text-align: center; }
 .note h3 { margin: 0 0 3cqw; font-size: 4cqw; font-weight: 600; text-align: center; }
 .note p { font-size: 3.3cqw; line-height: 1.7; }
-.ent { margin-bottom: 5cqw; }
+.ent { margin-bottom: 5cqw; text-align: center; }
 .ent p { margin: 0; font-size: 3.3cqw; line-height: 1.7; }
-details { border-bottom: .2cqw solid rgba(20,24,13,.12); padding: 3.4cqw 0; text-align: left; }
+details { border-bottom: .2cqw solid rgba(20,24,13,.12); padding: 3.4cqw 0; text-align: center; }
+summary { list-style-position: inside; }
 summary { font-size: 3.4cqw; font-weight: 600; cursor: pointer; }
 details p { margin: 2.4cqw 0 0; font-size: 3.2cqw; }
 
@@ -514,3 +513,14 @@ details p { margin: 2.4cqw 0 0; font-size: 3.2cqw; }
 /* the RSVP form, framed over the story so the song keeps playing (app.js openRsvp) */
 .rsvp-frame { position: fixed; inset: 0; z-index: 90; background: #0a0c07; }
 .rsvp-frame iframe { display: block; width: 100%; height: 100%; border: 0; }
+
+/* the splash's way out (app.js): there every time the splash plays */
+.skip02 {
+  position: absolute; right: 6cqw; bottom: calc(5cqh + env(safe-area-inset-bottom, 0px)); z-index: 5;
+  padding: 3cqw 5cqw; border: .3cqw solid rgba(160,255,180,.45); border-radius: 999px;
+  background: rgba(10,20,12,.55); color: #9dffb0; font: 500 3.2cqw/1 Orbitron, 'Courier New', monospace;
+  letter-spacing: .18em; pointer-events: auto;
+}
+
+/* the walk between the path and the hall (app.js walk): the film over the scenery */
+.walk-film { position: absolute; inset: 0; z-index: 1; width: 100%; height: 100%; object-fit: cover; opacity: 0; pointer-events: none; }

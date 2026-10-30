@@ -165,7 +165,7 @@ window.MANIFEST = {
   "y": 59.690736890736886,
   "w": 12.03273612032736,
   "h": 4.441655641655641,
-  "src": "assets/p01_screen.jpg"
+  "src": "assets/p01_screen-v5.jpg"
  },
  "p01_logo": {
   "x": 40.27777777777778,
