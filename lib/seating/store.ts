@@ -109,10 +109,10 @@ export async function loadSeating(
   return readSeating(prisma);
 }
 
-// Inside the caller's transaction: a guest who answers Not attending (or leaves the sheet) loses their chair.
-export async function releaseSeats(tx: Prisma.TransactionClient, guestIds: string[]): Promise<void> {
+// A guest who answers Not attending (or leaves the sheet) loses their chair.
+export async function releaseSeats(db: Db, guestIds: string[]): Promise<void> {
   if (guestIds.length === 0) return;
-  await tx.seatAssignment.deleteMany({ where: { guestId: { in: guestIds } } });
+  await db.seatAssignment.deleteMany({ where: { guestId: { in: guestIds } } });
 }
 
 function sameAssignment(a: Assignment, b: Assignment): boolean {
@@ -121,6 +121,12 @@ function sameAssignment(a: Assignment, b: Assignment): boolean {
 
 function tableData(t: SeatingTable) {
   return { kind: t.kind, number: t.number, name: t.name, seats: t.seats, x: t.x, y: t.y };
+}
+
+function sameTable(a: SeatingTable, b: SeatingTable): boolean {
+  const x = tableData(a);
+  const y = tableData(b);
+  return (Object.keys(x) as (keyof typeof x)[]).every((key) => x[key] === y[key]);
 }
 
 // Reads the plan, lets `change` produce the next one, and writes the difference, all in one
@@ -153,14 +159,20 @@ export async function saveSeatingChange(
           await tx.seatAssignment.deleteMany({ where: { guestId: { in: dropped.map((a) => a.guestId) } } });
         }
 
+        // Only new or changed tables are written, and the room only when its center moved.
+        const currentTables = new Map(current.tables.map((t) => [t.id, t]));
         for (const table of next.tables) {
+          const before = currentTables.get(table.id);
+          if (before && sameTable(before, table)) continue;
           await tx.seatingTable.upsert({
             where: { id: table.id },
             create: { id: table.id, ...tableData(table) },
             update: tableData(table),
           });
         }
-        await tx.seatingRoom.update({ where: { id: 1 }, data: { centerX: next.center.x, centerY: next.center.y } });
+        if (next.center.x !== current.center.x || next.center.y !== current.center.y) {
+          await tx.seatingRoom.update({ where: { id: 1 }, data: { centerX: next.center.x, centerY: next.center.y } });
+        }
 
         const added = next.assignments.filter((a) => {
           const before = currentByGuest.get(a.guestId);
@@ -170,7 +182,7 @@ export async function saveSeatingChange(
 
         return { state: next };
       },
-      { isolationLevel: 'Serializable' },
+      { isolationLevel: 'Serializable', timeout: 15_000 },
     );
   } catch (error) {
     if (isConflict(error)) throw new SeatingConflictError();

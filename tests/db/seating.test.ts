@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { submitRsvp } from '../../lib/rsvp/submit';
 import { applyMove } from '../../lib/seating/rules';
 import { loadSeating, saveSeatingChange, SeatingConflictError } from '../../lib/seating/store';
@@ -38,7 +38,9 @@ describe('seating store', { timeout: 30_000 }, () => {
     guestIds = guests.map((g) => g.id);
   });
 
-  afterEach(async () => {
+  // Every case starts from an empty plan, even after a run that left one behind (or local use of
+  // the test database).
+  async function reset() {
     await testPrisma.seatAssignment.deleteMany({});
     await testPrisma.seatingTable.deleteMany({});
     await testPrisma.seatingRoom.deleteMany({});
@@ -46,7 +48,10 @@ describe('seating store', { timeout: 30_000 }, () => {
     await testPrisma.rsvpSubmission.deleteMany({ where: { partyId } });
     await testPrisma.guestRsvp.deleteMany({ where: { guestId: { in: guestIds } } });
     await testPrisma.guest.updateMany({ where: { id: { in: guestIds } }, data: { archivedAt: null } });
-  });
+  }
+  beforeAll(reset);
+  beforeEach(reset);
+  afterEach(reset);
 
   it('creates the room and VIP 1 and VIP 2 on first load, once', async () => {
     const [first] = await Promise.all([loadSeating(testPrisma), loadSeating(testPrisma)]);
@@ -109,6 +114,33 @@ describe('seating store', { timeout: 30_000 }, () => {
     const { state } = await loadSeating(testPrisma);
     expect(state.assignments.map((a) => a.guestId)).toEqual([guestIds[1]]);
     expect(await testPrisma.seatAssignment.count()).toBe(1);
+  });
+
+  it('writes only the tables that changed, and the room only when the center moves', async () => {
+    await attend([guestIds[0]]);
+    const tableId = await vip1Id();
+    const stamps = async () => ({
+      tables: new Map((await testPrisma.seatingTable.findMany()).map((t) => [t.id, t.updatedAt.getTime()])),
+      room: (await testPrisma.seatingRoom.findUniqueOrThrow({ where: { id: 1 } })).updatedAt.getTime(),
+    });
+    const before = await stamps();
+    await seatAt(guestIds[0], tableId, 1);
+    expect(await stamps()).toEqual(before);
+
+    await saveSeatingChange(testPrisma, (state) => ({
+      state: { ...state, tables: state.tables.map((t) => (t.id === tableId ? { ...t, name: 'Family' } : t)) },
+    }));
+    const renamed = await stamps();
+    expect(renamed.room).toBe(before.room);
+    for (const [id, stamp] of renamed.tables) {
+      if (id === tableId) expect(stamp).toBeGreaterThan(before.tables.get(id)!);
+      else expect(stamp).toBe(before.tables.get(id));
+    }
+    const { state } = await loadSeating(testPrisma);
+    expect(state.tables.find((t) => t.id === tableId)!.name).toBe('Family');
+
+    await saveSeatingChange(testPrisma, (state) => ({ state: { ...state, center: { x: 520, y: 400 } } }));
+    expect((await loadSeating(testPrisma)).state.center).toEqual({ x: 520, y: 400 });
   });
 
   it('one of two concurrent moves for the same chair fails cleanly', async () => {

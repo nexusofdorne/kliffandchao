@@ -118,13 +118,25 @@ function seatGuest(state: SeatingState, move: Extract<Move, { kind: 'seat' }>): 
   return { state: withAssignments(state, assignments), bumped, notSeated: [] };
 }
 
+// The free chairs reordered so a household sits together: the first run of `count` consecutive
+// free chairs comes first. With no run that long, the order stays first-free.
+function consecutiveFirst(free: number[], count: number): number[] {
+  for (let start = 0; count > 0 && start + count <= free.length; start++) {
+    if (free[start + count - 1] - free[start] === count - 1) {
+      const run = free.slice(start, start + count);
+      return [...run, ...free.filter((seat) => !run.includes(seat))];
+    }
+  }
+  return free;
+}
+
 function seatHousehold(state: SeatingState, move: Extract<Move, { kind: 'household' }>): MoveResult {
   const table = findTable(state, move.tableId);
   if (!table) return unchanged(state, 'UNKNOWN_TABLE');
 
   const seated = new Set(state.assignments.map((a) => a.guestId));
   const toSeat = [...new Set(move.guestIds)].filter((id) => !seated.has(id));
-  const free = freeSeats(state, table);
+  const free = consecutiveFirst(freeSeats(state, table), toSeat.length);
   const added: Assignment[] = toSeat.slice(0, free.length).map((guestId, i) => ({ guestId, tableId: table.id, seat: free[i] }));
   return {
     state: withAssignments(state, [...state.assignments, ...added]),

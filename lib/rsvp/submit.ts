@@ -77,15 +77,7 @@ export async function submitRsvp(
           },
         });
       }
-
-      // A guest who is no longer coming gives up their chair in the seating plan.
-      await releaseSeats(
-        tx,
-        input.responses.filter((response) => response.status === 'NOT_ATTENDING').map((response) => response.guestId),
-      );
     });
-
-    return { outcome: 'submitted' };
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
@@ -95,4 +87,16 @@ export async function submitRsvp(
     }
     throw error;
   }
+
+  // A guest who is no longer coming gives up their chair in the seating plan. This runs after the
+  // commit and never fails the RSVP: the plan also drops stale seats whenever it loads.
+  try {
+    await releaseSeats(
+      prisma,
+      input.responses.filter((response) => response.status === 'NOT_ATTENDING').map((response) => response.guestId),
+    );
+  } catch (error) {
+    console.error('Could not free seats after an RSVP', error);
+  }
+  return { outcome: 'submitted' };
 }

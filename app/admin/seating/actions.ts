@@ -1,6 +1,5 @@
 'use server';
 
-import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { prisma } from '@/lib/prisma';
@@ -71,7 +70,6 @@ async function run(
       message = next.message;
       return { state: next.state };
     });
-    revalidatePath('/admin/seating');
     return { ok: true, state, guests, ...(message ? { message } : {}) };
   } catch (error) {
     if (error instanceof Invalid) return invalid(error.message);
@@ -81,6 +79,13 @@ async function run(
     }
     throw error;
   }
+}
+
+// The plan as stored right now, e.g. for the exports: guests who stopped attending are already gone.
+export async function loadSeatingPlan(): Promise<SeatingActionResult> {
+  await requireAdmin();
+  const { state, guests } = await loadSeating(prisma);
+  return { ok: true, state, guests };
 }
 
 export async function moveGuests(input: Move): Promise<SeatingActionResult> {

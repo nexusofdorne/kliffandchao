@@ -75,6 +75,14 @@ export function useSeatingPlan(initial: Plan) {
     notFitted,
     dismissMessage: () => setMessage(null),
 
+    // Shows a plan freshly loaded from the server (the exports reload first). It also becomes the
+    // last saved plan, and an answer to an earlier change still on its way is ignored.
+    replace(next: Plan) {
+      latestRequest.current += 1;
+      saved.current = next;
+      setPlan(next);
+    },
+
     move(move: Move) {
       const result = applyMove(state(), move);
       return commit(result.error ? null : result.state, () => moveGuests(move));

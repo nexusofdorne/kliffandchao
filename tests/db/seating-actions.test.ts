@@ -1,11 +1,11 @@
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { testPrisma } from './client';
 
 const requireAdmin = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/auth/require-admin', () => ({ requireAdmin }));
-vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-import { moveCenter, moveGuests, renameTable, setRoundTables } from '../../app/admin/seating/actions';
+import * as actions from '../../app/admin/seating/actions';
+import { loadSeatingPlan, moveCenter, moveGuests, renameTable, setRoundTables } from '../../app/admin/seating/actions';
 import { clampCenterToRoom, RING } from '../../lib/seating/geometry';
 import { loadSeating } from '../../lib/seating/store';
 
@@ -24,17 +24,50 @@ describe('seating actions', { timeout: 30_000 }, () => {
     guestIds = guests.map((g) => g.id);
   });
 
-  afterEach(async () => {
-    requireAdmin.mockReset();
+  // Every case starts from an empty plan, even after a run that left one behind (or local use of
+  // the test database).
+  async function reset() {
     await testPrisma.seatAssignment.deleteMany({});
     await testPrisma.seatingTable.deleteMany({});
     await testPrisma.seatingRoom.deleteMany({});
     await testPrisma.guestRsvp.deleteMany({ where: { guestId: { in: guestIds } } });
+  }
+  beforeAll(reset);
+  beforeEach(reset);
+  afterEach(async () => {
+    requireAdmin.mockReset();
+    await reset();
   });
 
-  it('rejects an unauthorised call', async () => {
+  it('rejects every action when the caller is not an admin, before touching the database', async () => {
     requireAdmin.mockRejectedValue(new Error('NEXT_REDIRECT'));
-    await expect(renameTable('x', 'Y')).rejects.toThrow('NEXT_REDIRECT');
+    const exported = Object.entries(actions).filter(([, value]) => typeof value === 'function');
+    expect(exported.map(([name]) => name)).toContain('loadSeatingPlan');
+    for (const [name, action] of exported) {
+      const call = (action as (...args: unknown[]) => Promise<unknown>)('x', 1, 2);
+      await expect(call, name).rejects.toThrow('NEXT_REDIRECT');
+    }
+    expect(requireAdmin).toHaveBeenCalledTimes(exported.length);
+    // Any load or save would have created the room row.
+    expect(await testPrisma.seatingRoom.count()).toBe(0);
+    expect(await testPrisma.seatingTable.count()).toBe(0);
+  });
+
+  it('loads the latest plan without guests who stopped attending', async () => {
+    requireAdmin.mockResolvedValue('admin@test');
+    for (const guestId of [guestIds[0], guestIds[1]]) {
+      await testPrisma.guestRsvp.create({
+        data: { guestId, status: 'ATTENDING', respondedAt: new Date(), respondedByGuestId: guestId, lastSubmissionId: 'seating-actions-test' },
+      });
+    }
+    const tableId = await vip1Id();
+    await moveGuests({ kind: 'seat', guestId: guestIds[0], tableId, seat: 1 });
+    await moveGuests({ kind: 'seat', guestId: guestIds[1], tableId, seat: 2 });
+    await testPrisma.guestRsvp.update({ where: { guestId: guestIds[0] }, data: { status: 'NOT_ATTENDING' } });
+
+    const result = await loadSeatingPlan();
+    expect(result.ok && result.state.assignments).toEqual([{ guestId: guestIds[1], tableId, seat: 2 }]);
+    expect(result.ok && result.guests.map((g) => g.id)).not.toContain(guestIds[0]);
   });
 
   it('refuses to seat a guest who is not attending', async () => {

@@ -2,8 +2,10 @@
 
 import Link from 'next/link';
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
+import { flushSync } from 'react-dom';
+import { loadSeatingPlan } from '@/app/admin/seating/actions';
 import { exportJpg, exportXlsx } from '@/lib/seating/export-files';
-import { notSeatedRows, seatingRows, tableRows } from '@/lib/seating/export-rows';
+import { exportRows } from '@/lib/seating/export-rows';
 import { clampCenterToRoom, clampToRoom } from '@/lib/seating/geometry';
 import type { SeatableGuest, SeatingState } from '@/lib/seating/rules';
 import { FloorPlan } from './FloorPlan';
@@ -11,7 +13,7 @@ import { RoomControls } from './RoomControls';
 import { TablePanel } from './TablePanel';
 import { UnseatedList } from './UnseatedList';
 import { usePointerDrag, type ActiveDrag, type Gesture } from './usePointerDrag';
-import { useSeatingPlan } from './useSeatingPlan';
+import { useSeatingPlan, type Plan } from './useSeatingPlan';
 
 type SeatingPlannerProps = { initialState: SeatingState; initialGuests: SeatableGuest[] };
 
@@ -46,13 +48,37 @@ export function SeatingPlanner({ initialState, initialGuests }: SeatingPlannerPr
   const unseated = useMemo(() => guests.filter((g) => !seatedIds.has(g.id)), [guests, seatedIds]);
   const seatedCount = guests.length - unseated.length;
 
-  async function runExport(task: () => Promise<void>) {
+  // Exports always reload the plan first, so a guest who stopped attending since the page opened
+  // is never in a chair in the files.
+  async function runExport(task: (plan: Plan) => Promise<void>) {
     setExportError(null);
     try {
-      await task();
+      const result = await loadSeatingPlan();
+      if (!result.ok) throw new Error(result.message);
+      await task({ state: result.state, guests: result.guests });
     } catch {
       setExportError('The export did not work. Please try again.');
     }
+  }
+
+  function exportPicture() {
+    return runExport(async (plan) => {
+      // Show the fresh plan with no table highlighted, and have it on screen before copying it.
+      flushSync(() => {
+        seating.replace(plan);
+        setSelectedId(null);
+      });
+      const svg = svgRef.current;
+      if (!svg) throw new Error('The floor plan is not on the page');
+      await exportJpg(svg);
+    });
+  }
+
+  function exportSpreadsheet() {
+    return runExport(async (plan) => {
+      seating.replace(plan);
+      await exportXlsx(exportRows(plan));
+    });
   }
 
   function finish(gesture: Gesture, drag: ActiveDrag | null) {
@@ -133,29 +159,10 @@ export function SeatingPlanner({ initialState, initialGuests }: SeatingPlannerPr
           <button type="button" onClick={() => void seating.autoFill()} className={buttonClass}>
             Auto-fill VIP
           </button>
-          <button
-            type="button"
-            onClick={() => {
-              const svg = svgRef.current;
-              if (svg) void runExport(() => exportJpg(svg));
-            }}
-            className={buttonClass}
-          >
+          <button type="button" onClick={() => void exportPicture()} className={buttonClass}>
             Export JPG
           </button>
-          <button
-            type="button"
-            onClick={() =>
-              void runExport(() =>
-                exportXlsx({
-                  seating: seatingRows(state, guestsById),
-                  tables: tableRows(state),
-                  notSeated: notSeatedRows(state, guests),
-                }),
-              )
-            }
-            className={buttonClass}
-          >
+          <button type="button" onClick={() => void exportSpreadsheet()} className={buttonClass}>
             Export spreadsheet
           </button>
         </div>

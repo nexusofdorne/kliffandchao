@@ -16,14 +16,18 @@ merged, pushed or deployed.
   without the column still syncs.
 - **Exports:** `kliff-chao-seating-plan.jpg` (the floor plan, no names) and `kliff-chao-seating.xlsx`
   (sheets Seating, Tables, Not seated).
-- **Seats free themselves:** when a guest answers Not attending (inside the RSVP transaction), when the
-  full "Sync now" archives them, and stale seats are dropped whenever the plan loads.
+- **Seats free themselves:** when a guest answers Not attending (right after the RSVP is saved, best
+  effort, so seating can never fail an RSVP), and stale seats (not attending, or archived by the full
+  "Sync now") are dropped whenever the plan loads. The exports reload the plan first.
+- **Tests:** `npm run test:db` erases the seating plan on the test database.
 
 **Migrations — two, applied to the TEST database only.** `20261031000000_guest_role` (adds
 `Guest.role`) and `20261031000100_seating` (`SeatingTable`, `SeatAssignment`, `SeatingRoom`; RLS on
-all three). Production needs, **with the owner's explicit OK and BEFORE deploying this code**: first
-`20261030000000_site_settings` (the separate, still-uncommitted site-settings work), then these two.
-Do not run anything against production without that OK.
+all three). Production needs these two, **with the owner's explicit OK and BEFORE deploying this
+code**. `20261030000000_site_settings` belongs to a separate, still-uncommitted piece of work (site
+settings); the two sets are independent. The order only matters because migrations apply by timestamp:
+if site settings ships too, apply its earlier-timestamped migration before these later ones. Do not run
+anything against production without that OK.
 
 **Trying it locally before production is migrated:** point the dev server's `DATABASE_URL` at the test
 database (with the test CA trusted, as `.env.test` does for the test scripts), run `npm run db:prepare-test`

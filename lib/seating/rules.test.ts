@@ -154,6 +154,40 @@ describe('applyMove household', () => {
     expect(seatOf(r.state, 'c')).toEqual({ tableId: 'T1', seat: 4 });
   });
 
+  it('seats a household in the first run of consecutive free chairs', () => {
+    const s = setTableSeats(state([{ guestId: 'x', tableId: 'T1', seat: 2 }]), 'T1', 6).state;
+    const r = applyMove(s, { kind: 'household', guestIds: ['a', 'b', 'c'], tableId: 'T1' });
+    expect(r.notSeated).toEqual([]);
+    expect(seatOf(r.state, 'a')).toEqual({ tableId: 'T1', seat: 3 });
+    expect(seatOf(r.state, 'b')).toEqual({ tableId: 'T1', seat: 4 });
+    expect(seatOf(r.state, 'c')).toEqual({ tableId: 'T1', seat: 5 });
+  });
+
+  it('only counts members not yet seated when looking for a run', () => {
+    const s = state([
+      { guestId: 'x', tableId: 'T1', seat: 2 },
+      { guestId: 'a', tableId: 'T2', seat: 1 },
+    ]);
+    const r = applyMove(s, { kind: 'household', guestIds: ['a', 'b', 'c'], tableId: 'T1' });
+    expect(seatOf(r.state, 'a')).toEqual({ tableId: 'T2', seat: 1 });
+    expect(seatOf(r.state, 'b')).toEqual({ tableId: 'T1', seat: 3 });
+    expect(seatOf(r.state, 'c')).toEqual({ tableId: 'T1', seat: 4 });
+  });
+
+  it('falls back to the first free chairs when no run is long enough', () => {
+    const s = setTableSeats(
+      state([
+        { guestId: 'x', tableId: 'T1', seat: 2 },
+        { guestId: 'y', tableId: 'T1', seat: 4 },
+      ]),
+      'T1',
+      6,
+    ).state;
+    const r = applyMove(s, { kind: 'household', guestIds: ['a', 'b', 'c'], tableId: 'T1' });
+    expect(r.notSeated).toEqual([]);
+    expect([seatOf(r.state, 'a')?.seat, seatOf(r.state, 'b')?.seat, seatOf(r.state, 'c')?.seat]).toEqual([1, 3, 5]);
+  });
+
   it('leaves members who are already seated where they are', () => {
     const s = withAt('a', 'T2', 2);
     const r = applyMove(s, { kind: 'household', guestIds: ['a', 'b'], tableId: 'T1' });

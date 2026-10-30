@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { notSeatedRows, seatingRows, tableRows } from './export-rows';
+import { exportRows, notSeatedRows, seatingRows, tableRows } from './export-rows';
 import type { SeatableGuest, SeatingState, SeatingTable } from './rules';
 
 function table(id: string, kind: 'VIP' | 'ROUND', number: number, seats: number, name?: string): SeatingTable {
@@ -111,5 +111,16 @@ describe('notSeatedRows', () => {
   it('is empty when everyone is seated or there are no guests', () => {
     expect(notSeatedRows(state, [guests[0]])).toEqual([]);
     expect(notSeatedRows(state, [])).toEqual([]);
+  });
+});
+
+describe('exportRows', () => {
+  it('builds all three sheets from the plan it is given', () => {
+    // The freshly loaded plan: d stopped attending, so the server dropped their seat and their row.
+    const fresh = { state: { ...state, assignments: state.assignments.filter((a) => a.guestId !== 'd') }, guests: guests.filter((g) => g.id !== 'd') };
+    const rows = exportRows(fresh);
+    expect(rows.seating.map((r) => r.guest)).toEqual(['a Cruz', 'c Cruz', 'b Cruz']);
+    expect(rows.tables.find((r) => r.table === 1)).toMatchObject({ filled: 1, free: 5 });
+    expect(rows.notSeated).toEqual([]);
   });
 });

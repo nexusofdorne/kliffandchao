@@ -69,3 +69,13 @@ export function notSeatedRows(state: SeatingState, guests: SeatableGuest[]): Not
     .filter((g) => !seated.has(g.id))
     .map((g) => ({ guest: guestName(g), household: g.partyLabel, side: SIDE_LABEL[g.side], role: g.role ?? '' }));
 }
+
+// The spreadsheet's three sheets, all from one plan (the exports pass the freshly loaded one).
+export function exportRows(plan: { state: SeatingState; guests: SeatableGuest[] }): ExportRows {
+  const guestsById = new Map(plan.guests.map((g) => [g.id, g]));
+  return {
+    seating: seatingRows(plan.state, guestsById),
+    tables: tableRows(plan.state),
+    notSeated: notSeatedRows(plan.state, plan.guests),
+  };
+}

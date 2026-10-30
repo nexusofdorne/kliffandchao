@@ -11,7 +11,8 @@ function download(blob: Blob, fileName: string) {
   document.body.appendChild(link);
   link.click();
   link.remove();
-  URL.revokeObjectURL(url);
+  // Revoked on the next tick: Safari may not have started the download yet.
+  setTimeout(() => URL.revokeObjectURL(url), 0);
 }
 
 // Draws the floor plan SVG onto a white 3000 px canvas. Guest names live only in the

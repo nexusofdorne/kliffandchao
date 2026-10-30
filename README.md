@@ -39,7 +39,7 @@ Before running this version against a database, apply the additive `202610250000
 
 ## Seating plan
 
-`/admin/seating` (linked from `/admin` as "Seating plan") is an admin-only floor plan: round tables, Centerstage and a VIP 1 / VIP 2 ring, with drag and drop seating of attending guests, and exports to JPG (no names) and Excel. **Auto-fill VIP** seats guests whose `Role` in the Guests sheet is "Parents" or "Principal Sponsor"; the `Role` column is optional, and a sheet without it still syncs. A seat is freed automatically when a guest answers Not attending or is archived by the full sync. It needs the `20261031000000_guest_role` and `20261031000100_seating` migrations, applied after `20261030000000_site_settings` and before deploying.
+`/admin/seating` (linked from `/admin` as "Seating plan") is an admin-only floor plan: round tables, Centerstage and a VIP 1 / VIP 2 ring, with drag and drop seating of attending guests, and exports to JPG (no names) and Excel. **Auto-fill VIP** seats guests whose `Role` in the Guests sheet is "Parents" or "Principal Sponsor"; the `Role` column is optional, and a sheet without it still syncs. A seat is freed automatically when a guest answers Not attending or is archived by the full sync. It needs the `20261031000000_guest_role` and `20261031000100_seating` migrations, applied before deploying. `20261030000000_site_settings` belongs to separate (uncommitted) site-settings work and is independent of them; the order only matters in that, if both ship, the earlier-timestamped site-settings migration is applied before the seating ones. `npm run test:db` erases the seating plan on the test database.
 
 ## Content editing guide
 
