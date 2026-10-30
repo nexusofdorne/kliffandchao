@@ -32,6 +32,7 @@ export async function upsertGuestRows(prisma: PrismaClient, parsed: ParsedGuestR
         nickname: guest.nickname,
         side: guest.side,
         notesPrivate: guest.notesPrivate,
+        role: guest.role,
         partyId: party.id,
       },
       update: {
@@ -40,6 +41,7 @@ export async function upsertGuestRows(prisma: PrismaClient, parsed: ParsedGuestR
         nickname: guest.nickname,
         side: guest.side,
         notesPrivate: guest.notesPrivate,
+        role: guest.role,
         partyId: party.id,
         archivedAt: null,
       },

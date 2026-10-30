@@ -24,6 +24,7 @@ export type GuestSeed = {
   nickname: string | null;
   side: GuestSide;
   notesPrivate: string | null;
+  role: string | null;
   partyExternalId: string;
 };
 
@@ -46,6 +47,9 @@ export function parseGuestRows(rows: Record<string, string>[]): ParsedGuestRows 
       throw new Error(`Missing required column "${required}" in guest data`);
     }
   }
+
+  // Optional column: found by header (any case) so a sheet without it still syncs.
+  const roleHeader = headers.find((header) => header.trim().toLowerCase() === 'role');
 
   const partiesByExternalId = new Map<string, PartySeed>();
   const guests: GuestSeed[] = [];
@@ -73,6 +77,7 @@ export function parseGuestRows(rows: Record<string, string>[]): ParsedGuestRows 
       nickname: emptyToNull(row.nickname),
       side: side as GuestSide,
       notesPrivate: emptyToNull(row.notes_private),
+      role: roleHeader ? emptyToNull(row[roleHeader]) : null,
       partyExternalId,
     });
   }

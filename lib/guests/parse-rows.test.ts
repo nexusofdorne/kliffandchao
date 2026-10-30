@@ -56,4 +56,14 @@ describe('parseGuestRows', () => {
   it('rejects a row with a blank required value', () => {
     expect(() => parseGuestRows([{ ...baseRow, first_name: '' }])).toThrow(/row 2/i);
   });
+
+  it('reads the Role column by header in any case, trimmed, empty as null', () => {
+    expect(parseGuestRows([{ ...baseRow, Role: ' Parents ' }]).guests[0].role).toBe('Parents');
+    expect(parseGuestRows([{ ...baseRow, role: 'Principal Sponsor' }]).guests[0].role).toBe('Principal Sponsor');
+    expect(parseGuestRows([{ ...baseRow, Role: '' }]).guests[0].role).toBeNull();
+  });
+
+  it('still parses a sheet without a Role column', () => {
+    expect(parseGuestRows([baseRow]).guests[0].role).toBeNull();
+  });
 });
