@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { GuestTable } from '@/components/admin/GuestTable';
 import { DeliveryStatus } from '@/components/admin/DeliveryStatus';
 import { StatsSummary } from '@/components/admin/StatsSummary';
@@ -28,6 +29,9 @@ export default async function AdminPage({ searchParams }: PageProps<'/admin'>) {
           <p className="text-sm text-muted-foreground">Signed in as {email}</p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/admin/seating" className="rounded-md border border-input px-3 py-1.5 text-sm text-foreground">
+            Seating plan
+          </Link>
           <SyncNowButton />
           <form action={signOutAdmin}>
             <button
