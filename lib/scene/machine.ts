@@ -7,6 +7,7 @@ export type SceneId = 'intro' | 'journey' | 'wedding';
 
 export const SCENES: readonly SceneId[] = ['intro', 'journey', 'wedding'];
 export const JOURNEY_TABS = 5;
+export const WEDDING_TABS = 6;
 
 export interface SceneState {
   readonly scene: SceneId;
@@ -15,6 +16,8 @@ export interface SceneState {
   /** Active journey chapter, 1..JOURNEY_TABS. Remembered while elsewhere. */
   readonly journeyTab: number;
   readonly weddingOpen: boolean;
+  /** Active wedding tab, 1..WEDDING_TABS. Remembered while elsewhere. */
+  readonly weddingTab: number;
 }
 
 export type MoveKind =
@@ -25,6 +28,7 @@ export type MoveKind =
   | 'intro->wedding'
   | 'wedding->intro'
   | 'journey-tab'
+  | 'wedding-tab'
   | 'journey-open'
   | 'journey-close'
   | 'wedding-open'
@@ -45,6 +49,7 @@ export const initialState: SceneState = {
   journeyOpen: false,
   journeyTab: 1,
   weddingOpen: false,
+  weddingTab: 1,
 };
 
 /** 0, 1 or 2: the nav capsule's position and the active section. */
@@ -84,9 +89,15 @@ export function stepPlan(state: SceneState, dir: 1 | -1): Move[] {
       ? enterWedding(state)
       : [{ kind: 'journey->intro', to: leaveJourney(state) }];
   }
-  // wedding: nothing lies beyond it, and scrolling back up stays here too (the wedding tabs
-  // scroll, and reaching the top of one shouldn't fly the guest back to the journey); the
-  // nav's Journey button still goes back
+  // wedding: a scroll steps through the open window's tabs, as on the journey; nothing lies
+  // beyond the last, and scrolling up from the first stays here too (reaching the top of a
+  // tab shouldn't fly the guest back to the journey; the nav's Journey button still does)
+  if (state.weddingOpen) {
+    const next = state.weddingTab + dir;
+    if (next >= 1 && next <= WEDDING_TABS) {
+      return [{ kind: 'wedding-tab', to: { ...state, weddingTab: next } }];
+    }
+  }
   return [];
 }
 
@@ -210,12 +221,19 @@ export function windowMove(state: SceneState, open: boolean): Move | null {
   return null;
 }
 
-/** A tab was clicked in the open journey window. */
+/** A tab was clicked in the open journey or wedding window. */
 export function tabMove(state: SceneState, tab: number): Move | null {
-  const next = clampTab(tab);
-  if (state.scene !== 'journey' || !state.journeyOpen) return null;
-  if (next === state.journeyTab) return null;
-  return { kind: 'journey-tab', to: { ...state, journeyTab: next } };
+  if (state.scene === 'journey' && state.journeyOpen) {
+    const next = clampTab(tab);
+    if (next === state.journeyTab) return null;
+    return { kind: 'journey-tab', to: { ...state, journeyTab: next } };
+  }
+  if (state.scene === 'wedding' && state.weddingOpen) {
+    const next = Math.min(WEDDING_TABS, Math.max(1, Math.round(tab)));
+    if (next === state.weddingTab) return null;
+    return { kind: 'wedding-tab', to: { ...state, weddingTab: next } };
+  }
+  return null;
 }
 
 /** The state after a whole plan has played. */

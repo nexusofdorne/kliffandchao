@@ -8,6 +8,7 @@ import {
   stepPlan,
   tabMove,
   windowMove,
+  WEDDING_TABS,
   type SceneId,
   type SceneState,
 } from './machine';
@@ -70,6 +71,39 @@ describe('stepPlan', () => {
       'wedding-open',
     ]);
     expect(kinds(stepPlan(state, -1))).toEqual(['journey->intro']);
+  });
+
+  it('steps through the open wedding window tabs, and stops at either end', () => {
+    const open: SceneState = {
+      ...initialState,
+      scene: 'wedding',
+      weddingOpen: true,
+      weddingTab: 1,
+    };
+    expect(stepPlan(open, 1)).toEqual([
+      { kind: 'wedding-tab', to: { ...open, weddingTab: 2 } },
+    ]);
+    expect(stepPlan(open, -1)).toEqual([]);
+    const last: SceneState = { ...open, weddingTab: WEDDING_TABS };
+    expect(stepPlan(last, 1)).toEqual([]);
+    expect(stepPlan(last, -1)).toEqual([
+      { kind: 'wedding-tab', to: { ...last, weddingTab: WEDDING_TABS - 1 } },
+    ]);
+  });
+
+  it('moves to a clicked wedding tab only while its window is open', () => {
+    const open: SceneState = {
+      ...initialState,
+      scene: 'wedding',
+      weddingOpen: true,
+      weddingTab: 1,
+    };
+    expect(tabMove(open, 6)).toEqual({
+      kind: 'wedding-tab',
+      to: { ...open, weddingTab: 6 },
+    });
+    expect(tabMove(open, 1)).toBeNull();
+    expect(tabMove({ ...open, weddingOpen: false }, 3)).toBeNull();
   });
 
   it('stays at the wedding when scrolling either way (the nav goes back)', () => {

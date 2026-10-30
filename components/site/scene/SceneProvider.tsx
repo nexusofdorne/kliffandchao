@@ -252,7 +252,7 @@ export function SceneProvider({ children }: { children: ReactNode }) {
       onWheel: (self) => {
         if (modalOpen()) return;
         if (busyRef.current) {
-          wheelGate.current.reset();
+          wheelGate.current.hold(performance.now());
           return;
         }
         const dir = wheelGate.current.push(self.deltaY, performance.now());
@@ -267,7 +267,11 @@ export function SceneProvider({ children }: { children: ReactNode }) {
         e.target instanceof Element
           ? e.target.closest<HTMLElement>('[data-scene-scroll]')
           : null;
-      if (!pane || busyRef.current || e.deltaY === 0 || modalOpen()) return;
+      if (!pane || e.deltaY === 0 || modalOpen()) return;
+      if (busyRef.current) {
+        wheelGate.current.hold(performance.now());
+        return;
+      }
       const dir: Direction = e.deltaY > 0 ? 1 : -1;
       if (!atScrollEdge(pane, dir)) return;
       const step_ = wheelGate.current.push(e.deltaY, performance.now());

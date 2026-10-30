@@ -6,7 +6,6 @@ import {
   useEffect,
   useImperativeHandle,
   useRef,
-  useState,
   type ReactNode,
   type Ref,
 } from 'react';
@@ -60,8 +59,9 @@ const TABS: { id: WeddingTab; label: string }[] = [
 ];
 
 export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
-  const { state, registerPlayer, setWindowOpen } = useScene();
-  const [tab, setTab] = useState<WeddingTab>('detail');
+  const { state, registerPlayer, setWindowOpen, goToTab } = useScene();
+  // the tab lives in the scene state (lib/scene/machine), so a scroll can step through the tabs
+  const tab: WeddingTab = TABS[state.weddingTab - 1]?.id ?? 'detail';
   const stageRef = useRef<HTMLDivElement>(null);
   const windowRef = useRef<HTMLDivElement>(null);
   const folderRef = useRef<HTMLButtonElement>(null);
@@ -149,6 +149,8 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
   useEffect(() => {
     const offs = [
       registerPlayer('wedding-open', openWindow),
+      // the tab itself changes with the scene state; this just lets the new one settle in
+      registerPlayer('wedding-tab', () => sleep(450)),
       registerPlayer('wedding-close', closeWindow),
     ];
     return () => offs.forEach((off) => off());
@@ -211,7 +213,7 @@ export function WeddingScene({ ref }: { ref?: Ref<WeddingHandle> }) {
           label="The wedding"
           tabs={TABS.map((t) => ({ ...t, controls: `w5-panel-${t.id}` }))}
           selected={TABS.findIndex((t) => t.id === tab)}
-          onSelect={(i) => setTab(TABS[i].id)}
+          onSelect={(i) => goToTab(i + 1)}
           onClose={() => setWindowOpen(false)}
         >
           <div

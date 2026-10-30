@@ -8,6 +8,18 @@ import {
 } from './gestures';
 
 describe('createWheelGate', () => {
+  it('treats events during a move as the same gesture, so coasting fires no second step', () => {
+    const gate = createWheelGate();
+    expect(gate.push(60, 0)).toBe(1); // the gesture starts a move
+    // the move plays for 450 ms while the trackpad keeps coasting
+    for (let t = 30; t <= 450; t += 30) gate.hold(t);
+    // the move is over, the coasting goes on: still the same gesture
+    expect(gate.push(60, 480)).toBeNull();
+    expect(gate.push(60, 510)).toBeNull();
+    // a new flick after a quiet pause steps again
+    expect(gate.push(60, 510 + WHEEL_QUIET_MS + 10)).toBe(1);
+  });
+
   it('ignores small nudges and fires once the delta passes the threshold', () => {
     const gate = createWheelGate();
     expect(gate.push(10, 0)).toBeNull();

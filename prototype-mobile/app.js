@@ -1193,7 +1193,7 @@
     tab5Els.forEach((t, j) => t.setAttribute('aria-selected', String(i === j)));
     const t = tab5Els[i];
     if (t) tabs5.scrollTo({ left: t.offsetLeft - tabs5.offsetLeft - 24, behavior: 'smooth' });
-    pane5Els.forEach((p, j) => p.classList.toggle('is-on', i === j));
+    pane5Els.forEach((p, j) => { p.classList.toggle('is-on', i === j); if (i === j) p.scrollTop = 0; });
   }
   function countdown() {
     const ms = new Date(C.siteConfig.weddingDateTime) - Date.now();
@@ -1252,7 +1252,13 @@
     else if (current === 4) {
       if (dir > 0) winOpen && tab < 5 ? stepTab(tab + 1) : go45();
       else winOpen && tab > 1 ? stepTab(tab - 1) : go43();
-    } else if (current === 5 && dir < 0 && !win5Open) go54();  // with the sheet open, back is the nav or the close dot
+    } else if (current === 5 && win5Open) {
+      // with the sheet open a swipe steps through its tabs (a long tab scrolls first); it stops at
+      // either end: back to the journey is the nav or the close dot
+      const at = tab5Els.findIndex(t => t.getAttribute('aria-selected') === 'true');
+      const next = at + dir;
+      if (next >= 0 && next < tab5Els.length) { busy = true; setTab5(next); setTimeout(() => { busy = false; }, 600); }
+    } else if (current === 5 && dir < 0) go54();
   }
   async function goTo(n) {
     if (busy || n === current || current < 3) return;

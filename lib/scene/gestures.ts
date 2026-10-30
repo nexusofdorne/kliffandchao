@@ -14,6 +14,12 @@ export interface WheelGate {
   push(deltaY: number, now: number): Direction | null;
   /** Forget what has accumulated (a transition started or ended). */
   reset(): void;
+  /**
+   * A wheel event that arrived while a move was playing: it belongs to the gesture that started
+   * the move, so it is swallowed and keeps that gesture going (a trackpad coasting on past the
+   * end of a short move must not fire a second step).
+   */
+  hold(now: number): void;
 }
 
 export function createWheelGate(
@@ -41,6 +47,11 @@ export function createWheelGate(
     },
     reset() {
       acc = 0;
+    },
+    hold(now) {
+      last = now;
+      acc = 0;
+      swallowing = true;
     },
   };
 }
