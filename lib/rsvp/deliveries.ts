@@ -2,6 +2,7 @@ import 'server-only';
 import { randomUUID } from 'node:crypto';
 import type { PrismaClient, RsvpDelivery } from '../../generated/prisma/client';
 import { env } from '../env';
+import { markGuestsRsvp } from '../sheets/guests-rsvp';
 import { mirrorRsvpToSheet, readRsvpLogNextRow } from '../sheets/mirror';
 import { notificationSchema } from '../validation';
 import { DELIVERY_LEASE_MS, getDeliveryAction } from './delivery-policy';
@@ -11,11 +12,13 @@ type DeliveryServices = {
   notify: typeof notifyCouple;
   mirror: typeof mirrorRsvpToSheet;
   nextRow: typeof readRsvpLogNextRow;
+  markGuests: typeof markGuestsRsvp;
 };
 const services: DeliveryServices = {
   notify: notifyCouple,
   mirror: mirrorRsvpToSheet,
   nextRow: readRsvpLogNextRow,
+  markGuests: markGuestsRsvp,
 };
 
 export type DeliveryOutcome =
@@ -128,6 +131,11 @@ export async function deliverRsvpDelivery(
           createdAt: submission.createdAt,
         },
         startRow,
+      );
+      // then each guest's answer in the RSVP column of the Guests tab (a retry rewrites both)
+      await dependencies.markGuests(
+        prisma,
+        submission.responses.map((response) => response.guestId),
       );
     }
     const completed = await prisma.rsvpDelivery.updateMany({

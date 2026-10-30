@@ -85,6 +85,7 @@ function deliveryServices() {
     notify: vi.fn(async () => {}),
     mirror: vi.fn(async () => {}),
     nextRow: vi.fn(async () => 14),
+    markGuests: vi.fn(async () => {}),
   };
 }
 
@@ -152,6 +153,26 @@ describe('persisted delivery recovery', () => {
     );
     expect(query).toHaveBeenCalledTimes(1);
     expect(services.nextRow).toHaveBeenCalledTimes(1);
+  });
+  it("marks the guests' answers in the Guests tab after the RSVP log", async () => {
+    const { db, record } = databaseFixture({ channel: 'SHEETS', payload: {} });
+    const services = deliveryServices();
+    expect(await deliverRsvpDelivery(db, record.id, services)).toBe('delivered');
+    expect(services.markGuests).toHaveBeenCalledExactlyOnceWith(db, ['guest-1']);
+    expect(services.mirror.mock.invocationCallOrder[0]).toBeLessThan(
+      services.markGuests.mock.invocationCallOrder[0],
+    );
+  });
+  it('retries the whole Sheets delivery when marking the Guests tab fails', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { db, record } = databaseFixture({ channel: 'SHEETS', payload: {} });
+    const services = deliveryServices();
+    services.markGuests.mockRejectedValueOnce(new Error('Sheets busy'));
+    expect(await deliverRsvpDelivery(db, record.id, services)).toBe('failed');
+    expect(await deliverRsvpDelivery(db, record.id, services)).toBe('delivered');
+    expect(services.markGuests).toHaveBeenCalledTimes(2);
+    // the log rows go back into the same reserved range
+    expect(services.mirror.mock.calls[0]).toEqual(services.mirror.mock.calls[1]);
   });
   it('moves expired email attempts to review without sending again', async () => {
     const { db, record } = databaseFixture({

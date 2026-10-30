@@ -66,6 +66,7 @@ describe('delivery database coordination', () => {
       notify,
       nextRow: async () => 2,
       mirror: async () => {},
+      markGuests: async () => {},
     };
     const results = await Promise.all([
       deliverRsvpDelivery(testPrisma, email.id, dependencies),
@@ -96,6 +97,7 @@ describe('delivery database coordination', () => {
       mirror: async (_input: unknown, startRow: number) => {
         rows.push(startRow);
       },
+      markGuests: async () => {},
     };
     const results = await Promise.all(
       tasks.map(({ id }) => deliverRsvpDelivery(testPrisma, id, dependencies)),
