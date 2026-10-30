@@ -980,7 +980,7 @@
 .gate-monitor {
   position: absolute;
   overflow: hidden;
-  border-radius: 12% / 14%;
+  /* the shape comes from the clip-path (DesktopGate's SCREEN_OUTLINE) */
   background: #111;
   animation: scene-crt-jitter 4.2s steps(1) infinite;
 }

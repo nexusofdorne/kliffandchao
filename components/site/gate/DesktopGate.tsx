@@ -16,6 +16,11 @@ import { frameTransform, ridingFrame, zoomFrame } from '@/lib/scene/camera';
 import type { GateFormProps } from './MobileGate';
 
 const DIVE_SECONDS = 3.2;
+/** The monitor's screen in the 3.0 photo, as % of its box (scripts/design/prepare_assets.py): a
+ *  tilted quad with softened corners. The screen's layers (the photo, its glitch, the dark the
+ *  dive goes through) are clipped to it, so they never spill onto the bezel. */
+const SCREEN_OUTLINE =
+  'polygon(7.2% 9%, 10.3% 6%, 97.4% 0%, 100% 1.5%, 96.1% 90.2%, 93.1% 93.2%, 2.6% 99.7%, 0% 97.2%)';
 /** How far (% of the stage) the sky and the bubbles drift against the hill as the pointer moves. */
 const PARALLAX = { sky: 0.6, bubbles: 1.4 };
 const REDUCED_FADE_SECONDS = 0.4;
@@ -215,7 +220,10 @@ export function DesktopGate({
           </div>
           <StageLayer asset={a.s01_monitor} />
 
-          <div className="gate-monitor" style={boxStyle(a.s01_screen)}>
+          <div
+            className="gate-monitor"
+            style={{ ...boxStyle(a.s01_screen), clipPath: SCREEN_OUTLINE }}
+          >
             <Image
               src={a.s01_screen.src}
               alt=""
