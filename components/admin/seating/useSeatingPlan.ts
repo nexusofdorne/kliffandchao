@@ -11,7 +11,7 @@ import {
   setSeats,
   type SeatingActionResult,
 } from '@/app/admin/seating/actions';
-import { clampToRoom, nextRoundTablePosition, type Point } from '@/lib/seating/geometry';
+import { clampCenterToRoom, clampToRoom, nextRoundTablePosition, type Point } from '@/lib/seating/geometry';
 import {
   applyMove,
   autoFillVip,
@@ -48,6 +48,7 @@ export function useSeatingPlan(initial: Plan) {
   }
 
   async function commit(optimistic: SeatingState | null, call: () => Promise<SeatingActionResult>) {
+    setMessage(null);
     if (optimistic) setPlan({ ...current.current, state: optimistic });
     const request = ++latestRequest.current;
     let result: SeatingActionResult;
@@ -122,7 +123,7 @@ export function useSeatingPlan(initial: Plan) {
     },
 
     moveCenter(to: Point) {
-      const at = clampToRoom(to);
+      const at = clampCenterToRoom(to);
       return commit({ ...state(), center: at }, () => moveCenterAction(at.x, at.y));
     },
   };

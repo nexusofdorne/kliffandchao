@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { requireAdmin } from '@/lib/auth/require-admin';
 import { prisma } from '@/lib/prisma';
-import { clampToRoom, nextRoundTablePosition } from '@/lib/seating/geometry';
+import { clampCenterToRoom, clampToRoom, nextRoundTablePosition } from '@/lib/seating/geometry';
 import {
   applyMove,
   autoFillVip,
@@ -189,5 +189,5 @@ export async function moveCenter(x: number, y: number): Promise<SeatingActionRes
   await requireAdmin();
   const parsed = z.object({ x: coordinate, y: coordinate }).safeParse({ x, y });
   if (!parsed.success) return invalid('That position is not valid.');
-  return run((state) => ({ state: { ...state, center: clampToRoom(parsed.data) } }));
+  return run((state) => ({ state: { ...state, center: clampCenterToRoom(parsed.data) } }));
 }

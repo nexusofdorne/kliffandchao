@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   ROOM,
   RING,
+  VIP_CHAIR_SIZE,
+  clampCenterToRoom,
   defaultRoundTablePositions,
   nextRoundTablePosition,
   roundChairSpots,
@@ -82,5 +84,21 @@ describe('seating geometry', () => {
     expect(next.y).toBeGreaterThan(0);
     expect(next.x).toBeLessThan(ROOM.width);
     expect(next.y).toBeLessThan(ROOM.height);
+  });
+
+  it('keeps the whole VIP ring and its chairs inside the room when the center moves', () => {
+    const margin = RING.radius + RING.band / 2 + 14 + VIP_CHAIR_SIZE;
+    expect(clampCenterToRoom({ x: -500, y: 99999 })).toEqual({ x: margin, y: ROOM.height - margin });
+    expect(clampCenterToRoom({ x: 99999, y: 0 })).toEqual({ x: ROOM.width - margin, y: margin });
+    expect(clampCenterToRoom({ x: 500, y: 380 })).toEqual({ x: 500, y: 380 });
+    for (const corner of [{ x: 0, y: 0 }, { x: ROOM.width, y: ROOM.height }]) {
+      const center = clampCenterToRoom(corner);
+      for (const spot of [...vipChairSpots(center, 1, 40), ...vipChairSpots(center, 2, 40)]) {
+        expect(spot.x - VIP_CHAIR_SIZE / 2).toBeGreaterThanOrEqual(0);
+        expect(spot.x + VIP_CHAIR_SIZE / 2).toBeLessThanOrEqual(ROOM.width);
+        expect(spot.y - VIP_CHAIR_SIZE / 2).toBeGreaterThanOrEqual(0);
+        expect(spot.y + VIP_CHAIR_SIZE / 2).toBeLessThanOrEqual(ROOM.height);
+      }
+    }
   });
 });

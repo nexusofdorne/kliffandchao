@@ -4,6 +4,7 @@ import { forwardRef, type PointerEvent } from 'react';
 import {
   RING,
   ROOM,
+  VIP_CHAIR_SIZE,
   ROUND_TABLE_RADIUS,
   roundChairSpots,
   vipArc,
@@ -41,7 +42,6 @@ const COLORS = {
 };
 
 const ROUND_CHAIR = 12;
-const VIP_CHAIR = 14;
 const NAME_LENGTH = 12;
 
 function shortName(name: string): string {
@@ -88,9 +88,7 @@ export const FloorPlan = forwardRef<SVGSVGElement, FloorPlanProps>(function Floo
           style={{ cursor: guest ? 'grab' : 'pointer' }}
           onPointerDown={(e) => onPointerDownChair(table.id, spot.seat, e)}
         >
-          <title>
-            {person ? `${person.firstName} ${person.lastName}` : guest ? 'Guest' : `Seat ${spot.seat}`} · {table.name}
-          </title>
+          <title>{`${person ? `${person.firstName} ${person.lastName}` : guest ? 'Guest' : `Seat ${spot.seat}`} · ${table.name}`}</title>
         </rect>
       );
     });
@@ -159,7 +157,7 @@ export const FloorPlan = forwardRef<SVGSVGElement, FloorPlanProps>(function Floo
         const labelX = c.x + (half === 1 ? -RING.radius : RING.radius);
         return (
           <g key={table.id}>
-            {chairs(table, vipChairSpots(c, half, chairCount(table, seated)), VIP_CHAIR, seated)}
+            {chairs(table, vipChairSpots(c, half, chairCount(table, seated)), VIP_CHAIR_SIZE, seated)}
             <g
               data-drop-table={table.id}
               style={{ cursor: 'grab' }}

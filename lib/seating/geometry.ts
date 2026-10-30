@@ -12,6 +12,8 @@ export const RING = { radius: 150, band: 34, gapHalfAngle: 0.22 };
 
 export const ROUND_TABLE_RADIUS = 36;
 const CHAIR_OFFSET = 14;
+// The drawn size of a VIP chair; the floor plan uses it too.
+export const VIP_CHAIR_SIZE = 14;
 const TABLE_RADII = { x: 400, y: 300 };
 // keep a table (and its chairs) fully inside the room
 const ROOM_MARGIN = ROUND_TABLE_RADIUS + CHAIR_OFFSET + 10;
@@ -62,6 +64,17 @@ export function clampToRoom(p: Point): Point {
   return {
     x: Math.min(ROOM.width - ROOM_MARGIN, Math.max(ROOM_MARGIN, p.x)),
     y: Math.min(ROOM.height - ROOM_MARGIN, Math.max(ROOM_MARGIN, p.y)),
+  };
+}
+
+// The center carries the VIP ring: keep the ring and its chairs (a full chair's width of slack,
+// since they are rotated) inside the room.
+const CENTER_MARGIN = RING.radius + RING.band / 2 + CHAIR_OFFSET + VIP_CHAIR_SIZE;
+
+export function clampCenterToRoom(p: Point): Point {
+  return {
+    x: Math.min(ROOM.width - CENTER_MARGIN, Math.max(CENTER_MARGIN, p.x)),
+    y: Math.min(ROOM.height - CENTER_MARGIN, Math.max(CENTER_MARGIN, p.y)),
   };
 }
 

@@ -6,6 +6,7 @@ vi.mock('@/lib/auth/require-admin', () => ({ requireAdmin }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 import { moveCenter, moveGuests, renameTable, setRoundTables } from '../../app/admin/seating/actions';
+import { clampCenterToRoom, RING } from '../../lib/seating/geometry';
 import { loadSeating } from '../../lib/seating/store';
 
 // Sy Household (external id p03: g07-g09), as in seating.test.ts.
@@ -75,10 +76,11 @@ describe('seating actions', { timeout: 30_000 }, () => {
     expect(after).toEqual(ids.slice(0, 2));
   });
 
-  it('clamps the room center inside the room', async () => {
+  it('clamps the room center so the VIP ring stays inside the room', async () => {
     requireAdmin.mockResolvedValue('admin@test');
     const result = await moveCenter(99999, -50);
-    expect(result.ok && result.state.center.x).toBeLessThanOrEqual(1000);
-    expect(result.ok && result.state.center.y).toBeGreaterThanOrEqual(0);
+    expect(result.ok && result.state.center).toEqual(clampCenterToRoom({ x: 99999, y: -50 }));
+    expect(result.ok && result.state.center.x).toBeLessThan(1000 - RING.radius);
+    expect(result.ok && result.state.center.y).toBeGreaterThan(RING.radius);
   });
 });

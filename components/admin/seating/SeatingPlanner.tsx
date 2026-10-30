@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
-import { clampToRoom } from '@/lib/seating/geometry';
+import { clampCenterToRoom, clampToRoom } from '@/lib/seating/geometry';
 import type { SeatableGuest, SeatingState } from '@/lib/seating/rules';
 import { FloorPlan } from './FloorPlan';
 import { RoomControls } from './RoomControls';
@@ -23,11 +23,10 @@ function fullName(guest: SeatableGuest): string {
 function withDragPreview(state: SeatingState, drag: ActiveDrag | null): SeatingState {
   const gesture = drag?.gesture;
   if (!drag || !gesture) return state;
-  const to = (origin: { x: number; y: number }) =>
-    clampToRoom({ x: origin.x + drag.delta.x, y: origin.y + drag.delta.y });
-  if (gesture.kind === 'center') return { ...state, center: to(gesture.origin) };
+  const to = (origin: { x: number; y: number }) => ({ x: origin.x + drag.delta.x, y: origin.y + drag.delta.y });
+  if (gesture.kind === 'center') return { ...state, center: clampCenterToRoom(to(gesture.origin)) };
   if (gesture.kind === 'table') {
-    const at = to(gesture.origin);
+    const at = clampToRoom(to(gesture.origin));
     return { ...state, tables: state.tables.map((t) => (t.id === gesture.tableId ? { ...t, ...at } : t)) };
   }
   return state;
