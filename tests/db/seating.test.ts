@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { submitRsvp } from '../../lib/rsvp/submit';
 import { applyMove } from '../../lib/seating/rules';
 import { loadSeating, saveSeatingChange, SeatingConflictError } from '../../lib/seating/store';
@@ -92,6 +92,9 @@ describe('seating store', { timeout: 30_000 }, () => {
     const tableId = await vip1Id();
     await seatAt(guestIds[0], tableId, 1);
     await seatAt(guestIds[1], tableId, 2);
+    // the release after the RSVP is best-effort and only logs its errors: surface them here, so a
+    // failure of this test says why the seat wasn't freed (it failed once, unexplained, on 31 Oct)
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {});
     await submitRsvp(testPrisma, {
       clientSubmissionId: randomUUID(),
       partyId,
@@ -101,6 +104,9 @@ describe('seating store', { timeout: 30_000 }, () => {
       ipHash: null,
       notification: { recipient: 'test@example.com', partyLabel: 'Test household', submitterName: 'Test Guest', answers: [] },
     });
+    const errors = logged.mock.calls.map((call) => call.map(String).join(' '));
+    logged.mockRestore();
+    expect(errors).toEqual([]);
     const rows = await testPrisma.seatAssignment.findMany();
     expect(rows.map((r) => r.guestId)).toEqual([guestIds[1]]);
   });
