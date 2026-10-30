@@ -35,6 +35,16 @@ itself is ~900 MB and is now in `.gitignore`; `docs/design/v4/README.md` lists w
   party (`IdentityCheck`); journey photos open big (`PhotoLightbox`, and `openLightbox` on the
   phone), and the scene ignores input while it is open (`data-scene-modal`); a permanent "tap to see
   more verses" note under the verse (desktop and phone).
+- **Owner's third pass (30 Oct, later):** the gate's monitor shows the new 3.0 photo (no clip) and
+  the logos sit a set margin from the window edge; the splash has Skip (DesktopStory, `.skip02` on
+  the phone) and made-up progress/glitch sounds (`lib/audio/typing.ts`; only typing is a file);
+  the desktop verse is higher and larger; journey <-> wedding is the rendered walkthrough
+  (`public/video/walk-to-*.mp4`, from the reference clip; `WorldScene.walk`), played with reduce
+  motion on too; the journey's water mask stays clear of the path (`-v5` masks); folder labels sit
+  under the icons; the phone card is film, words, photos; the closed phone window is `display:
+  none`; chapter 2 is "It almost didn't work"; the motif's outfits share one height (women, then
+  men, on the phone), its credit is gone, and the phone's wedding text is centred. The phone's
+  direct intro <-> wedding jumps still use the old camera move.
 - **Screenshots without the preview pane:** the pane crops desktop sizes on this PC; the session used
   headless Chrome over DevTools at 1920 x 1080 instead.
 - **Phone:** same content and backdrops; republished to `public/m/` (`prepare_portrait.py --world-only`,
