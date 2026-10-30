@@ -6,8 +6,8 @@ The outlines are build_world.py's (the streams beside the journey's path; the we
 and the lake through its window), minus anything green (moss, banks, islands). Writes the mask in
 the desktop stage's frame (the whole painting) and in the phone stage's frame (the portrait crop
 around the vanishing point):
-  public/img/world/<j|w>_water-v4.png
-  prototype-mobile/assets/world/<j|w>_water-v4.png
+  public/img/world/<j|w>_water-v5.png
+  prototype-mobile/assets/world/<j|w>_water-v5.png
 """
 import os
 import sys
@@ -17,7 +17,10 @@ from PIL import Image, ImageDraw
 from scipy import ndimage as ndi
 
 sys.path.insert(0, os.path.dirname(__file__))
-from build_world import P_SHOW, REV, ROOT, SCENES, H, W  # noqa: E402
+from build_world import P_SHOW, ROOT, SCENES, H, W  # noqa: E402
+
+# its own revision: the journey's mask was redrawn clear of the path (media is cached for a week)
+REV = "-v5"
 
 
 STONE_WARMTH = {"journey": 0.03, "wedding": 0.08}
@@ -35,6 +38,12 @@ def water_mask(cfg):
     # lake is warm too, so its floor takes a stricter test
     stone = (a.mean(2) > 0.45) & (r - b > STONE_WARMTH[cfg["name"]])
     water = inside & ~greenish & ~stone
+    if cfg["name"] == "journey":
+        # keep the ripples well clear of the path: near its edge they pulled the paving into the
+        # water and made the path itself look as if it moved
+        path = (a.mean(2) > 0.62) & (np.abs(r - b) < 0.06)
+        path = ndi.binary_opening(path, iterations=3)
+        water &= ~ndi.binary_dilation(path, iterations=14)
     if cfg.get("window"):
         # the lake is only what shows through the round window
         (cx, cy), radius = cfg["window"]

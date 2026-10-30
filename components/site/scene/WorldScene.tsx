@@ -1,5 +1,6 @@
 'use client';
 
+import gsap from 'gsap';
 import {
   useEffect,
   useImperativeHandle,
@@ -53,7 +54,25 @@ export type WorldHandle = {
   pose: (pose: WorldPose) => void;
   /** One scene at rest (the painting as drawn), or none. */
   rest: (scene: WorldSceneId | null) => void;
+  /**
+   * The walk between the journey and the wedding: a rendered film whose first frame is the one
+   * painting and whose last is the other, played over the scenery (WALKTHROUGH). Resolves once
+   * the last frame is showing; `hideWalk` then takes it away when the scenery underneath has
+   * been set to the end painting.
+   */
+  walk: (to: WorldSceneId) => Promise<void>;
+  hideWalk: () => Promise<void>;
 };
+
+/** The walk from the path into the hall, and the same film reversed for the way back. */
+const WALKTHROUGH: Record<WorldSceneId, string> = {
+  wedding: '/video/walk-to-wedding.mp4',
+  journey: '/video/walk-to-journey.mp4',
+};
+/** How long the film may take to be ready, and to play, before the walk carries on without it. */
+const WALK_READY_MS = 2500;
+const WALK_PLAY_MS = 6000;
+const WALK_FADE_S = 0.35;
 
 // back to front: the river's sky and hills sit under the meadow's, which give way to them
 const ORDER: readonly (readonly [WorldSceneId, WorldKind])[] = [
@@ -99,8 +118,8 @@ const key = (scene: WorldSceneId, kind: WorldKind) => `${scene}-${kind}`;
 const GONE = 14;
 /** Each painting's water, for the WebGL ripples (scripts/design/build_water_mask.py). */
 const WATER_MASK = {
-  journey: '/img/world/j_water-v4.png',
-  wedding: '/img/world/w_water-v4.png',
+  journey: '/img/world/j_water-v5.png',
+  wedding: '/img/world/w_water-v5.png',
 };
 /** The soap bubble in the journey's sky (centre at 420, 160 and radius 40 in the 1920 x 1080 painting). */
 const JOURNEY_BUBBLE = {
@@ -115,6 +134,7 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
   const gl = useRef<WorldGL | null>(null);
+  const films = useRef(new Map<WorldSceneId, HTMLVideoElement>());
   const last = useRef<WorldPose>(REST);
   const calm = useRef(false);
 
@@ -216,10 +236,54 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
     };
   }, []);
 
+  async function walk(to: WorldSceneId) {
+    const film = films.current.get(to);
+    if (!film) return;
+    films.current.forEach((other) => {
+      if (other !== film) other.style.opacity = '0';
+    });
+    film.currentTime = 0;
+    // its first frame is the painting on screen now, so it can appear without a fade
+    if (film.readyState < 2) {
+      await new Promise<void>((resolve) => {
+        const done = () => resolve();
+        film.addEventListener('loadeddata', done, { once: true });
+        setTimeout(done, WALK_READY_MS);
+      });
+    }
+    film.style.opacity = '1';
+    await new Promise<void>((resolve) => {
+      const done = () => resolve();
+      film.addEventListener('ended', done, { once: true });
+      // a hidden tab or a refused play() must not hang the story
+      setTimeout(done, WALK_PLAY_MS);
+      film.play().catch(done);
+    });
+  }
+
+  async function hideWalk() {
+    const showing = [...films.current.values()].filter(
+      (f) => f.style.opacity !== '0',
+    );
+    await new Promise<void>((resolve) => {
+      if (!showing.length) return resolve();
+      gsap.to(showing, {
+        opacity: 0,
+        duration: WALK_FADE_S,
+        ease: 'none',
+        onComplete: resolve,
+      });
+      setTimeout(resolve, WALK_FADE_S * 1000 + 300);
+    });
+    showing.forEach((f) => f.pause());
+  }
+
   useImperativeHandle(ref, () => ({
     pose,
     rest: (scene) =>
       pose({ camera: { journey: 0, wedding: 0 }, show: scene ? [scene] : [] }),
+    walk,
+    hideWalk,
   }));
 
   return (
@@ -269,6 +333,24 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
         className="world-gl"
         style={{ visibility: 'hidden' }}
       />
+      <Stage>
+        {(Object.keys(WALKTHROUGH) as WorldSceneId[]).map((to) => (
+          <video
+            key={to}
+            ref={(el) => {
+              if (el) films.current.set(to, el);
+              else films.current.delete(to);
+            }}
+            src={WALKTHROUGH[to]}
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+            style={{ opacity: 0 }}
+          />
+        ))}
+      </Stage>
     </>
   );
 }
