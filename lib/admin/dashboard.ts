@@ -1,16 +1,9 @@
 import 'server-only';
 import type { PrismaClient } from '../../generated/prisma/client';
+import type { GuestTableRow } from './guest-table';
 import { computeAttendanceTally, type AttendanceStatus, type AttendanceTally } from './stats';
 
-export type AdminGuestRow = {
-  id: string;
-  displayName: string;
-  partyId: string;
-  partyLabel: string;
-  status: AttendanceStatus | null;
-  respondedAt: Date | null;
-  answeredByDisplayName: string | null;
-};
+export type AdminGuestRow = GuestTableRow;
 
 export type AdminDashboardData = {
   tally: AttendanceTally;
@@ -47,6 +40,7 @@ export async function getAdminDashboardData(prisma: PrismaClient): Promise<Admin
     displayName: `${guest.firstName} ${guest.lastName}`,
     partyId: guest.partyId,
     partyLabel: guest.party.label,
+    side: guest.side,
     status: guest.current?.status ?? null,
     respondedAt: guest.current?.respondedAt ?? null,
     answeredByDisplayName: guest.current ? (responderNameById.get(guest.current.respondedByGuestId) ?? null) : null,
