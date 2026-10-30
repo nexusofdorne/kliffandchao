@@ -1,6 +1,36 @@
 # Handoff — Kliff & Chao wedding site
 
-## Latest update — 29 October 2026: the 3.0 assets and copy (local, not committed)
+## Latest update — 31 October 2026: seating planner (branch feature/seating-planner, not merged)
+
+An admin-only seating plan at `/admin/seating` (linked from `/admin` as "Seating plan"). Nothing is
+merged, pushed or deployed.
+
+- **Page:** a floor plan with Centerstage and the VIP 1 / VIP 2 ring, plus round tables. The number of
+  tables and seats per table are editable, tables have editable names, and table numbers never change.
+  Guests are placed by chair-level drag and drop (bump and swap rules as in the spec,
+  `docs/superpowers/specs/2026-10-30-seating-planner-design.md`).
+- **Auto-fill VIP:** seats guests whose role is Parents or Principal Sponsor. Kliff's side goes to
+  VIP 1, Chao's to VIP 2, Both to whichever has room.
+- **Role column:** the Guests sheet's `Role` column (header matched in any case; values "Parents" and
+  "Principal Sponsor", singular or plural) feeds Auto-fill VIP and is stored in `Guest.role`. A sheet
+  without the column still syncs.
+- **Exports:** `kliff-chao-seating-plan.jpg` (the floor plan, no names) and `kliff-chao-seating.xlsx`
+  (sheets Seating, Tables, Not seated).
+- **Seats free themselves:** when a guest answers Not attending (inside the RSVP transaction), when the
+  full "Sync now" archives them, and stale seats are dropped whenever the plan loads.
+
+**Migrations — two, applied to the TEST database only.** `20261031000000_guest_role` (adds
+`Guest.role`) and `20261031000100_seating` (`SeatingTable`, `SeatAssignment`, `SeatingRoom`; RLS on
+all three). Production needs, **with the owner's explicit OK and BEFORE deploying this code**: first
+`20261030000000_site_settings` (the separate, still-uncommitted site-settings work), then these two.
+Do not run anything against production without that OK.
+
+**Trying it locally before production is migrated:** point the dev server's `DATABASE_URL` at the test
+database (with the test CA trusted, as `.env.test` does for the test scripts), run `npm run db:prepare-test`
+to apply the migrations and seed synthetic data, then open `/admin/seating`. Do not use `.env.local`
+(production) for this.
+
+## Earlier update — 29 October 2026: the 3.0 assets and copy (local, not committed)
 
 The couple's `3.0/` folder (`3.0/instructions.txt`, references in `3.0/reference screenshots/`) is
 applied in the working tree. **Nothing is committed** (the owner asked to review first). `3.0/`
