@@ -182,8 +182,9 @@ export function createTransitions(
   }
 
   // 04 -> 05: one continuous walk up the path, through the round arch and into the hall (the
-  // walkthrough film: its first frame is the path as painted, its last the hall). The journey's
-  // window and folder step aside first; the hall's folder is there at the end. It plays with
+  // walkthrough film: its first frame is the path as painted, its last the hall). The walk starts
+  // at once; the journey's window and folder fade away over its first steps, and the hall's
+  // folder is there at the end. It plays with
   // reduce motion on too: it is a film of the walk, the move the couple designed.
   async function walkToWedding(x: Parts, windowOpen: boolean) {
     const jp = x.journey.parts();
@@ -200,10 +201,8 @@ export function createTransitions(
       );
     }
     away.to(jp.folder, { opacity: 0, duration: 0.4 }, 0);
-    await playToEnd(away);
-
     x.world.rest('journey');
-    await x.world.walk('wedding');
+    await Promise.all([playToEnd(away), x.world.walk('wedding')]);
     x.world.rest('wedding');
     gsap.set(x.journeyRoot, { autoAlpha: 0 });
     gsap.set(jp.window, { clearProps: 'transform,--win-o' });
@@ -215,7 +214,7 @@ export function createTransitions(
     gsap.set(wp.folder, { clearProps: 'opacity' });
   }
 
-  // 05 -> 04: the same walk backwards, out of the hall and down the path.
+  // 05 -> 04: the same walk backwards, out of the hall and down the path, again starting at once.
   async function walkToJourney(
     x: Parts,
     openWindow: boolean,
@@ -233,11 +232,9 @@ export function createTransitions(
         0,
       );
     }
-    await playToEnd(away);
-
     gsap.set(jp.folder, { opacity: 0 });
     x.world.rest('wedding');
-    await x.world.walk('journey');
+    await Promise.all([playToEnd(away), x.world.walk('journey')]);
     x.world.rest('journey');
     gsap.set(x.weddingRoot, { autoAlpha: 0 });
     x.wedding.reset();

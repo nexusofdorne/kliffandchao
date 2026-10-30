@@ -358,16 +358,16 @@ export function Terminal({ ref }: { ref?: Ref<TerminalHandle> }) {
     }
     gsap.to(washRef.current, {
       keyframes: [
-        { opacity: 0.85, backgroundColor: 'rgb(28,52,34)', duration: 0.9 },
-        { opacity: 0.9, backgroundColor: 'rgb(92,122,120)', duration: 1.3 },
-        { opacity: 0.92, backgroundColor: 'rgb(118,146,158)', duration: 0.4 },
+        { opacity: 0.85, backgroundColor: 'rgb(28,52,34)', duration: 0.45 },
+        { opacity: 0.9, backgroundColor: 'rgb(92,122,120)', duration: 0.65 },
+        { opacity: 0.92, backgroundColor: 'rgb(118,146,158)', duration: 0.2 },
       ],
-      delay: 0.35,
+      delay: 0.18,
       ease: 'power1.in',
     });
     startTerminalSound('glitch');
     try {
-      await glitch(2900, 0.15, 0.85, signal);
+      await glitch(1450, 0.15, 0.85, signal);
     } finally {
       stopTerminalSound('glitch');
     }

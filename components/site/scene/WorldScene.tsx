@@ -74,6 +74,19 @@ const WALK_READY_MS = 2500;
 const WALK_PLAY_MS = 6000;
 const WALK_FADE_S = 0.35;
 
+/** Resolves once the film has a frame to show (loaded, or a seek landed), or after WALK_READY_MS. */
+function frameReady(film: HTMLVideoElement) {
+  return new Promise<void>((resolve) => {
+    const events = ['loadeddata', 'canplay', 'seeked'] as const;
+    const done = () => {
+      events.forEach((e) => film.removeEventListener(e, done));
+      resolve();
+    };
+    events.forEach((e) => film.addEventListener(e, done));
+    setTimeout(done, WALK_READY_MS);
+  });
+}
+
 // back to front: the river's sky and hills sit under the meadow's, which give way to them
 const ORDER: readonly (readonly [WorldSceneId, WorldKind])[] = [
   ['wedding', 'sky'],
@@ -242,15 +255,11 @@ export function WorldScene({ ref }: { ref?: Ref<WorldHandle> }) {
     films.current.forEach((other) => {
       if (other !== film) other.style.opacity = '0';
     });
-    film.currentTime = 0;
+    // rewinding a film that has played is a seek: until it lands the film has no frame, and
+    // 'loadeddata' (fired once, long ago) won't come again, so wait for whichever comes first
+    if (film.currentTime !== 0) film.currentTime = 0;
     // its first frame is the painting on screen now, so it can appear without a fade
-    if (film.readyState < 2) {
-      await new Promise<void>((resolve) => {
-        const done = () => resolve();
-        film.addEventListener('loadeddata', done, { once: true });
-        setTimeout(done, WALK_READY_MS);
-      });
-    }
+    if (film.readyState < 2) await frameReady(film);
     film.style.opacity = '1';
     await new Promise<void>((resolve) => {
       const done = () => resolve();

@@ -617,9 +617,9 @@
       { opacity: 0.85, backgroundColor: 'rgb(28,52,34)', offset: 0.35 },
       { opacity: 0.9, backgroundColor: 'rgb(92,122,120)', offset: 0.85 },
       { opacity: 0.92, backgroundColor: 'rgb(118,146,158)' },
-    ], { duration: 2600, delay: 350, easing: 'ease-in' });
+    ], { duration: 1300, delay: 180, easing: 'ease-in' });
     Typing.start('glitch');
-    const cv = await glitch02(2900, 0.15, 0.85);
+    const cv = await glitch02(1450, 0.15, 0.85);
     Typing.stop('glitch');
     clearInterval(dinoTimer);
     await erase02();
@@ -675,13 +675,10 @@
   const WORLD = window.WORLD;
   const NEAR = { sky: 0, far: 0.1, mid: 0.66, near: 0.8, fore: 0.9, glint: 0.5 };
   const ARRIVAL_BACK = -0.22;
-  const RIVER_LAG = 0.55;
   const clamp01 = n => Math.min(1, Math.max(0, n));
-  const sstep = (a, b, x) => { const t = clamp01((x - a) / (b - a)); return t * t * (3 - 2 * t); };
   const pscale = (n, c) => 1 / Math.max(0.04, 1 - n * c);
   const easeOut3 = p => 1 - Math.pow(1 - p, 3);
   const easeIn2 = p => p * p;
-  const easeInOut2 = p => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2);
   const SWAY = { mid: { deg: 0.12, x: 1, t: 12 }, near: { deg: 0.22, x: 2, t: 9 }, fore: { deg: 0.34, x: 3, t: 7.5 } };
   // back to front: the river's sky and hills sit under the meadow's, which give way to them
   const ORDER = [['wedding', 'sky'], ['wedding', 'far'], ['journey', 'sky'], ['journey', 'far'], ['wedding', 'mid'],
@@ -786,12 +783,6 @@
   const poseArrival = (p, t = p) => pose({
     camera: G ? G.arrivalCamera(p) : { journey: ARRIVAL_BACK * (1 - clamp01(p)), wedding: 0 }, on: ['journey'],
     fog: G ? G.arrivalFog(t) : 0, light: G ? G.arrivalLight(t) : 0, mistLag: G ? G.MIST_TRAVEL * (1 - p) : 0,
-  });
-  const poseCross = q => pose({
-    camera: { journey: q, wedding: (q - 1) * RIVER_LAG }, on: ['journey', 'wedding'],
-    backdrop: 1 - sstep(0.12, 0.55, q), front: sstep(0.22, 0.62, q),
-    meadow: G ? G.crossingMeadow(q) : 1 - sstep(0.5, 0.88, q),
-    fog: G ? G.crossingFog(q) : 0, light: G ? 0.1 * G.crossingFog(q) : 0,
   });
   // runs fn(eased progress) over ms; a timer finishes it if frames stop (a background tab)
   function tween(ms, ease, fn) {
@@ -1054,10 +1045,17 @@
   async function walk(to) {
     const v = walkFilms[to];
     const w = WALK[to];
-    v.currentTime = 0;
+    // rewinding a film that has played is a seek, and 'loadeddata' won't fire again: wait for
+    // whichever says there is a frame (or give up after 2.5 s)
+    if (v.currentTime !== 0) v.currentTime = 0;
     v.style.objectPosition = `${w.from}% 50%`;
     if (v.readyState < 2) {
-      await new Promise(r => { v.addEventListener('loadeddata', r, { once: true }); setTimeout(r, 2500); });
+      await new Promise(r => {
+        const ev = ['loadeddata', 'canplay', 'seeked'];
+        const done = () => { ev.forEach(e => v.removeEventListener(e, done)); r(); };
+        ev.forEach(e => v.addEventListener(e, done));
+        setTimeout(done, 2500);
+      });
     }
     v.style.opacity = 1;
     let raf = 0;
@@ -1080,9 +1078,10 @@
     showing.forEach(v => { v.pause(); v.style.opacity = 0; });
   }
 
+  // The walk starts at once: the nav pill glides and the folder and card fade during its first steps.
   async function go45() {
     busy = true;
-    await slideNav(2);
+    slideNav(2);
     resetStyles(subtree(s5));
     folder5.style.opacity = 0;
     const away = [play(folder4, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 })];
@@ -1090,9 +1089,8 @@
       win4.style.transformOrigin = '50% 50%';
       away.push(play(win4, [{ transform: 'none', opacity: 1 }, { transform: 'scale(.95)', opacity: 0 }], { duration: 500, easing: 'ease-in' }));
     }
-    await Promise.all(away);
     restWorld('journey');
-    await walk('wedding');
+    await Promise.all([...away, walk('wedding')]);
     show(5);
     hide(4);
     restWorld('wedding');
@@ -1110,11 +1108,10 @@
     const away = [play(folder5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 }),
       play(c5, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 })];
     if (win5Open) away.push(play(win5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 }));
-    await Promise.all(away);
     folder4.style.opacity = 0;
     if (winOpen) win4.style.opacity = 0;
     restWorld('wedding');
-    await walk('journey');
+    await Promise.all([...away, walk('journey')]);
     show(4);
     hide(5);
     restWorld('journey');
@@ -1267,27 +1264,9 @@
     else if (current === 5) await (n === 3 ? go53() : go54());
   }
 
-  // The intro and the wedding straight to each other (a nav tap): one camera move from just
-  // through the film all the way to the river, u = time 0..1. The meadow passes without a stop
-  // (no folder, no card, Journey never highlighted). As the site's transitions.ts throughMeadow.
-  const DIRECT_MS = 5200;
-  const DIRECT_ARRIVAL = 0.28;
-  function poseDirect(u) {
-    const back = G ? G.ARRIVAL_BACK : ARRIVAL_BACK;
-    const c = back + (1 - back) * easeInOut2(u);
-    const q = Math.max(0, c);
-    const a = Math.min(1, u / DIRECT_ARRIVAL);
-    pose({
-      camera: { journey: c, wedding: (q - 1) * RIVER_LAG }, on: ['journey', 'wedding'],
-      backdrop: 1 - sstep(0.12, 0.55, q), front: sstep(0.22, 0.62, q),
-      meadow: G ? G.crossingMeadow(q) : 1 - sstep(0.5, 0.88, q),
-      fog: G ? Math.max(G.arrivalFog(a), G.crossingFog(q)) : 0,
-      light: G ? Math.max(G.arrivalLight(a), 0.1 * G.crossingFog(q)) : 0,
-      mistLag: G ? G.MIST_TRAVEL * (1 - a) : 0,
-    });
-  }
-
-  // 03 -> 05: the film flares to light and the camera comes out into the meadow and keeps going
+  // The intro and the wedding straight to each other (a nav tap), as on the website: out of the
+  // film onto the path and straight on up the walk into the hall (no folder or card on the way),
+  // and back down the walk and into the film.
   async function go35() {
     busy = true;
     const st3 = stageOf(3);
@@ -1295,57 +1274,63 @@
     reset04();
     resetStyles(subtree(s5));
     folder5.style.opacity = 0;
-    poseDirect(0);
+    folder4.style.opacity = 0;
+    poseArrival(0, 0);
     play($('.s03-ui', st3), [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
     await Promise.all([
       play(st3, [{ transform: 'none' }, { transform: ZOOM }], { duration: 1300, easing: 'cubic-bezier(.45,0,.9,.6)' }),
       play(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 750, easing: 'ease-in' }),
     ]);
+    show(4);
     hide(3);
     resetStyles(st3, $('.s03-ui', st3));
     video3.pause();
-    let river = false;
     await Promise.all([
       play(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' }),
-      tween(DIRECT_MS, p => p, u => {
-        poseDirect(u);
-        if (!river && u > 0.84) {
-          river = true;
-          show(5);
-          play(folder5, [{ opacity: 0 }, { opacity: 1 }], { duration: 800 });
-        }
-      }),
+      tween(2400, p => p, t => poseArrival(easeOut3(t), t)),
     ]);
+    restWorld('journey');
+    await walk('wedding');
     show(5);
+    hide(4);
+    reset04();
     restWorld('wedding');
+    play(folder5, [{ opacity: 0 }, { opacity: 1 }], { duration: 600 });
+    await hideWalk();
     current = 5;
     await wait(700);
     await autoOpen5();
   }
 
-  // 05 -> 03: back the same way without stopping in the meadow, into the light, and the film
   async function go53() {
     busy = true;
     const st3 = stageOf(3);
     slideNav(0);
-    if (win5Open) play(win5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
-    play(folder5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 });
-    play(c5, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 });
-    setTimeout(() => hide(5), 500);
-    await Promise.all([
-      tween(DIRECT_MS, p => p, u => poseDirect(1 - u)),
-      play(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: DIRECT_MS - 450, easing: 'ease-in' }),
-    ]);
+    const away = [play(folder5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 }),
+      play(c5, [{ opacity: 1 }, { opacity: 0 }], { duration: 300 })];
+    if (win5Open) away.push(play(win5, [{ opacity: 1 }, { opacity: 0 }], { duration: 400 }));
+    reset04();
+    folder4.style.opacity = 0;
+    restWorld('wedding');
+    await Promise.all([...away, walk('journey')]);
+    show(4);
     hide(5);
     win5.classList.remove('is-open');
     resetStyles(win5, c5, folder5);
     win5Open = false;
-    reset04();
+    restWorld('journey');
+    await hideWalk();
+    await Promise.all([
+      tween(1600, p => p, s => { const t = 1 - s; poseArrival(t * t, t); }),
+      play(veil, [{ opacity: 0 }, { opacity: 1 }], { duration: 600, delay: 1000, easing: 'ease-in' }),
+    ]);
     st3.style.transform = ZOOM;
     $('.s03-ui', st3).style.opacity = 0;
     show(3);
     video3.style.opacity = 1;
     video3.play().catch(() => {});
+    hide(4);
+    reset04();
     restWorld(null);
     await Promise.all([
       play(veil, [{ opacity: 1 }, { opacity: 0 }], { duration: 800, easing: 'ease-out' }),
