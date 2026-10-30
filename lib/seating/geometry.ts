@@ -58,7 +58,7 @@ export function defaultRoundTablePositions(count: number, center: Point): Point[
   });
 }
 
-function clampToRoom(p: Point): Point {
+export function clampToRoom(p: Point): Point {
   return {
     x: Math.min(ROOM.width - ROOM_MARGIN, Math.max(ROOM_MARGIN, p.x)),
     y: Math.min(ROOM.height - ROOM_MARGIN, Math.max(ROOM_MARGIN, p.y)),

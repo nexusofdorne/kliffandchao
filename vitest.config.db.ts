@@ -11,6 +11,7 @@ export default defineConfig({
     alias: {
       // Same reasoning as vitest.config.ts: Next's bundler swaps this for
       // an empty module server-side; Vitest has no such swap.
+      '@': fileURLToPath(new URL('./', import.meta.url)),
       'server-only': fileURLToPath(
         new URL('./vitest.setup/server-only-shim.ts', import.meta.url),
       ),
@@ -18,6 +19,8 @@ export default defineConfig({
   },
   test: {
     environment: 'node',
+    // The seating test files share the singleton seating tables, so files run one at a time.
+    fileParallelism: false,
     include: ['tests/db/**/*.test.ts'],
     env: {
       ...testEnv,
