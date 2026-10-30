@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { useMemo, useRef, useState, type PointerEvent } from 'react';
+import { exportJpg, exportXlsx } from '@/lib/seating/export-files';
+import { notSeatedRows, seatingRows, tableRows } from '@/lib/seating/export-rows';
 import { clampCenterToRoom, clampToRoom } from '@/lib/seating/geometry';
 import type { SeatableGuest, SeatingState } from '@/lib/seating/rules';
 import { FloorPlan } from './FloorPlan';
@@ -37,11 +39,21 @@ export function SeatingPlanner({ initialState, initialGuests }: SeatingPlannerPr
   const { state, guests } = seating.plan;
   const svgRef = useRef<SVGSVGElement>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const guestsById = useMemo(() => new Map(guests.map((g) => [g.id, g])), [guests]);
   const seatedIds = useMemo(() => new Set(state.assignments.map((a) => a.guestId)), [state.assignments]);
   const unseated = useMemo(() => guests.filter((g) => !seatedIds.has(g.id)), [guests, seatedIds]);
   const seatedCount = guests.length - unseated.length;
+
+  async function runExport(task: () => Promise<void>) {
+    setExportError(null);
+    try {
+      await task();
+    } catch {
+      setExportError('The export did not work. Please try again.');
+    }
+  }
 
   function finish(gesture: Gesture, drag: ActiveDrag | null) {
     if (!drag) {
@@ -121,14 +133,35 @@ export function SeatingPlanner({ initialState, initialGuests }: SeatingPlannerPr
           <button type="button" onClick={() => void seating.autoFill()} className={buttonClass}>
             Auto-fill VIP
           </button>
-          <button type="button" disabled className={buttonClass}>
+          <button
+            type="button"
+            onClick={() => {
+              const svg = svgRef.current;
+              if (svg) void runExport(() => exportJpg(svg));
+            }}
+            className={buttonClass}
+          >
             Export JPG
           </button>
-          <button type="button" disabled className={buttonClass}>
+          <button
+            type="button"
+            onClick={() =>
+              void runExport(() =>
+                exportXlsx({
+                  seating: seatingRows(state, guestsById),
+                  tables: tableRows(state),
+                  notSeated: notSeatedRows(state, guests),
+                }),
+              )
+            }
+            className={buttonClass}
+          >
             Export spreadsheet
           </button>
         </div>
       </header>
+
+      {exportError && <p className="text-sm text-destructive">{exportError}</p>}
 
       {seating.message && (
         <div className="flex items-start justify-between gap-3 rounded-md border border-border px-3 py-2 text-sm text-foreground">
